@@ -1,0 +1,492 @@
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function fallbackColorValue(color) {
+  return getComputedStyle(document.documentElement).getPropertyValue(`--${color}`).trim() || '#ffe2a3';
+}
+
+export function createUiEffects({
+  boardEl,
+  battleEl,
+  enemyArtEl,
+  enemyImageEl,
+  teamEl,
+  resultEl,
+  getColorValue = fallbackColorValue,
+  getComboBaseMultiplier = (combo) => 1 + Math.max(0, combo - 1) * 0.15,
+} = {}) {
+  const activeBoardCallouts = [];
+  const activeEnemyDamageFloats = [];
+  const activeOverflowCallouts = [];
+
+  function showBuffFlash(text) {
+    const el = document.createElement('div');
+    el.className = 'board-callout';
+    el.textContent = text;
+    const slot = activeBoardCallouts.length;
+    activeBoardCallouts.push(el);
+    const rect = boardEl.getBoundingClientRect();
+    const spacing = Math.max(58, Math.min(74, rect.height * 0.14));
+    const offset = slot * spacing;
+    el.style.left = `${rect.left + rect.width / 2}px`;
+    el.style.top = `${rect.top + rect.height * 0.58 - offset}px`;
+    const drift = -52;
+    el.style.setProperty('--callout-mid-drift', `${drift * 0.36}px`);
+    el.style.setProperty('--callout-drift', `${drift}px`);
+    document.body.appendChild(el);
+    window.setTimeout(() => {
+      const index = activeBoardCallouts.indexOf(el);
+      if (index >= 0) activeBoardCallouts.splice(index, 1);
+      el.remove();
+    }, 1900);
+  }
+
+  function showEnemyStatusCallout(text) {
+    const el = document.createElement('div');
+    el.className = 'enemy-status-callout';
+    el.textContent = text;
+    const rect = enemyArtEl.getBoundingClientRect();
+    el.style.left = `${rect.left + rect.width / 2}px`;
+    el.style.top = `${rect.top + rect.height * 0.42}px`;
+    document.body.appendChild(el);
+    window.setTimeout(() => el.remove(), 1900);
+  }
+
+  function showEnemyBurnEffect() {
+    if (!enemyArtEl) return;
+    enemyArtEl.classList.remove('burn-hit');
+    void enemyArtEl.offsetWidth;
+    enemyArtEl.classList.add('burn-hit');
+
+    const flame = document.createElement('div');
+    flame.className = 'enemy-burn-effect';
+    enemyArtEl.appendChild(flame);
+    window.setTimeout(() => {
+      enemyArtEl.classList.remove('burn-hit');
+      flame.remove();
+    }, 1200);
+  }
+
+  function showOverflowCallout(title, detail = '', type = 'chain') {
+    const el = document.createElement('div');
+    el.className = `overflow-callout ${type}`;
+    el.innerHTML = `<strong>${title}</strong>${detail ? `<span>${detail}</span>` : ''}`;
+    const slot = activeOverflowCallouts.length;
+    activeOverflowCallouts.push(el);
+    const rect = enemyArtEl.getBoundingClientRect();
+    const x = Math.max(18, rect.left + rect.width * 0.08);
+    const y = rect.top + rect.height * 0.28 + slot * 74;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    document.body.appendChild(el);
+    window.setTimeout(() => {
+      const index = activeOverflowCallouts.indexOf(el);
+      if (index >= 0) activeOverflowCallouts.splice(index, 1);
+      el.remove();
+    }, 2200);
+  }
+
+  async function showSkillCastIntro(skill = {}) {
+    const el = document.createElement('div');
+    el.className = 'skill-cast-pop';
+
+    if (skill.icon) {
+      const icon = document.createElement('img');
+      icon.src = skill.icon;
+      icon.alt = '';
+      el.appendChild(icon);
+    }
+
+    const name = document.createElement('strong');
+    name.textContent = skill.name || '主動技能';
+    el.appendChild(name);
+
+    document.body.appendChild(el);
+    await wait(980);
+    el.remove();
+  }
+
+  async function showEnemySkillCastIntro(skill = {}) {
+    const el = document.createElement('div');
+    el.className = 'enemy-skill-cast-pop';
+
+    const name = document.createElement('strong');
+    name.textContent = skill.name || '妖術發動';
+    el.appendChild(name);
+
+    const rect = enemyArtEl?.getBoundingClientRect();
+    if (rect) {
+      el.style.left = `${rect.left + rect.width / 2}px`;
+      el.style.top = `${rect.top + rect.height * 0.44}px`;
+    }
+
+    document.body.appendChild(el);
+    await wait(880);
+    el.remove();
+  }
+
+  function showAttackEffect(type = 'slash') {
+    const layer = document.getElementById('attackEffectLayer');
+    if (!layer) return;
+    const effect = document.createElement('div');
+    effect.className = `attack-effect ${type}`;
+    layer.appendChild(effect);
+    window.setTimeout(() => effect.remove(), 650);
+  }
+
+  function showBoardBombs(cells = []) {
+    if (!boardEl || !cells.length) return;
+    const children = [...boardEl.querySelectorAll('.orb')];
+    const columns = Math.max(1, Math.round(Math.sqrt(children.length)));
+    cells.forEach(({ x, y }, index) => {
+      const cellEl = children[y * columns + x];
+      if (!cellEl) return;
+      const rect = cellEl.getBoundingClientRect();
+      const bomb = document.createElement('div');
+      bomb.className = 'board-bomb-pop';
+      bomb.style.left = `${rect.left + rect.width / 2}px`;
+      bomb.style.top = `${rect.top + rect.height / 2}px`;
+      bomb.style.width = `${Math.max(34, rect.width * 1.16)}px`;
+      bomb.style.height = `${Math.max(34, rect.height * 1.16)}px`;
+      bomb.style.setProperty('--bomb-delay', `${Math.min(index * 24, 180)}ms`);
+      document.body.appendChild(bomb);
+
+      const marker = document.createElement('div');
+      marker.className = 'board-bomb-marker';
+      marker.style.left = `${rect.left}px`;
+      marker.style.top = `${rect.top}px`;
+      marker.style.width = `${rect.width}px`;
+      marker.style.height = `${rect.height}px`;
+      document.body.appendChild(marker);
+      window.setTimeout(() => marker.remove(), 1120);
+      window.setTimeout(() => bomb.remove(), 1360);
+    });
+  }
+
+  function showBoardShatters(cells = []) {
+    if (!boardEl || !cells.length) return;
+    const children = [...boardEl.querySelectorAll('.orb')];
+    const columns = Math.max(1, Math.round(Math.sqrt(children.length)));
+    cells.forEach(({ x, y }, index) => {
+      const cellEl = children[y * columns + x];
+      if (!cellEl) return;
+      const rect = cellEl.getBoundingClientRect();
+      const crack = document.createElement('div');
+      crack.className = 'board-shatter-crack';
+      crack.style.left = `${rect.left}px`;
+      crack.style.top = `${rect.top}px`;
+      crack.style.width = `${rect.width}px`;
+      crack.style.height = `${rect.height}px`;
+      crack.style.setProperty('--shatter-delay', `${Math.min(index * 28, 220)}ms`);
+      document.body.appendChild(crack);
+
+      const debris = document.createElement('div');
+      debris.className = 'board-shatter-debris';
+      debris.style.left = `${rect.left + rect.width / 2}px`;
+      debris.style.top = `${rect.top + rect.height / 2}px`;
+      debris.style.width = `${Math.max(36, rect.width * 1.18)}px`;
+      debris.style.height = `${Math.max(36, rect.height * 1.18)}px`;
+      debris.style.setProperty('--shatter-delay', `${Math.min(index * 28, 220)}ms`);
+      document.body.appendChild(debris);
+
+      window.setTimeout(() => crack.remove(), 1220);
+      window.setTimeout(() => debris.remove(), 1320);
+    });
+  }
+
+  function showBoardConversions(cells = []) {
+    if (!boardEl || !cells.length) return;
+    const children = [...boardEl.querySelectorAll('.orb')];
+    const columns = Math.max(1, Math.round(Math.sqrt(children.length)));
+    cells.forEach(({ x, y }, index) => {
+      const cellEl = children[y * columns + x];
+      if (!cellEl) return;
+      const rect = cellEl.getBoundingClientRect();
+      const marker = document.createElement('div');
+      marker.className = 'board-convert-marker';
+      marker.style.left = `${rect.left}px`;
+      marker.style.top = `${rect.top}px`;
+      marker.style.width = `${rect.width}px`;
+      marker.style.height = `${rect.height}px`;
+      marker.style.setProperty('--convert-delay', `${Math.min(index * 32, 260)}ms`);
+      document.body.appendChild(marker);
+      window.setTimeout(() => marker.remove(), 1450);
+    });
+  }
+
+  function getPlayerAttackEffectType(color = 'light') {
+    if (color === 'red' || color === 'enhancedRed') return 'fire';
+    if (color === 'green') return 'poison';
+    if (color === 'yellow') return 'thunder';
+    if (color === 'dark') return 'dark';
+    return 'light';
+  }
+
+  function getAttackEffectType(color = 'light', label = '') {
+    if (label.includes('炸珠') || label.includes('爆破')) return 'bomb';
+    return getPlayerAttackEffectType(color);
+  }
+
+  function animateHeroStrike(color = 'red') {
+    const card = teamEl.querySelector('.hero-card');
+    const portrait = card?.querySelector('.hero-portrait');
+    if (!card || !portrait) return;
+    card.classList.remove('hero-strike');
+    portrait.classList.remove('portrait-strike');
+    void card.offsetWidth;
+    card.classList.add('hero-strike');
+    portrait.classList.add('portrait-strike');
+    window.setTimeout(() => {
+      card.classList.remove('hero-strike');
+      portrait.classList.remove('portrait-strike');
+    }, 460);
+  }
+
+  function animateAttack(damage, skill = false, color = 'light', label = '') {
+    animateHeroStrike(color);
+    showAttackEffect(getAttackEffectType(color, label));
+    battleEl.classList.remove('shake');
+    void battleEl.offsetWidth;
+    battleEl.classList.add('shake');
+    enemyArtEl.classList.remove('hit', 'skill-hit', 'attack');
+    void enemyArtEl.offsetWidth;
+    enemyArtEl.classList.add(skill ? 'skill-hit' : 'hit');
+    window.setTimeout(() => enemyArtEl.classList.remove('hit', 'skill-hit'), skill ? 540 : 300);
+
+    const rect = enemyArtEl.getBoundingClientRect();
+    const float = document.createElement('div');
+    float.className = 'damage-float enemy-damage-float';
+    if (label) {
+      const labelEl = document.createElement('span');
+      labelEl.className = 'enemy-damage-label';
+      labelEl.textContent = label;
+      const amountEl = document.createElement('span');
+      amountEl.className = 'enemy-damage-amount';
+      amountEl.textContent = damage;
+      float.append(labelEl, amountEl);
+    } else {
+      float.textContent = `-${damage}`;
+    }
+    const slot = activeEnemyDamageFloats.length;
+    activeEnemyDamageFloats.push(float);
+    const spacing = Math.max(70, Math.min(96, rect.height * 0.18));
+    const offset = slot * spacing;
+    float.style.setProperty('--damage-color', getColorValue(color));
+    float.style.left = `${rect.left + rect.width / 2}px`;
+    float.style.top = `${rect.top + rect.height * 0.46 - offset}px`;
+    document.body.appendChild(float);
+    window.setTimeout(() => {
+      const index = activeEnemyDamageFloats.indexOf(float);
+      if (index >= 0) activeEnemyDamageFloats.splice(index, 1);
+      float.remove();
+    }, 1400);
+  }
+
+  function showComboPop(combo) {
+    const rect = boardEl.getBoundingClientRect();
+    const pop = document.createElement('div');
+    pop.className = 'combo-pop';
+    pop.innerHTML = `<span>${combo} COMBO</span><small>x${getComboBaseMultiplier(combo).toFixed(2)}</small>`;
+    pop.style.left = `${rect.left + rect.width / 2}px`;
+    pop.style.top = `${rect.top + rect.height * 0.34}px`;
+    document.body.appendChild(pop);
+    window.setTimeout(() => pop.remove(), 820);
+  }
+
+  function createAttackEffect(attackType = 'slash') {
+    showAttackEffect(attackType);
+    showAttackEffect('impact');
+  }
+
+  function createAttackAfterimage(enemyEl = enemyImageEl) {
+    if (!enemyEl || !enemyEl.parentElement) return null;
+    const parent = enemyEl.parentElement;
+    const rect = enemyEl.getBoundingClientRect();
+    const parentRect = parent.getBoundingClientRect();
+    const clone = enemyEl.cloneNode(false);
+    clone.removeAttribute('id');
+    clone.className = 'enemy-afterimage';
+    clone.style.left = `${rect.left - parentRect.left}px`;
+    clone.style.top = `${rect.top - parentRect.top}px`;
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    parent.appendChild(clone);
+    window.setTimeout(() => clone.remove(), 360);
+    return clone;
+  }
+
+  function shakeBattleStage() {
+    battleEl.classList.remove('shake');
+    void battleEl.offsetWidth;
+    battleEl.classList.add('shake');
+    window.setTimeout(() => battleEl.classList.remove('shake'), 260);
+  }
+
+  function flashTargetHit(targetEl) {
+    if (!targetEl) return;
+    targetEl.classList.remove('target-hit');
+    void targetEl.offsetWidth;
+    targetEl.classList.add('target-hit');
+    window.setTimeout(() => targetEl.classList.remove('target-hit'), 280);
+  }
+
+  function showFloatingDamage(targetEl, damage) {
+    if (!targetEl || !damage) return;
+    const rect = targetEl.getBoundingClientRect();
+    const float = document.createElement('div');
+    float.className = 'player-damage-float';
+    float.textContent = `-${damage}`;
+    float.style.left = `${rect.left + rect.width / 2}px`;
+    float.style.top = `${rect.top + 8}px`;
+    document.body.appendChild(float);
+    window.setTimeout(() => float.remove(), 2000);
+  }
+
+  async function playEnemyAttackAnimation(enemyEl = enemyImageEl, targetEl = document.querySelector('.battle-party'), damage = 0, attackType = 'slash') {
+    if (!enemyEl) return;
+    enemyArtEl.classList.remove('hit', 'skill-hit', 'attack', 'enemy-charging');
+    enemyEl.classList.remove('enemy-windup', 'enemy-lunge');
+    enemyEl.style.animation = '';
+    enemyArtEl.classList.add('enemy-charging');
+    enemyEl.classList.add('enemy-windup');
+    await wait(150);
+
+    createAttackAfterimage(enemyEl);
+    window.setTimeout(() => createAttackAfterimage(enemyEl), 48);
+    window.setTimeout(() => createAttackAfterimage(enemyEl), 92);
+    enemyEl.classList.remove('enemy-windup');
+    enemyEl.classList.add('enemy-lunge');
+    await wait(180);
+
+    createAttackEffect(attackType);
+    shakeBattleStage();
+    flashTargetHit(targetEl);
+    showFloatingDamage(targetEl, damage);
+    await wait(120);
+
+    enemyEl.classList.remove('enemy-lunge');
+    enemyEl.style.animation = 'enemyReturn 250ms ease-out forwards';
+    await wait(250);
+    enemyEl.style.animation = '';
+    enemyArtEl.classList.remove('enemy-charging');
+  }
+
+  function animateEnemyAttack(type = 'slash') {
+    playEnemyAttackAnimation(enemyImageEl, document.querySelector('.battle-party'), 0, type);
+  }
+
+  function showClawSlashes() {
+    const rect = document.querySelector('.battle-party').getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height * 0.62;
+    [
+      { x: -58, y: -22, rot: -24, delay: 0 },
+      { x: 2, y: 0, rot: -18, delay: 80 },
+      { x: 56, y: 22, rot: -12, delay: 150 },
+    ].forEach((slash) => {
+      window.setTimeout(() => {
+        const el = document.createElement('div');
+        el.className = 'claw-slash';
+        el.style.left = `${centerX + slash.x}px`;
+        el.style.top = `${centerY + slash.y}px`;
+        el.style.setProperty('--rot', `${slash.rot}deg`);
+        document.body.appendChild(el);
+        window.setTimeout(() => el.remove(), 560);
+      }, slash.delay);
+    });
+  }
+
+  function shootBeam(color, skill = false) {
+    const sourceEl = teamEl.querySelector(`[data-color="${color}"]`) || boardEl;
+    const sourceRect = sourceEl.getBoundingClientRect();
+    const enemyRect = enemyArtEl.getBoundingClientRect();
+    const start = {
+      x: sourceRect.left + sourceRect.width / 2,
+      y: sourceRect.top + sourceRect.height * 0.24,
+    };
+    const end = {
+      x: enemyRect.left + enemyRect.width / 2,
+      y: enemyRect.top + enemyRect.height / 2,
+    };
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.max(120, Math.hypot(dx, dy));
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const beam = document.createElement('div');
+    beam.className = 'beam';
+    beam.style.left = `${start.x}px`;
+    beam.style.top = `${start.y}px`;
+    beam.style.width = `${length}px`;
+    beam.style.height = skill ? '18px' : '11px';
+    beam.style.color = getColorValue(color);
+    beam.style.transform = `rotate(${angle}deg)`;
+    document.body.appendChild(beam);
+    window.setTimeout(() => beam.remove(), 560);
+  }
+
+  function flashResult() {
+    resultEl.classList.remove('flash');
+    void resultEl.offsetWidth;
+    resultEl.classList.add('flash');
+  }
+
+  function updateCommandGaugeVisual(buttonEl, value = 0, max = 1, label = '') {
+    if (!buttonEl) return;
+    const ratio = Math.max(0, Math.min(1, max > 0 ? value / max : 0));
+    buttonEl.style.setProperty('--command-fill', `${Math.round(ratio * 100)}%`);
+    buttonEl.style.setProperty('--command-fill-opacity', (0.52 + ratio * 0.48).toFixed(2));
+    buttonEl.style.setProperty('--command-fill-light', (0.18 + ratio * 0.36).toFixed(2));
+    buttonEl.style.setProperty('--command-fill-core', (0.42 + ratio * 0.32).toFixed(2));
+    buttonEl.style.setProperty('--command-fill-ember', (0.16 + ratio * 0.24).toFixed(2));
+    buttonEl.style.setProperty('--command-glow-size', `${Math.round(10 + ratio * 24)}px`);
+    buttonEl.style.setProperty('--command-glow-alpha', (0.28 + ratio * 0.48).toFixed(2));
+    buttonEl.style.setProperty('--command-aura-alpha', (ratio * 0.18).toFixed(2));
+    buttonEl.setAttribute('aria-label', `${label}${value}/${max}`);
+    buttonEl.dataset.gaugeReady = ratio >= 1 ? 'true' : 'false';
+  }
+
+  return {
+    showBuffFlash,
+    showOverflowCallout,
+    showSkillCastIntro,
+    showEnemySkillCastIntro,
+    showEnemyStatusCallout,
+    showEnemyBurnEffect,
+    animateAttack,
+    showComboPop,
+    showAttackEffect,
+    showBoardBombs,
+    showBoardShatters,
+    showBoardConversions,
+    getPlayerAttackEffectType,
+    animateHeroStrike,
+    createAttackEffect,
+    createAttackAfterimage,
+    shakeBattleStage,
+    flashTargetHit,
+    showFloatingDamage,
+    playEnemyAttackAnimation,
+    animateEnemyAttack,
+    showClawSlashes,
+    shootBeam,
+    flashResult,
+    updateCommandGaugeVisual,
+  };
+}
+
+export function showFloatingDamage() {
+  throw new Error('Use createUiEffects().showFloatingDamage after DOM refs are available.');
+}
+
+export function showAttackEffect() {
+  throw new Error('Use createUiEffects().showAttackEffect after DOM refs are available.');
+}
+
+export function showComboPop() {
+  throw new Error('Use createUiEffects().showComboPop after DOM refs are available.');
+}
+
+export function shakeBattleStage() {
+  throw new Error('Use createUiEffects().shakeBattleStage after DOM refs are available.');
+}

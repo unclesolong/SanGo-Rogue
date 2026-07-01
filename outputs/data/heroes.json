@@ -1,0 +1,53 @@
+{
+  "packId": "single_hero_card_pack_001",
+  "version": "0.1.0",
+  "mode": "singleHero",
+  "notes": "單一英雄上場模式資料。主程式使用 heroes[0] 作為目前上場英雄。圖片路徑已轉為相對於 match-card-battle-prototype.html。",
+  "defaults": {
+    "maxEnergy": 100
+  },
+  "heroes": [
+    {
+      "id": "hero_zhao_yun",
+      "name": "趙雲",
+      "title": "常山龍膽",
+      "era": "蜀漢",
+      "element": "fire",
+      "orbAffinity": "red",
+      "rarity": 5,
+      "cost": 35,
+      "level": 1,
+      "maxLevel": 99,
+      "stats": {
+        "hp": 2800,
+        "attack": 220,
+        "recovery": 200
+      },
+      "activeSkill": {
+        "id": "active_dragon_spear_thrust",
+        "name": "龍膽突刺",
+        "cooldown": 6,
+        "type": "single_damage",
+        "damageMultiplier": 4.5,
+        "description": "造成 450% 基礎攻擊傷害量。",
+        "icon": "assets/single-hero-card-pack/art/skills/skill_dragon_spear_thrust.png"
+      },
+      "passiveSkill": {
+        "id": "passive_fearless_courage",
+        "name": "渾身是膽",
+        "trigger": "消除紅珠時",
+        "chance": 0.1,
+        "type": "shield_on_red_orb_match",
+        "shieldScaleStat": "attack",
+        "shieldMultiplier": 1,
+        "description": "消除紅珠時，有 10% 機率獲取攻擊力數值的護盾。",
+        "icon": "assets/single-hero-card-pack/art/skills/skill_fearless_courage.png"
+      },
+      "art": {
+        "portrait": "assets/single-hero-card-pack/art/portraits/hero_zhao_yun_portrait.png",
+        "battleIcon": "assets/single-hero-card-pack/art/battle-icons/hero_zhao_yun_battle_icon.png",
+        "card": "assets/single-hero-card-pack/cards/hero_zhao_yun_card.png"
+      }
+    }
+  ]
+}

@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cactbot TTS Subtitle Overlay</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: rgba(0, 0, 0, 0.78);
+      --fg: #fff8e8;
+      --muted: rgba(255, 255, 255, 0.72);
+      --accent: #69d2ff;
+      --danger: #ff7777;
+      --shadow: rgba(0, 0, 0, 0.72);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", "Segoe UI", sans-serif;
+      user-select: none;
+    }
+
+    body.debug {
+      background: rgba(12, 16, 22, 0.64);
+    }
+
+    #subtitle {
+      position: fixed;
+      left: 50%;
+      bottom: 18%;
+      z-index: 20;
+      max-width: min(92vw, 1200px);
+      transform: translateX(-50%);
+      padding: 12px 22px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: clamp(24px, 4.2vw, 56px);
+      font-weight: 800;
+      line-height: 1.18;
+      letter-spacing: 0;
+      text-align: center;
+      text-shadow: 0 2px 8px var(--shadow), 0 0 2px #000;
+      opacity: 0;
+      transition: opacity 140ms ease;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      pointer-events: none;
+    }
+
+    #subtitle.show {
+      opacity: 1;
+    }
+
+    #panel {
+      position: fixed;
+      inset: 12px auto auto 12px;
+      z-index: 10;
+      width: min(560px, calc(100vw - 24px));
+      max-height: calc(100vh - 24px);
+      display: none;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      background: rgba(8, 10, 14, 0.86);
+      color: white;
+      font-size: 13px;
+      line-height: 1.45;
+      overflow: hidden;
+    }
+
+    body.debug #panel {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status {
+      color: var(--muted);
+    }
+
+    .status strong {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    button {
+      min-height: 30px;
+      padding: 4px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.10);
+      color: white;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+    }
+
+    input[type="number"] {
+      width: 74px;
+      min-height: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.10);
+      color: white;
+      font: inherit;
+      padding: 3px 8px;
+    }
+
+    #log {
+      min-height: 120px;
+      margin: 0;
+      padding: 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.42);
+      color: rgba(255, 255, 255, 0.82);
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    #showPanel {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 11;
+      width: 24px;
+      height: 24px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border-radius: 6px;
+      opacity: 0.42;
+    }
+
+    #showPanel:hover {
+      opacity: 1;
+    }
+
+    body:not(.debug) #showPanel {
+      display: flex;
+    }
+
+    .warn {
+      color: var(--danger);
+    }
+  </style>
+</head>
+<body>
+  <div id="subtitle" aria-live="polite"></div>
+  <button id="showPanel" title="顯示設定">≡</button>
+
+  <section id="panel" aria-label="debug panel">
+    <div class="row">
+      <button id="test">測試字幕</button>
+      <button id="clear">清除</button>
+      <button id="hidePanel">隱藏面板</button>
+      <label>顯示秒數 <input id="duration" type="number" min="1" max="20" step="1" value="4"></label>
+    </div>
+    <div class="status" id="status">狀態：<strong>初始化中</strong></div>
+    <pre id="log"></pre>
+  </section>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const eventsToSubscribe = [
+        'CactbotTTS',
+        'CactbotSay',
+        'cactbotSay',
+        'TTS',
+        'TextToSpeech',
+        'BroadcastMessage',
+        'onLogEvent',
+        'LogLine',
+      ];
+
+      const body = document.body;
+      const subtitle = document.getElementById('subtitle');
+      const status = document.getElementById('status');
+      const log = document.getElementById('log');
+      const durationInput = document.getElementById('duration');
+      let hideTimer = 0;
+      let ws = null;
+      let queue = [];
+      let connected = false;
+
+      const params = new URLSearchParams(window.location.search);
+      const debugDefault = params.get('debug') !== '0';
+      body.classList.toggle('debug', debugDefault);
+
+      const setStatus = (text, isWarn = false) => {
+        status.innerHTML = `狀態：<strong class="${isWarn ? 'warn' : ''}">${escapeHtml(text)}</strong>`;
+      };
+
+      const addLog = (text, data) => {
+        const time = new Date().toLocaleTimeString();
+        const payload = data === undefined ? '' : `\n${safeJson(data)}`;
+        log.textContent = `[${time}] ${text}${payload}\n\n${log.textContent}`.slice(0, 9000);
+      };
+
+      const showSubtitle = (text) => {
+        const clean = String(text ?? '').trim();
+        if (!clean)
+          return;
+
+        subtitle.textContent = clean;
+        subtitle.classList.add('show');
+        clearTimeout(hideTimer);
+        const seconds = Math.max(1, Math.min(20, Number(durationInput.value) || 4));
+        hideTimer = window.setTimeout(() => subtitle.classList.remove('show'), seconds * 1000);
+        addLog('顯示字幕', { text: clean });
+      };
+
+      const handlePossibleTts = (event) => {
+        const text = findText(event);
+        if (text) {
+          showSubtitle(text);
+          return;
+        }
+
+        if (body.classList.contains('debug')) {
+          const type = event?.type ?? event?.call ?? 'unknown';
+          if (type !== 'onLogEvent' && type !== 'LogLine')
+            addLog(`收到事件但沒有文字：${type}`, event);
+        }
+      };
+
+      const findText = (value) => {
+        if (!value)
+          return '';
+
+        if (typeof value === 'string')
+          return value;
+
+        const candidates = [
+          value.text,
+          value.tts,
+          value.ttsText,
+          value.msg?.text,
+          value.msg?.tts,
+          value.msg?.ttsText,
+          value.msg?.kind === 'cactbot-tts-subtitle' ? value.msg?.text : '',
+          value.message,
+          value.detail?.text,
+          value.detail?.tts,
+          value.detail?.ttsText,
+          value.payload?.text,
+          value.payload?.tts,
+          value.payload?.ttsText,
+          value.data?.text,
+          value.data?.tts,
+          value.data?.ttsText,
+        ];
+
+        for (const candidate of candidates) {
+          if (typeof candidate === 'string' && candidate.trim())
+            return candidate;
+        }
+
+        return '';
+      };
+
+      const subscribe = (eventName) => {
+        if (typeof window.addOverlayListener === 'function') {
+          window.addOverlayListener(eventName, handlePossibleTts);
+          addLog(`已訂閱 ${eventName}`);
+          return;
+        }
+
+        send({ call: 'subscribe', events: [eventName] });
+        addLog(`已訂閱 ${eventName}`);
+      };
+
+      const send = (msg) => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(msg));
+          return;
+        }
+        queue.push(msg);
+      };
+
+      const connectWs = (wsUrl) => {
+        ws = new WebSocket(wsUrl);
+
+        ws.addEventListener('open', () => {
+          connected = true;
+          setStatus('已連線到 OverlayPlugin');
+          addLog('WebSocket 已連線');
+          const pending = queue;
+          queue = [];
+          for (const msg of pending)
+            ws.send(JSON.stringify(msg));
+        });
+
+        ws.addEventListener('message', (message) => {
+          try {
+            const event = JSON.parse(message.data);
+            handlePossibleTts(event);
+          } catch (err) {
+            addLog('收到無法解析的訊息', String(message.data));
+          }
+        });
+
+        ws.addEventListener('close', () => {
+          connected = false;
+          setStatus('連線中斷，正在重連', true);
+          window.setTimeout(() => connectWs(wsUrl), 1000);
+        });
+
+        ws.addEventListener('error', () => {
+          setStatus('WebSocket 連線錯誤', true);
+        });
+      };
+
+      const initOverlayApi = () => {
+        const wsUrl = params.get('OVERLAY_WS');
+        if (wsUrl) {
+          connectWs(wsUrl);
+          for (const eventName of eventsToSubscribe)
+            subscribe(eventName);
+          return;
+        }
+
+        const waitForApi = () => {
+          if (!window.OverlayPluginApi?.ready) {
+            window.setTimeout(waitForApi, 300);
+            return;
+          }
+
+          window.__OverlayCallback = handlePossibleTts;
+          window.addOverlayListener = (eventName, cb) => {
+            window.OverlayPluginApi.callHandler(JSON.stringify({
+              call: 'subscribe',
+              events: [eventName],
+            }));
+            window.__OverlayCallback = cb;
+          };
+
+          setStatus('已連線到 OverlayPlugin');
+          connected = true;
+          for (const eventName of eventsToSubscribe)
+            subscribe(eventName);
+        };
+
+        waitForApi();
+      };
+
+      const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[char]);
+
+      const safeJson = (value) => {
+        try {
+          return JSON.stringify(value, null, 2);
+        } catch {
+          return String(value);
+        }
+      };
+
+      document.getElementById('test').addEventListener('click', () => {
+        showSubtitle('字幕測試：如果你看得到，overlay 顯示正常');
+      });
+
+      document.getElementById('clear').addEventListener('click', () => {
+        subtitle.classList.remove('show');
+        subtitle.textContent = '';
+        log.textContent = '';
+      });
+
+      document.getElementById('hidePanel').addEventListener('click', () => {
+        body.classList.remove('debug');
+        addLog('偵錯面板：關');
+      });
+
+      document.getElementById('showPanel').addEventListener('click', () => {
+        body.classList.add('debug');
+        addLog('偵錯面板：開');
+      });
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key.toLowerCase() === 'd') {
+          body.classList.toggle('debug');
+          addLog(`偵錯面板：${body.classList.contains('debug') ? '開' : '關'}`);
+        }
+      });
+
+      window.addEventListener('message', (event) => {
+        handlePossibleTts(event.data);
+      });
+
+      window.cactbotSubtitle = {
+        show: showSubtitle,
+        status: () => ({ connected }),
+      };
+
+      setStatus('等待 OverlayPlugin');
+      initOverlayApi();
+      window.setTimeout(() => {
+        if (!connected)
+          setStatus('尚未連上 OverlayPlugin，請用 ACT OverlayPlugin 載入這個檔案', true);
+      }, 3500);
+    })();
+  </script>
+</body>
+</html>

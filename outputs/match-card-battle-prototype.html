@@ -1,0 +1,279 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>五色珠卡牌戰鬥原型</title>
+  <link rel="stylesheet" href="styles/battle.css?v=earthquake-shatter-vfx-20260701a">
+</head>
+<body>
+  <audio id="battleBgm" src="assets/audio/rogue_sanguo_demon_battle_loop_60s.wav" loop preload="auto"></audio>
+  <audio id="orbClearSfx" src="assets/audio/sfx_orb_clear_mystic_chime.wav" preload="auto"></audio>
+  <audio id="enemyAttackSfx" src="assets/audio/sfx_enemy_yellow_turban_demon_soldier_attack_growl_01.wav" preload="auto"></audio>
+  <main class="app">
+    <section id="lobbyScreen" class="screen menu-screen active">
+      <div class="login-panel" aria-label="三國妖異志登入頁">
+        <img class="login-poster" src="assets/login-three-kingdoms-vs-demons.png" alt="三國妖異志">
+        <button id="startGame" class="poster-start-action" type="button" aria-label="踏入亂世"></button>
+        <div class="poster-bottom-actions" aria-label="登入頁選項">
+          <button type="button" aria-label="公告"></button>
+          <button type="button" aria-label="帳號"></button>
+          <button type="button" aria-label="選擇伺服器"></button>
+          <button type="button" aria-label="設定"></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="mainMenuScreen" class="screen menu-screen">
+      <div class="home-panel main-city-panel">
+        <div class="city-backdrop"></div>
+        <header class="city-topbar" aria-label="主城狀態">
+          <div class="lord-badge">
+            <img src="assets/single-hero-card-pack/art/portraits/hero_zhao_yun_portrait.png" alt="">
+            <div>
+              <strong>主公</strong>
+              <span>戰力 125,680</span>
+              <div class="lord-progress"><i style="width: 32%"></i></div>
+            </div>
+          </div>
+          <div class="resource-row" aria-label="資源">
+            <span><b>金</b>256.7萬</span>
+            <span><b>玉</b>12,850</span>
+            <span><b>糧</b>8,230</span>
+          </div>
+        </header>
+
+        <section class="city-quickbar" aria-label="快捷功能">
+          <button type="button"><i>信</i><span>郵件</span></button>
+          <button type="button"><i>活</i><span>活動</span><em></em></button>
+          <button type="button"><i>賞</i><span>福利</span><em></em></button>
+          <button type="button"><i>令</i><span>首儲</span><em></em></button>
+          <button type="button"><i>設</i><span>設定</span></button>
+        </section>
+
+        <section class="city-hero">
+          <div class="announcement">
+            <strong>公告</strong>
+            <span>恭喜主公戰勝「虎牢魔君」，獲得【龍將・呂布】！</span>
+          </div>
+          <div class="city-logo">
+            <h1>三國妖異志</h1>
+            <span>亂世爭鋒</span>
+          </div>
+        </section>
+
+        <div class="main-menu-grid city-feature-grid">
+          <button id="goAdventure" class="menu-tile feature-card story-card" type="button">
+            <strong>故事冒險</strong>
+            <span>主線劇情 / 征戰三國</span>
+            <small>第 3 章　黃巾之亂　3/10</small>
+          </button>
+          <button class="menu-tile feature-card rift-card" type="button">
+            <strong>裂縫探索</strong>
+            <span>無盡裂縫 / 挑戰強敵</span>
+            <small>裂縫層數　28 層</small>
+          </button>
+          <button id="goTeam" class="menu-tile feature-card team-card" type="button">
+            <strong>角色培養</strong>
+            <span>武將強化 / 提升戰力</span>
+            <small>武將數量　18/28</small>
+          </button>
+          <button id="goGacha" class="menu-tile feature-card summon-card" type="button">
+            <strong>異世召喚</strong>
+            <span>召喚武將 / 逆轉戰局</span>
+            <small>免費次數　1/1</small>
+          </button>
+        </div>
+
+        <nav class="city-utility-row" aria-label="主城工具">
+          <button type="button">背包</button>
+          <button type="button">任務</button>
+          <button type="button">成就</button>
+          <button type="button">圖鑑</button>
+          <button type="button">排行</button>
+          <button type="button">軍團</button>
+          <button id="goShop" type="button">商店</button>
+        </nav>
+
+        <nav class="city-bottom-tabs" aria-label="主要導覽">
+          <button class="active" type="button">主城</button>
+          <button type="button">武將</button>
+          <button type="button">戰鬥</button>
+          <button type="button">鍛造</button>
+          <button type="button">神兵</button>
+          <button type="button">寶物</button>
+        </nav>
+      </div>
+    </section>
+
+    <section id="teamScreen" class="screen menu-screen">
+      <div class="chapter-panel">
+        <div class="war-sigil">將</div>
+        <div class="ink-army"></div>
+        <div class="chapter-head">
+          <div>
+            <div class="eyebrow">隊伍編成</div>
+            <h1>三國英傑名冊</h1>
+          </div>
+          <button id="backMenuFromTeam" type="button">返回主選單</button>
+        </div>
+        <div id="rosterGrid" class="roster-grid"></div>
+      </div>
+    </section>
+
+    <section id="stageScreen" class="screen menu-screen">
+      <div class="chapter-panel stage-select-panel">
+        <button id="backMenu" class="stage-back-button" type="button" aria-label="返回主選單">‹</button>
+        <section class="stage-intro">
+          <div class="stage-title-block">
+            <div class="stage-kicker">第一大關</div>
+            <h1>虎牢妖門</h1>
+            <p>虎牢關外，妖氣沖天，群魔攪亂三國。曹操與群雄皆曾於此鏖戰，今妖魔復現，唯有斬除妖邪，方能前行。</p>
+          </div>
+          <div class="stage-seal" aria-hidden="true"><span>妖</span></div>
+        </section>
+        <section class="stage-info-row" aria-label="關卡資訊">
+          <article><strong>敵人屬性</strong><span>妖族</span></article>
+          <article><strong>關卡機制</strong><span>火魔性</span></article>
+          <article><strong>首通獎勵</strong><span>100 玉</span></article>
+        </section>
+        <section class="stage-drop-row" aria-label="可能掉落">
+          <span class="drop-spear"></span>
+          <span class="drop-armor"></span>
+          <span class="drop-crest"></span>
+          <span class="drop-gem"></span>
+          <span class="drop-chest"></span>
+        </section>
+        <div id="stageMap" class="stage-map"></div>
+      </div>
+    </section>
+
+    <section id="battleScreen" class="screen game game-shell">
+    <section class="battle battlefield battle-stage">
+      <div class="battle-topbar">
+        <div id="battleStageInfo" class="battle-stage-info">第 1 層 / 回合 1/20</div>
+        <div class="battle-actions">
+          <button id="battleToStage" class="command-orb" type="button">開卡</button>
+          <button id="battleToMenu" class="command-orb" type="button">主選單</button>
+        </div>
+      </div>
+      <div class="enemy enemy-layer">
+        <div class="enemy-art">
+          <div class="stage-smoke"></div>
+          <div class="stage-embers"></div>
+          <div id="attackEffectLayer" class="attack-effect-layer"></div>
+          <button id="divineCommandButton" class="side-command side-command-left" type="button">
+            <img src="assets/GOD CLEAN.png" alt="">
+            <strong>神令</strong>
+            <span id="divineGaugeText"></span>
+          </button>
+          <button id="orderCommandButton" class="side-command side-command-right" type="button">
+            <img src="assets/ORDER CLEAN.png" alt="">
+            <strong>軍令</strong>
+            <span id="orderGaugeText"></span>
+          </button>
+          <img id="enemyImage" class="enemy-sprite" src="assets/monster-yellow-turban-clean.png" alt="">
+        </div>
+        <div class="enemy-info">
+          <div class="name-row">
+            <h1 id="enemyName">黃巾妖兵</h1>
+            <div id="enemyDebuffs" class="enemy-debuffs"></div>
+            <div class="turn"><span id="enemyTurn">3</span></div>
+          </div>
+          <div class="bar boss-hp-bar" aria-label="enemy hp">
+            <div id="enemyHpBar" class="bar-fill"></div>
+            <div class="boss-hp-text"><strong id="enemyHp">3000</strong><span id="enemyMaxHp">3000</span></div>
+          </div>
+          <div id="battleMessage" class="battle-message">戰鬥開始</div>
+          <div class="stats intent-box">
+            <span>下回合攻擊：<strong id="enemyPreviewDamage">300</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="battle-party">
+        <div id="team" class="team hero-row"></div>
+        <div class="player-status">
+          <div id="buffRow" class="buff-row player-buff-row"></div>
+          <div class="player-status-row">
+            <strong>玩家 HP</strong>
+            <span><strong id="playerHp">0</strong> / <span id="playerMaxHp">0</span></span>
+          </div>
+          <div class="bar player-bar" aria-label="player hp">
+            <div id="playerHpBar" class="bar-fill player-hp-fill"></div>
+          </div>
+          <div class="hero-energy-panel">
+            <span>趙雲能量</span>
+            <strong id="heroEnergyText">0/100</strong>
+            <div class="energy yellow player-energy-bar">
+              <div id="heroEnergyFill" class="energy-fill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="board-wrap board-frame">
+        <div id="board" class="board match-grid" aria-label="match board"></div>
+        <div id="result" class="result"></div>
+      </div>
+
+      <nav class="bottom-nav" aria-label="主要導覽">
+        <button type="button">主城</button>
+        <button type="button">武將</button>
+        <button type="button">背包</button>
+        <button class="active" type="button">戰鬥</button>
+        <button type="button">鍛造</button>
+        <button type="button">招募</button>
+        <button type="button">商店</button>
+      </nav>
+
+      <div id="victoryPanel" class="victory-panel" aria-live="polite">
+        <div class="victory-box">
+          <div class="victory-title">Victory</div>
+          <button id="nextStage" type="button">Next Stage</button>
+        </div>
+      </div>
+
+      <div id="skillDialog" class="skill-dialog" aria-live="polite">
+        <div class="skill-box">
+          <div class="skill-head">
+            <img id="skillDialogImage" src="" alt="">
+            <div>
+              <strong id="skillDialogTitle">技能</strong>
+              <span id="skillDialogHero">武將</span>
+            </div>
+          </div>
+          <div id="skillDialogDesc" class="skill-desc"></div>
+          <div class="skill-actions">
+            <button id="skillCancel" type="button">取消</button>
+            <button id="skillConfirm" type="button">發動</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="rewardDialog" class="reward-dialog" aria-live="polite">
+        <div class="reward-box">
+          <div>
+            <strong>選擇軍令</strong>
+            <div class="roster-flavor">選擇一個 BUFF，本次探索立即生效。</div>
+          </div>
+          <div id="rewardOptions" class="reward-options"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="log-panel">
+      <h2>紀錄</h2>
+      <div id="log" class="log"></div>
+      <div class="controls">
+        <button id="newBoard">重洗盤面</button>
+        <button id="restart">重新開始</button>
+      </div>
+    </aside>
+    </section>
+  </main>
+
+  <script type="module" src="src/main.js?v=earthquake-shatter-sfx-20260701a"></script>
+</body>
+</html>
+

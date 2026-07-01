@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 460">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#233247"/>
+      <stop offset="0.55" stop-color="#101622"/>
+      <stop offset="1" stop-color="#3a1f18"/>
+    </linearGradient>
+    <linearGradient id="armor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e7edf7"/>
+      <stop offset="0.45" stop-color="#8fa7c7"/>
+      <stop offset="1" stop-color="#33465d"/>
+    </linearGradient>
+    <radialGradient id="aura" cx="50%" cy="34%" r="55%">
+      <stop offset="0" stop-color="#b8e7ff" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#b8e7ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="320" height="460" rx="14" fill="url(#bg)"/>
+  <circle cx="160" cy="156" r="148" fill="url(#aura)"/>
+  <path d="M38 384 C76 318 91 258 97 186 C101 139 129 105 160 105 C191 105 219 139 223 186 C229 258 244 318 282 384 C246 422 74 422 38 384Z" fill="#17202c"/>
+  <path d="M92 352 L128 190 L160 132 L192 190 L228 352 C198 390 122 390 92 352Z" fill="url(#armor)" stroke="#d8ecff" stroke-width="3"/>
+  <path d="M133 132 C132 98 147 75 160 75 C173 75 188 98 187 132 C180 154 140 154 133 132Z" fill="#f0d0b0"/>
+  <path d="M122 92 C145 54 194 62 204 104 C178 88 150 91 122 92Z" fill="#2d3139"/>
+  <path d="M118 176 L42 278" stroke="#d6edf7" stroke-width="12" stroke-linecap="round"/>
+  <path d="M202 176 L278 278" stroke="#d6edf7" stroke-width="12" stroke-linecap="round"/>
+  <path d="M259 65 L284 40 M256 62 L54 352" stroke="#e9f7ff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M258 63 L286 92" stroke="#e9f7ff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M104 238 C130 254 190 254 216 238" fill="none" stroke="#b42121" stroke-width="10"/>
+  <text x="160" y="426" text-anchor="middle" font-family="Microsoft JhengHei, sans-serif" font-size="30" font-weight="900" fill="#f4e7c4">趙雲</text>
+</svg>

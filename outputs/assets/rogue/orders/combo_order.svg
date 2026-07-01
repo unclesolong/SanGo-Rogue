@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 220">
+  <path d="M42 210 V52 L80 10 L118 52 V210 Z" fill="#c58c4f" stroke="#684225" stroke-width="6"/>
+  <path d="M54 86 H106 M54 116 H106 M54 146 H106" stroke="#fff0c2" stroke-width="12" stroke-linecap="round"/>
+  <path d="M62 67 L98 67 L80 45 Z" fill="#6d3825"/>
+  <text x="80" y="198" text-anchor="middle" font-family="Microsoft JhengHei, sans-serif" font-size="22" font-weight="900" fill="#3a1e16">連擊</text>
+</svg>

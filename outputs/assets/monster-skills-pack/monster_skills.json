@@ -1,0 +1,197 @@
+{
+  "packId": "monster_skills_001",
+  "version": "0.1.0",
+  "notes": "?????????????????????? skillId ??????? specialSkill ? skills ???",
+  "currentMonsterAttackReference": [
+    {
+      "id": "mob_yellow_turban_demon_soldier",
+      "name": "????",
+      "attack": 180
+    },
+    {
+      "id": "mob_ghostfire_spear_soldier",
+      "name": "????",
+      "attack": 215
+    },
+    {
+      "id": "mob_rotten_shell_shield",
+      "name": "????",
+      "attack": 190
+    },
+    {
+      "id": "mob_snake_shadow_warlock",
+      "name": "????",
+      "attack": 245
+    },
+    {
+      "id": "mob_bloodmoon_wolf_general",
+      "name": "????",
+      "attack": 280
+    },
+    {
+      "id": "mob_dark_gate_warrior",
+      "name": "????",
+      "attack": 260
+    },
+    {
+      "id": "mob_red_flame_demon_lady",
+      "name": "????",
+      "attack": 310
+    },
+    {
+      "id": "mob_black_sun_demon_rider",
+      "name": "????",
+      "attack": 335
+    },
+    {
+      "id": "mob_baqi_remnant",
+      "name": "????",
+      "attack": 360
+    },
+    {
+      "id": "mob_hulao_demon_lu",
+      "name": "????",
+      "attack": 420
+    }
+  ],
+  "skills": [
+    {
+      "id": "monster_poison_dot",
+      "name": "??",
+      "category": "damage_over_time",
+      "timing": "active",
+      "description": "????? X ??????? X ???",
+      "effect": {
+        "type": "poison_dot",
+        "params": {
+          "damagePerTurn": 100,
+          "durationTurns": 3,
+          "damageType": "poison",
+          "stacking": "refresh_duration"
+        }
+      },
+      "tuningNote": "???? 80-120????? 120-180???? 180-250?"
+    },
+    {
+      "id": "monster_freeze_board_third",
+      "name": "??",
+      "category": "board_control",
+      "timing": "active",
+      "description": "???? 1/3 ???????? 3 ???",
+      "effect": {
+        "type": "freeze_random_orbs",
+        "params": {
+          "boardFraction": 0.3333,
+          "durationTurns": 3,
+          "target": "randomBoardOrbs",
+          "canMoveFrozenOrbs": false,
+          "canMatchFrozenOrbs": true
+        }
+      },
+      "tuningNote": "????????? 1/4 ????? 2 ???"
+    },
+    {
+      "id": "monster_demon_aura_shield",
+      "name": "????",
+      "category": "defense",
+      "timing": "passive_each_turn",
+      "description": "????? X ???",
+      "effect": {
+        "type": "gain_shield_each_turn",
+        "params": {
+          "shieldPerTurn": 150,
+          "maxShield": 9999,
+          "triggerTiming": "enemyTurnStart"
+        }
+      },
+      "tuningNote": "???????? 50%-80% ??????????? 300 ??? 150-240?"
+    },
+    {
+      "id": "monster_enrage_on_damage",
+      "name": "??",
+      "category": "buff",
+      "timing": "passive_on_damaged",
+      "description": "???????? X% ???",
+      "effect": {
+        "type": "increase_damage_when_damaged",
+        "params": {
+          "damageIncreasePercent": 10,
+          "maxStacks": 5,
+          "stackDuration": "battle",
+          "triggerTiming": "onMonsterDamaged"
+        }
+      },
+      "tuningNote": "????? 5 ???? +50% ??????? 15%?????????"
+    },
+    {
+      "id": "monster_burn_dot",
+      "name": "??",
+      "category": "damage_over_time",
+      "timing": "active",
+      "description": "????? X ??????? X ???",
+      "effect": {
+        "type": "burn_dot",
+        "params": {
+          "damagePerTurn": 120,
+          "durationTurns": 2,
+          "damageType": "fire",
+          "stacking": "refresh_duration"
+        }
+      },
+      "tuningNote": "????????????? 80-120??? 120-200?? 200-300?"
+    },
+    {
+      "id": "monster_silence_orders",
+      "name": "??",
+      "category": "seal",
+      "timing": "active",
+      "description": "??????????????? X ???",
+      "effect": {
+        "type": "seal_order_casting",
+        "params": {
+          "durationTurns": 2,
+          "sealedSystems": [
+            "militaryOrders",
+            "divineFlags"
+          ],
+          "preventClick": true
+        }
+      },
+      "tuningNote": "?? 1-2 ????????? 3 ??????????"
+    },
+    {
+      "id": "monster_chaos_shuffle",
+      "name": "??",
+      "category": "board_control",
+      "timing": "active",
+      "description": "??????????????????????",
+      "effect": {
+        "type": "chaos_shuffle_board",
+        "params": {
+          "shuffleBoard": true,
+          "clearMilitaryOrders": true,
+          "clearDivineFlags": true,
+          "rerollBoard": true
+        }
+      },
+      "tuningNote": "???????????????????????? 5 ???"
+    },
+    {
+      "id": "monster_poison_curse_orbs",
+      "name": "??",
+      "category": "board_corruption",
+      "timing": "passive_each_turn",
+      "description": "????????????????",
+      "effect": {
+        "type": "convert_non_poison_to_poison_each_turn",
+        "params": {
+          "convertCountPerTurn": 1,
+          "sourceFilter": "nonPoison",
+          "targetColor": "poison",
+          "triggerTiming": "enemyTurnStart"
+        }
+      },
+      "tuningNote": "????? 1 ????? 2 ???? 3 ?????????????????"
+    }
+  ]
+}

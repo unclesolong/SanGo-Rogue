@@ -1,0 +1,55 @@
+{
+  "version": "0.1.0",
+  "commandRewards": [
+    {
+      "id": "assault_order",
+      "name": "猛攻令",
+      "type": "attack_up",
+      "value": 0.25,
+      "durationTurns": 3,
+      "description": "接下來三回合攻擊力提升 25%。",
+      "icon": "assets/rogue/orders/assault_order.svg",
+      "buffIcon": "assets/rogue/buffs/buff_attack_up.svg"
+    },
+    {
+      "id": "pursuit_order",
+      "name": "追擊令",
+      "type": "follow_up",
+      "value": 0.5,
+      "durationTurns": 1,
+      "description": "本回合首次攻擊後，再追擊一次攻擊力 50% 傷害。",
+      "icon": "assets/rogue/orders/pursuit_order.svg",
+      "buffIcon": "assets/rogue/buffs/buff_follow_up.svg"
+    },
+    {
+      "id": "combo_order",
+      "name": "連擊令",
+      "type": "combo_damage",
+      "value": 0.08,
+      "durationTurns": 5,
+      "description": "Combo 每增加 1，傷害 +8%，持續 5 回合。",
+      "icon": "assets/rogue/orders/combo_order.svg",
+      "buffIcon": "assets/rogue/buffs/buff_combo.svg"
+    },
+    {
+      "id": "gale_order",
+      "name": "疾風令",
+      "type": "extra_move",
+      "value": 1,
+      "durationTurns": 1,
+      "description": "本回合第一次消除後，再獲得一次移動機會。",
+      "icon": "assets/rogue/orders/gale_order.svg",
+      "buffIcon": "assets/rogue/buffs/buff_gale.svg"
+    },
+    {
+      "id": "sorcery_order",
+      "name": "妖術令",
+      "type": "color_convert",
+      "value": 1,
+      "durationTurns": 0,
+      "description": "隨機將一種顏色全部變成另一種顏色。",
+      "icon": "assets/rogue/orders/sorcery_order.svg",
+      "buffIcon": "assets/rogue/buffs/buff_sorcery.svg"
+    }
+  ]
+}
