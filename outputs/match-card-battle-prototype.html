@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>五色珠卡牌戰鬥原型</title>
-  <link rel="stylesheet" href="styles/battle.css?v=battle-board-fullwidth-20260702k">
+  <link rel="stylesheet" href="styles/battle.css?v=battle-topbar-effects-20260702x">
 </head>
 <body>
   <audio id="battleBgm" src="assets/audio/rogue_sanguo_demon_battle_loop_60s.wav" loop preload="auto"></audio>
@@ -121,6 +121,58 @@
       </div>
     </section>
 
+    <section id="talentScreen" class="screen menu-screen">
+      <div class="talent-page">
+        <header class="talent-topbar">
+          <button id="backTeamFromTalent" class="talent-back-button" type="button" aria-label="返回角色培養">‹</button>
+          <div>
+            <div class="eyebrow">武將專屬</div>
+            <h1>天賦盤</h1>
+          </div>
+          <div class="talent-point-box">
+            <span>天賦點數</span>
+            <strong>12 / 12</strong>
+          </div>
+        </header>
+
+        <aside id="talentHeroList" class="talent-hero-list"></aside>
+
+        <main class="talent-board-panel">
+          <div class="talent-hero-title">
+            <span>烈焰武將</span>
+            <strong id="talentHeroName">趙雲</strong>
+          </div>
+          <div id="talentBoard" class="talent-board" aria-label="武將天賦盤"></div>
+        </main>
+
+        <aside class="talent-side-panel">
+          <section class="talent-detail-card">
+            <div class="talent-panel-title">天賦詳情</div>
+            <div id="talentDetail" class="talent-detail"></div>
+          </section>
+          <section class="talent-resonance-card">
+            <div class="talent-panel-title">共鳴效果</div>
+            <div id="talentResonance" class="talent-resonance"></div>
+          </section>
+        </aside>
+
+        <footer class="talent-bottom-panel">
+          <section>
+            <div class="talent-panel-title">已啟動天賦</div>
+            <div id="activeTalentList" class="active-talent-list"></div>
+          </section>
+          <section>
+            <div class="talent-panel-title">推薦流派</div>
+            <div class="talent-build-list">
+              <button type="button">火珠爆發流</button>
+              <button type="button">引爆連鎖流</button>
+              <button type="button">護盾反擊流</button>
+            </div>
+          </section>
+        </footer>
+      </div>
+    </section>
+
     <section id="stageScreen" class="screen menu-screen">
       <div class="chapter-panel stage-select-panel">
         <button id="backMenu" class="stage-back-button" type="button" aria-label="返回主選單">?</button>
@@ -165,7 +217,7 @@
       <div class="battle-topbar">
         <div id="battleStageInfo" class="battle-stage-info">第 1 層 / 回合 1/20</div>
         <div class="battle-actions">
-          <button id="battleToStage" class="command-orb" type="button">開卡</button>
+          <button id="battleToStage" class="command-orb" type="button">關卡</button>
           <button id="battleToMenu" class="command-orb" type="button">主選單</button>
         </div>
       </div>
@@ -190,6 +242,9 @@
         <div class="enemy-info">
           <div class="name-row">
             <h1 id="enemyName">黃巾妖兵</h1>
+            <div class="stats intent-box">
+              <span>下回合攻擊：<strong id="enemyPreviewDamage">300</strong></span>
+            </div>
             <div id="enemyDebuffs" class="enemy-debuffs"></div>
             <div class="turn"><span id="enemyTurn">3</span></div>
           </div>
@@ -198,9 +253,6 @@
             <div class="boss-hp-text"><strong id="enemyHp">3000</strong><span id="enemyMaxHp">3000</span></div>
           </div>
           <div id="battleMessage" class="battle-message">戰鬥開始</div>
-          <div class="stats intent-box">
-            <span>下回合攻擊：<strong id="enemyPreviewDamage">300</strong></span>
-          </div>
         </div>
       </div>
 
@@ -287,7 +339,7 @@
     </section>
   </main>
 
-  <script type="module" src="src/main.js?v=bomb-empty-drop-20260702c"></script>
+  <script type="module" src="src/main.js?v=talent-board-module-20260702a"></script>
 </body>
 </html>
 

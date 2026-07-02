@@ -296,8 +296,8 @@ export function createUiEffects({
       burst.className = 'board-poison-pop';
       burst.style.left = `${rect.left + rect.width / 2}px`;
       burst.style.top = `${rect.top + rect.height / 2}px`;
-      burst.style.width = `${Math.max(38, rect.width * 1.28)}px`;
-      burst.style.height = `${Math.max(38, rect.height * 1.28)}px`;
+      burst.style.width = `${Math.max(96, rect.width * 2.55)}px`;
+      burst.style.height = `${Math.max(96, rect.height * 2.55)}px`;
       burst.style.setProperty('--poison-delay', `${Math.min(index * 32, 220)}ms`);
       document.body.appendChild(burst);
 

@@ -17,9 +17,10 @@ import {
   pickEquipmentRewards,
 } from './progression/equipmentProgress.js?v=gem-runes-20260701a';
 import { getDomRefs } from './ui/dom.js';
-import { createUiEffects } from './ui/effects.js?v=bomb-empty-drop-20260702c';
+import { createUiEffects } from './ui/effects.js?v=poison-mist-burst-20260702a';
 import { createAudioController } from './ui/audio.js?v=bomb-empty-drop-20260702c';
 import { renderEnemyDebuffs as renderEnemyDebuffsView, renderHeroRow } from './ui/renderBattle.js?v=divine-rework-20260701a';
+import { createTalentScreenController } from './ui/talentScreen.js?v=talent-board-module-20260702a';
 import { calculateBombDamage as calculateBombDamageValue } from './battle/damage.js';
 import { canActivateHeroSkill, createHeroSkillDialogModel, createHeroSkillSystem } from './battle/skills.js?v=dragon-soul-burst-20260701f';
 import {
@@ -170,6 +171,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       battleMessageEl,
       stageMapEl,
       rosterGridEl,
+      talentHeroListEl,
+      talentHeroNameEl,
+      talentBoardEl,
+      talentDetailEl,
+      talentResonanceEl,
+      activeTalentListEl,
       screens,
     } = getDomRefs();
     const uiEffects = createUiEffects({
@@ -1607,6 +1614,18 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
 
+    const talentScreen = createTalentScreenController({
+      heroDatabase,
+      activeHero,
+      talentHeroListEl,
+      talentHeroNameEl,
+      talentBoardEl,
+      talentDetailEl,
+      talentResonanceEl,
+      activeTalentListEl,
+      showScreen,
+    });
+
     const stagePresentation = [
       {
         id: 'mob_yellow_turban_demon_soldier',
@@ -2223,8 +2242,14 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       rosterGridEl.innerHTML = heroDatabase.heroes.map((hero) => `
         <article class="hero-profile-card">
           <img src="${hero.art.card}" alt="${hero.name} 卡片">
+          <div class="hero-profile-actions">
+            <button class="hero-talent-button" data-hero-id="${hero.id}" type="button">天賦</button>
+          </div>
         </article>
       `).join('');
+      rosterGridEl.querySelectorAll('[data-hero-id]').forEach((button) => {
+        button.addEventListener('click', () => talentScreen.open(button.dataset.heroId));
+      });
     }
 
     function renderBoard(matched = new Set()) {
@@ -3338,6 +3363,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     document.getElementById('goGacha').addEventListener('click', () => alert('抽卡功能準備中'));
     document.getElementById('backMenu').addEventListener('click', () => showScreen('menu'));
     document.getElementById('backMenuFromTeam').addEventListener('click', () => showScreen('menu'));
+    document.getElementById('backTeamFromTalent').addEventListener('click', () => {
+      renderRoster();
+      showScreen('team');
+    });
     document.getElementById('battleToStage').addEventListener('click', () => {
       if (busy) return;
       renderStageMap();
