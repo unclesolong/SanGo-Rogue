@@ -209,6 +209,24 @@ export function createUiEffects({
     window.setTimeout(() => storm.remove(), 1700);
   }
 
+  async function showIceTalismanCastEffect() {
+    const seal = document.createElement('div');
+    seal.className = 'ice-talisman-cast';
+    document.body.appendChild(seal);
+    await wait(980);
+    seal.remove();
+  }
+
+  async function showBleedTalismanCastEffect() {
+    const seal = document.createElement('div');
+    seal.className = 'bleed-talisman-cast';
+    document.body.appendChild(seal);
+    await wait(420);
+    shakeBoard();
+    await wait(300);
+    seal.remove();
+  }
+
   function showChaosDoomApplyEffect() {
     const targetEl = teamEl?.querySelector('.hero-card') || document.querySelector('.battle-party');
     if (!enemyImageEl || !targetEl) return;
@@ -377,6 +395,67 @@ export function createUiEffects({
     return getPlayerAttackEffectType(color);
   }
 
+  function showSpearThrusts() {
+    if (!enemyArtEl) return;
+    const rect = enemyArtEl.getBoundingClientRect();
+    const centerX = rect.left + rect.width * 0.52;
+    const centerY = rect.top + rect.height * 0.48;
+    [
+      { x: -120, y: -26, rot: -6, delay: 0, scale: 1 },
+      { x: -88, y: 18, rot: 5, delay: 105, scale: 0.92 },
+      { x: -142, y: 54, rot: -13, delay: 210, scale: 0.86 },
+    ].forEach((hit) => {
+      window.setTimeout(() => {
+        const spear = document.createElement('div');
+        spear.className = 'zhao-spear-thrust';
+        spear.style.left = `${centerX + hit.x}px`;
+        spear.style.top = `${centerY + hit.y}px`;
+        spear.style.setProperty('--spear-rot', `${hit.rot}deg`);
+        spear.style.setProperty('--spear-scale', hit.scale);
+        document.body.appendChild(spear);
+
+        const spark = document.createElement('div');
+        spark.className = 'zhao-spear-impact';
+        spark.style.left = `${centerX + rect.width * 0.18}px`;
+        spark.style.top = `${centerY + hit.y * 0.35}px`;
+        spark.style.setProperty('--impact-delay', `${hit.delay}ms`);
+        document.body.appendChild(spark);
+
+        window.setTimeout(() => spear.remove(), 620);
+        window.setTimeout(() => spark.remove(), 560);
+      }, hit.delay);
+    });
+  }
+
+  function showSpearShot() {
+    if (!enemyArtEl) return;
+    const sourceEl = teamEl?.querySelector('.hero-card') || document.querySelector('.battle-party') || battleEl;
+    const sourceRect = sourceEl.getBoundingClientRect();
+    const targetRect = enemyArtEl.getBoundingClientRect();
+    const startX = sourceRect.left + sourceRect.width * 0.52;
+    const startY = sourceRect.top + sourceRect.height * 0.36;
+    const endX = targetRect.left + targetRect.width * 0.56;
+    const endY = targetRect.top + targetRect.height * 0.5;
+    const shot = document.createElement('div');
+    shot.className = 'zhao-spear-shot';
+    shot.style.left = `${startX}px`;
+    shot.style.top = `${startY}px`;
+    shot.style.setProperty('--shot-x', `${endX - startX}px`);
+    shot.style.setProperty('--shot-y', `${endY - startY}px`);
+    document.body.appendChild(shot);
+
+    window.setTimeout(() => {
+      const spark = document.createElement('div');
+      spark.className = 'zhao-spear-impact spear-shot-impact';
+      spark.style.left = `${endX}px`;
+      spark.style.top = `${endY}px`;
+      document.body.appendChild(spark);
+      window.setTimeout(() => spark.remove(), 560);
+    }, 330);
+
+    window.setTimeout(() => shot.remove(), 720);
+  }
+
   function animateHeroStrike(color = 'red') {
     const card = teamEl.querySelector('.hero-card');
     const portrait = card?.querySelector('.hero-portrait');
@@ -392,9 +471,11 @@ export function createUiEffects({
     }, 460);
   }
 
-  function animateAttack(damage, skill = false, color = 'light', label = '') {
+  function animateAttack(damage, skill = false, color = 'light', label = '', vfx = '') {
     animateHeroStrike(color);
-    showAttackEffect(getAttackEffectType(color, label));
+    if (vfx === 'spearThrust') showSpearThrusts();
+    else if (vfx === 'spearShot') showSpearShot();
+    else showAttackEffect(getAttackEffectType(color, label));
     battleEl.classList.remove('shake');
     void battleEl.offsetWidth;
     battleEl.classList.add('shake');
@@ -470,6 +551,14 @@ export function createUiEffects({
     void battleEl.offsetWidth;
     battleEl.classList.add('shake');
     window.setTimeout(() => battleEl.classList.remove('shake'), 260);
+  }
+
+  function shakeBoard() {
+    if (!boardEl) return;
+    boardEl.classList.remove('shake');
+    void boardEl.offsetWidth;
+    boardEl.classList.add('shake');
+    window.setTimeout(() => boardEl.classList.remove('shake'), 220);
   }
 
   function flashTargetHit(targetEl) {
@@ -601,12 +690,16 @@ export function createUiEffects({
     showSkillCastIntro,
     showEnemySkillCastIntro,
     showChaosStormEffect,
+    showIceTalismanCastEffect,
+    showBleedTalismanCastEffect,
     showChaosDoomApplyEffect,
     showEnemyStatusCallout,
     showEnemyBurnEffect,
     animateAttack,
     showComboPop,
     showAttackEffect,
+    showSpearThrusts,
+    showSpearShot,
     showBoardBombs,
     showBoardPoisonBursts,
     showBoardShatters,
@@ -616,6 +709,7 @@ export function createUiEffects({
     createAttackEffect,
     createAttackAfterimage,
     shakeBattleStage,
+    shakeBoard,
     flashTargetHit,
     showFloatingDamage,
     playEnemyAttackAnimation,

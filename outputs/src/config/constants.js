@@ -1,6 +1,6 @@
 export const width = 7;
 
-export const height = 7;
+export const height = 6;
 
 export const characterRoster = [
       { characterId: 'tk_liao_hua', id: 'red', label: '火', hero: '廖化', era: '蜀漢', role: '前鋒', rarity: 3, attack: 112, hp: 900, activeSkill: { name: '老將突火', cost: 3, type: 'single_damage', description: '對前方 1 名敵人造成 130% 攻擊傷害；若自身生命低於 50%，額外獲得 60 點護盾。' }, flavor: '久經戰陣的蜀漢老將，攻勢不華麗，但一刀一盾都很實在。', cardArt: 'assets/characters/cards/tk_liao_hua_card.png', thumbArt: 'assets/characters/thumbs/tk_liao_hua_thumb.png' },

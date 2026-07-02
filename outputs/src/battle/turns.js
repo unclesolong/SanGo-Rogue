@@ -138,6 +138,7 @@ export function getEnemyAttackType(skill) {
   if (!skill) return 'slash';
   if (skill.effectType === 'poison') return 'poison';
   if (skill.effectType === 'burn') return 'fire';
+  if (skill.effectType === 'bleed') return 'slash';
   if (skill.effectType === 'aoe_shield') return 'thunder';
   if (['freeze', 'damage_slow', 'damage_debuff', 'freeze_board_orbs'].includes(skill.effectType)) return 'dark';
   if (skill.effectType === 'shatter_board_orbs') return 'thunder';
@@ -219,6 +220,16 @@ function getPlayerStatusesFromSkill(skill) {
     }];
   }
   if (skill.effectType === 'poison') return [{ type: 'poison', damage: skill.dotDamage ?? 100, turns: skill.durationTurns ?? 3 }];
+  if (skill.effectType === 'bleed') {
+    return [{
+      type: 'bleed',
+      name: '流血',
+      damage: skill.bleedDamage ?? skill.dotDamage ?? 75,
+      turns: skill.durationTurns ?? 5,
+      icon: skill.icon ?? 'assets/effects/bleed_blade_cast.png',
+      description: skill.description ?? '每回合受到流血傷害。',
+    }];
+  }
   if (skill.effectType === 'damage_debuff') {
     return [{
       type: 'attackDown',

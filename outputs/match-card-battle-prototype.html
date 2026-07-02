@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>五色珠卡牌戰鬥原型</title>
-  <link rel="stylesheet" href="styles/battle.css?v=battle-topbar-effects-20260702x">
+  <link rel="stylesheet" href="styles/battle.css?v=monster-pressure-scale-20260702a">
 </head>
 <body>
   <audio id="battleBgm" src="assets/audio/rogue_sanguo_demon_battle_loop_60s.wav" loop preload="auto"></audio>
@@ -237,6 +237,11 @@
             <strong>軍令</strong>
             <span id="orderGaugeText"></span>
           </button>
+          <button id="battleMenuGear" class="battle-menu-gear" type="button" aria-label="戰鬥選單">⚙</button>
+          <div id="battleQuickMenu" class="battle-quick-menu" hidden>
+            <button id="battleQuickStage" type="button">關卡</button>
+            <button id="battleQuickMenuHome" type="button">主選單</button>
+          </div>
           <img id="enemyImage" class="enemy-sprite" src="assets/monster-yellow-turban-clean.png" alt="">
         </div>
         <div class="enemy-info">
@@ -339,7 +344,7 @@
     </section>
   </main>
 
-  <script type="module" src="src/main.js?v=talent-board-module-20260702a"></script>
+  <script type="module" src="src/main.js?v=monster-pressure-scale-20260702a"></script>
 </body>
 </html>
 

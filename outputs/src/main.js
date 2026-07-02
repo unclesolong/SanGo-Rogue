@@ -1,4 +1,4 @@
-﻿import { width, height, characterRoster } from './config/constants.js';
+﻿import { width, height, characterRoster } from './config/constants.js?v=board-7x6-20260702a';
 import { battleBalance } from './config/balance.js?v=command-gauge-20260701b';
 import { teamElements, traitRules } from './data/traits.js?v=energy-double-20260701f';
 import { heroDatabase } from './data/heroes.js?v=dragon-soul-burst-20260701f';
@@ -6,7 +6,7 @@ import { rogueRewards } from './data/rogueRewards.js?v=pursuit-order-20260701a';
 import { equipmentRewards } from './data/equipmentRewards.js?v=weapon-icons-20260701a';
 import { divineFlagsPack } from './data/divineFlags.js?v=divine-rework-20260701a';
 import { attackArts } from './data/attackArts.js';
-import { stageData } from './data/monsters.js?v=boss10-poison-3orbs-20260702a';
+import { stageData } from './data/monsters.js?v=yellow-bleed-blade-20260702a';
 import { createMonsterBattleState, getMonsterArt, getMonsterPreviewDamage, getMonsterTurnCooldown, getStageMonster } from './data/monsterCatalog.js';
 import { completeStage, createStageProgress, createStageSelectModel } from './progression/stageProgress.js';
 import {
@@ -17,7 +17,7 @@ import {
   pickEquipmentRewards,
 } from './progression/equipmentProgress.js?v=gem-runes-20260701a';
 import { getDomRefs } from './ui/dom.js';
-import { createUiEffects } from './ui/effects.js?v=poison-mist-burst-20260702a';
+import { createUiEffects } from './ui/effects.js?v=yellow-bleed-blade-20260702a';
 import { createAudioController } from './ui/audio.js?v=bomb-empty-drop-20260702c';
 import { renderEnemyDebuffs as renderEnemyDebuffsView, renderHeroRow } from './ui/renderBattle.js?v=divine-rework-20260701a';
 import { createTalentScreenController } from './ui/talentScreen.js?v=talent-board-module-20260702a';
@@ -31,7 +31,7 @@ import {
   resetEnemySkillCooldown,
   resolveEnemyAction,
   tickEnemySkillCooldowns,
-} from './battle/turns.js?v=boss10-poison-orbs-20260701a';
+} from './battle/turns.js?v=yellow-bleed-blade-20260702a';
 import {
   applyDivineFlag as applyDivineFlagEffect,
   applyOrderReward as applyOrderRewardEffect,
@@ -277,16 +277,38 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     function showPlayerGain(amount, type) {
-      const target = document.querySelector('.player-status');
+      const target = type === 'heal'
+        ? document.getElementById('playerHpBar')?.parentElement || document.querySelector('.player-status')
+        : document.querySelector('.player-status');
       const rect = target.getBoundingClientRect();
+      if (type === 'heal') {
+        const healEffect = document.createElement('div');
+        healEffect.className = 'player-hp-heal-effect';
+        healEffect.innerHTML = '<span></span><span></span><span></span>';
+        target.classList.remove('hp-healing');
+        void target.offsetWidth;
+        target.classList.add('hp-healing');
+        target.appendChild(healEffect);
+        window.setTimeout(() => {
+          healEffect.remove();
+          target.classList.remove('hp-healing');
+        }, 1180);
+      }
       const float = document.createElement('div');
-      float.className = 'player-gain-float';
+      float.className = `player-gain-float ${type === 'heal' ? 'heal-gain-float' : ''}`;
       const labels = { shield: '+盾 ', heal: '+HP ', energy: '+能量 ' };
       const colors = { shield: '#7fc7ff', heal: '#70f2a6', energy: '#ffe15b' };
-      float.textContent = `${labels[type] ?? '+'}${amount}`;
+      if (type === 'heal') {
+        const text = document.createElement('span');
+        text.className = 'heal-gain-text';
+        text.textContent = `HP +${amount}`;
+        float.append(text);
+      } else {
+        float.textContent = `${labels[type] ?? '+'}${amount}`;
+      }
       float.style.setProperty('--gain-color', colors[type] ?? '#ffe15b');
       float.style.left = `${rect.left + rect.width / 2}px`;
-      float.style.top = `${rect.top + 10}px`;
+      float.style.top = `${type === 'heal' ? rect.top - 22 : rect.top + 10}px`;
       document.body.appendChild(float);
       window.setTimeout(() => float.remove(), 1380);
     }
@@ -759,6 +781,11 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           icon: 'assets/POSION.png',
           value: effect.damage ? ` ${effect.damage}` : '',
         },
+        bleed: {
+          name: '流血',
+          icon: 'assets/effects/bleed_blade_cast.png',
+          value: effect.damage ? ` ${effect.damage}` : '',
+        },
         slow: {
           name: '遲緩',
           icon: 'assets/rogue/buffs/buff_sorcery_.png',
@@ -1017,8 +1044,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       panel.innerHTML = `
         <img src="${orbSrc}" alt="${label}珠">
         <div>
-          <strong>${label}*${chaosDoom.cleared}/${chaosDoom.required}</strong>
-          <span>需要消除 ${chaosDoom.required} 顆${label}珠</span>
+          <strong>${label}*${chaosDoom.cleared}/${chaosDoom.required}<span>需要消除 ${chaosDoom.required} 顆${label}珠</span></strong>
         </div>
         <em>${chaosDoom.turns}回合</em>
       `;
@@ -1279,7 +1305,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     function cleanseOnePlayerDebuff() {
-      const index = playerStatusEffects.findIndex((effect) => ['burn', 'poison', 'attackDown', 'slow', 'freeze'].includes(effect.type));
+      const index = playerStatusEffects.findIndex((effect) => ['burn', 'poison', 'bleed', 'attackDown', 'slow', 'freeze'].includes(effect.type));
       if (index < 0) return false;
       const [removed] = playerStatusEffects.splice(index, 1);
       showBuffFlash('光淨化');
@@ -1314,7 +1340,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       }
     }
 
-    function scheduleBoardRefillAfterBomb({ preventAutoMatches = false, delay = 2000 } = {}) {
+    function scheduleBoardRefillAfterBomb({ preventAutoMatches = false, delay = 1000 } = {}) {
       pendingBoardRefillPreventAutoMatches = pendingBoardRefillPreventAutoMatches || preventAutoMatches;
       dropKeys = new Set();
       renderBoard();
@@ -1406,7 +1432,6 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         };
       }
       renderBoard();
-      playFreezeSfx();
       showBuffFlash(`冰凍珠 x${count}`);
       addLog(`冰咒凍結 ${count} 顆珠子，持續 ${effect.durationTurns ?? 3} 回合。`);
       return count;
@@ -1556,7 +1581,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       let dotDamage = 0;
       playerStatusEffects.forEach((effect) => {
         if (effect.type === 'doom') return;
-        if (effect.type === 'burn' || effect.type === 'poison') dotDamage += effect.damage;
+        if (effect.type === 'burn' || effect.type === 'poison' || effect.type === 'bleed') dotDamage += effect.damage;
         effect.turns--;
       });
       playerStatusEffects = playerStatusEffects.filter((effect) => effect.turns > 0);
@@ -2467,7 +2492,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         if (fireAttackBombed > 0) {
           dropKeys = new Set();
           renderBoard();
-          await wait(2000);
+          await wait(1000);
         }
         dropKeys = collapseBoard();
         placeSpecialCreatesAfterCollapse(specialCreates);
@@ -2545,7 +2570,13 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             redOrbBonusDamage = 0;
           }
           totalDamage += damage;
-          attackEvents.push({ color, count, damage, attackType: color === 'yellow' ? 'thunder' : color === 'red' && count >= 5 ? 'fire' : color });
+          attackEvents.push({
+            color,
+            count,
+            damage,
+            attackType: color === 'yellow' ? 'thunder' : color === 'red' && count >= 5 ? 'fire' : color,
+            vfx: color === 'red' && count >= 3 && count <= 4 ? 'spearThrust' : '',
+          });
           if (color === 'red' && enhanced) {
             const bonusDamage = Math.round(playerHero.attack * battleBalance.enhancedFireFlatAtk * getPlayerAttackMultiplier() * finalComboMultiplier * consumedDragonMultiplier * fireDamageMultiplier);
             totalDamage += bonusDamage;
@@ -2638,11 +2669,11 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         let dealt = 0;
         await playBattleStep(`${playerHero.hero}・${actionName}`, () => {
           playAttackEventSfx(event);
-          shootBeam(event.color);
+          if (event.vfx !== 'spearThrust') shootBeam(event.color);
           dealt = damageEnemy(event.damage);
           addLog(`${actionName}造成 ${dealt} 傷害。`);
           updateStats();
-          animateAttack(dealt, !!event.skill, event.color, actionName);
+          animateAttack(dealt, !!event.skill, event.color, actionName, event.vfx);
         }, event.color);
         if (resolveEnemyDefeat(actionName)) return;
         await wait(120);
@@ -2672,8 +2703,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         await playBattleStep('追擊令・突進！', () => {
           followDealt = damageEnemy(followDamage);
           totalDamage += followDealt;
-          shootBeam('red', true);
-          animateAttack(followDealt, true, 'red', '追擊');
+          animateAttack(followDealt, true, 'red', '追擊', 'spearShot');
           addLog(`追擊令追加 ${followDealt} 傷害。`);
           updateStats();
         }, 'red');
@@ -2687,8 +2717,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         await playBattleStep('被動追擊・突進！', () => {
           followDealt = damageEnemy(followDamage);
           totalDamage += followDealt;
-          shootBeam('red', true);
-          animateAttack(followDealt, true, 'red', '追擊');
+          animateAttack(followDealt, true, 'red', '追擊', 'spearShot');
           addLog(`被動追擊追加 ${followDealt} 傷害。`);
           updateStats();
         }, 'red');
@@ -2957,7 +2986,14 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       document.getElementById('enemyMaxHp').textContent = ` / ${enemyMaxHp}`;
       document.getElementById('playerHp').textContent = playerHp;
       document.getElementById('playerMaxHp').textContent = playerMaxHp;
-      document.getElementById('enemyTurn').textContent = enemyTurn;
+      const nextSkillIntent = getNextEnemySkillIntent(currentStage, {
+        actionCount: enemyActionCount,
+        currentTurn: enemyTurn,
+        skillCooldowns: enemySkillCooldowns,
+      });
+      document.getElementById('enemyTurn').textContent = nextSkillIntent
+        ? `${nextSkillIntent.name} ${nextSkillIntent.turnsRemaining}`
+        : enemyTurn;
       const turnBox = document.querySelector('.turn');
       if (turnBox) {
         let intentLabel = document.getElementById('enemyIntentLabel');
@@ -2967,14 +3003,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           intentLabel.className = 'enemy-intent-label';
           turnBox.appendChild(intentLabel);
         }
-        const nextSkillIntent = getNextEnemySkillIntent(currentStage, {
-          actionCount: enemyActionCount,
-          currentTurn: enemyTurn,
-          skillCooldowns: enemySkillCooldowns,
-        });
-        intentLabel.textContent = nextSkillIntent
-          ? `下一招 ${nextSkillIntent.name} ${nextSkillIntent.turnsRemaining} 回合`
-          : '';
+        intentLabel.textContent = '';
       }
       const battleStageInfo = document.getElementById('battleStageInfo');
       if (battleStageInfo) battleStageInfo.textContent = `第 ${stage} 層 / 回合 ${Math.min(20, battleRound)}/20`;
@@ -2993,8 +3022,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       renderDivineStatusBanner();
     }
 
-    function animateAttack(damage, skill = false, color = 'light', label = '') {
-      uiEffects.animateAttack(damage, skill, color, label);
+    function animateAttack(damage, skill = false, color = 'light', label = '', vfx = '') {
+      uiEffects.animateAttack(damage, skill, color, label, vfx);
     }
 
     function showComboPop(combo) {
@@ -3084,6 +3113,13 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
 
       if (useSkill) {
         await showEnemySkillCastIntro(skill);
+        if (skill.effectType === 'freeze_board_orbs') {
+          playFreezeSfx();
+          await uiEffects.showIceTalismanCastEffect?.();
+        }
+        if (skill.effectType === 'bleed') {
+          await uiEffects.showBleedTalismanCastEffect?.();
+        }
         if (action.shieldGain > 0) {
           enemyShield += action.shieldGain;
           enemyShieldTurns = Math.max(enemyShieldTurns, action.shieldTurns ?? 0);
@@ -3367,14 +3403,35 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       renderRoster();
       showScreen('team');
     });
-    document.getElementById('battleToStage').addEventListener('click', () => {
+    const battleQuickMenuEl = document.getElementById('battleQuickMenu');
+    const closeBattleQuickMenu = () => {
+      if (battleQuickMenuEl) battleQuickMenuEl.hidden = true;
+    };
+    const goBattleStageSelect = () => {
       if (busy) return;
+      closeBattleQuickMenu();
       renderStageMap();
       showScreen('stage');
-    });
-    document.getElementById('battleToMenu').addEventListener('click', () => {
+    };
+    const goBattleMainMenu = () => {
       if (busy) return;
+      closeBattleQuickMenu();
       showScreen('menu');
+    };
+    document.getElementById('battleToStage').addEventListener('click', goBattleStageSelect);
+    document.getElementById('battleToMenu').addEventListener('click', goBattleMainMenu);
+    document.getElementById('battleQuickStage')?.addEventListener('click', goBattleStageSelect);
+    document.getElementById('battleQuickMenuHome')?.addEventListener('click', goBattleMainMenu);
+    document.getElementById('battleMenuGear')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (busy || !battleQuickMenuEl) return;
+      battleQuickMenuEl.hidden = !battleQuickMenuEl.hidden;
+    });
+    document.addEventListener('pointerdown', (event) => {
+      if (battleQuickMenuEl?.hidden !== false) return;
+      const target = event.target;
+      if (target instanceof Node && (battleQuickMenuEl.contains(target) || document.getElementById('battleMenuGear')?.contains(target))) return;
+      closeBattleQuickMenu();
     });
     document.body.addEventListener('pointerdown', startBattleBgm, { once: true });
 
@@ -3382,3 +3439,4 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     renderRoster();
     renderStageMap();
     restart();
+
