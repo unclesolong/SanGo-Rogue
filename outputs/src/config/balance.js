@@ -16,6 +16,8 @@ export const battleBalance = {
       ironWallReduction: 0.3,
       lightCleanseExtraHealMaxHp: 0.05,
       redOrbBonusAtk: 0.1,
+      poisonDamageAtkPerTurn: 0.1,
+      poisonComboMultipliers: { 1: 1.1, 2: 1.4, 3: 1.8, 4: 2.5, 5: 3, 6: 3.5, 7: 4 },
       zhaoPassiveChance: 0.2,
       zhaoPassiveMinBombs: 5,
       zhaoPassiveMaxBombs: 20,

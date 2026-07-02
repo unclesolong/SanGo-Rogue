@@ -134,6 +134,44 @@ export function getNextEnemySkillIntent(monster, {
   };
 }
 
+export function getEnemyActionIntents(monster, {
+  currentTurn = monster.basicAttackTurns,
+  skillCooldowns = null,
+  attackMultiplier = 1,
+} = {}) {
+  const basicAttack = {
+    type: 'attack',
+    name: '普通攻擊',
+    turnsRemaining: Math.max(0, currentTurn),
+    damage: getEnemyActionDamage(monster, null, {
+      useSkill: false,
+      playerStatusCount: 0,
+      attackMultiplier,
+    }),
+    effectType: 'attack',
+  };
+  const skillIntents = getMonsterSkills(monster)
+    .filter((skill) => skill.frequencyTurns)
+    .map((skill) => ({
+      type: 'skill',
+      name: skill.name,
+      turnsRemaining: Math.max(0, skillCooldowns?.[getSkillKey(skill)] ?? skill.frequencyTurns),
+      damage: getEnemyActionDamage(monster, skill, {
+        useSkill: true,
+        playerStatusCount: 0,
+        attackMultiplier,
+      }),
+      effectType: skill.effectType,
+      skill,
+    }));
+
+  return [basicAttack, ...skillIntents].sort((first, second) => {
+    if (first.turnsRemaining !== second.turnsRemaining) return first.turnsRemaining - second.turnsRemaining;
+    if (first.type === second.type) return 0;
+    return first.type === 'skill' ? -1 : 1;
+  });
+}
+
 export function getEnemyAttackType(skill) {
   if (!skill) return 'slash';
   if (skill.effectType === 'poison') return 'poison';

@@ -15,6 +15,247 @@
     }
 
     @media (max-width: 560px) {
+      #battleScreen .hero-command-row {
+        overflow: visible !important;
+      }
+
+      #battleScreen .hero-command-row .side-command {
+        transform: translateY(-18px) !important;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite {
+        animation: enemyBreathWide 2.6s ease-in-out infinite;
+        transform-origin: center bottom !important;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite.enemy-windup {
+        animation: responsiveEnemyWindupFinal 150ms ease-out forwards;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite.enemy-lunge {
+        animation: responsiveEnemyLungeFinal 180ms cubic-bezier(.16, .82, .24, 1) forwards;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite.enemy-return {
+        animation: enemyReturn 240ms ease-out forwards;
+      }
+
+      .skill-cast-pop {
+        top: clamp(96px, 20dvh, 144px) !important;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 24px) !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+      }
+
+      .skill-cast-pop::before,
+      .skill-cast-pop::after,
+      .skill-cast-pop strong::before,
+      .skill-cast-pop strong::after {
+        display: none !important;
+        content: none !important;
+      }
+
+      .skill-cast-pop > img:not(.skill-dragon-img) {
+        width: 36px !important;
+        height: 36px !important;
+        flex: 0 0 36px !important;
+        border: 0 !important;
+        border-radius: 4px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter:
+          drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+          drop-shadow(0 0 8px rgba(89, 205, 255, 0.52)) !important;
+      }
+
+      .skill-cast-pop strong {
+        display: inline-block !important;
+        max-width: calc(100vw - 72px) !important;
+        padding: 0 !important;
+        font-size: 16px !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        color: #fff4c8 !important;
+        text-shadow:
+          0 1px 2px #000,
+          0 0 8px rgba(255, 218, 112, 0.88),
+          0 0 14px rgba(94, 203, 255, 0.62) !important;
+        animation: none !important;
+      }
+    }
+
+    @keyframes enemyBreathWide {
+      0%, 100% {
+        transform: translateY(0) scaleX(1.54);
+        filter: brightness(1.16) contrast(1.08) saturate(1.06);
+      }
+      50% {
+        transform: translateY(-5px) scaleX(1.58) scaleY(1.015);
+        filter: brightness(1.24) contrast(1.1) saturate(1.08);
+      }
+    }
+
+    #battleScreen .hero-command-row {
+      overflow: visible !important;
+    }
+
+    #battleScreen .hero-command-row #divineCommandButton.side-command,
+    #battleScreen .hero-command-row #orderCommandButton.side-command {
+      transform: translateY(-18px) !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+    }
+
+    #battleScreen .hero-command-row #divineCommandButton.side-command::before,
+    #battleScreen .hero-command-row #orderCommandButton.side-command::before {
+      display: none !important;
+      content: none !important;
+    }
+
+    .skill-cast-pop,
+    body .skill-cast-pop {
+      top: clamp(86px, 18dvh, 132px) !important;
+      display: inline-flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: calc(100vw - 24px) !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      overflow: visible !important;
+      white-space: nowrap !important;
+    }
+
+    .skill-cast-pop::before,
+    .skill-cast-pop::after,
+    .skill-cast-pop strong::before,
+    .skill-cast-pop strong::after {
+      display: none !important;
+      content: none !important;
+    }
+
+    .skill-cast-pop > img:not(.skill-dragon-img) {
+      width: 34px !important;
+      height: 34px !important;
+      flex: 0 0 34px !important;
+      border: 0 !important;
+      border-radius: 4px !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      filter:
+        drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+        drop-shadow(0 0 8px rgba(89, 205, 255, 0.52)) !important;
+    }
+
+    .skill-cast-pop strong {
+      display: inline-block !important;
+      max-width: calc(100vw - 70px) !important;
+      padding: 0 !important;
+      font-size: 16px !important;
+      line-height: 1 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      color: #fff4c8 !important;
+      text-shadow:
+        0 1px 2px #000,
+        0 0 8px rgba(255, 218, 112, 0.88),
+        0 0 14px rgba(94, 203, 255, 0.62) !important;
+      animation: none !important;
+    }
+
+    #battleScreen .hero-command-row {
+      overflow: visible !important;
+    }
+
+    #battleScreen .hero-command-row .side-command {
+      transform: translateY(-16px) !important;
+    }
+
+    .skill-cast-pop {
+      top: clamp(86px, 18dvh, 132px) !important;
+      display: inline-flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: calc(100vw - 24px) !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      overflow: visible !important;
+      white-space: nowrap !important;
+    }
+
+    .skill-cast-pop::before,
+    .skill-cast-pop::after,
+    .skill-cast-pop strong::before,
+    .skill-cast-pop strong::after {
+      display: none !important;
+      content: none !important;
+    }
+
+    .skill-cast-pop > img:not(.skill-dragon-img) {
+      width: 34px !important;
+      height: 34px !important;
+      flex: 0 0 34px !important;
+      border: 0 !important;
+      border-radius: 4px !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      filter:
+        drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+        drop-shadow(0 0 8px rgba(89, 205, 255, 0.52)) !important;
+    }
+
+    .skill-cast-pop strong {
+      display: inline-block !important;
+      max-width: calc(100vw - 70px) !important;
+      padding: 0 !important;
+      font-size: 16px !important;
+      line-height: 1 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      color: #fff4c8 !important;
+      text-shadow:
+        0 1px 2px #000,
+        0 0 8px rgba(255, 218, 112, 0.88),
+        0 0 14px rgba(94, 203, 255, 0.62) !important;
+      animation: none !important;
+    }
+
+    @media (max-width: 560px) {
       #battleScreen {
         --hero-row-h: clamp(66px, 10.2dvh, 78px);
       }
@@ -136,7 +377,6 @@
       }
 
       #battleScreen #enemyImage.enemy-sprite {
-        transform: scaleX(1.16) !important;
         transform-origin: center bottom !important;
       }
 
@@ -172,6 +412,102 @@
           transform: translateY(clamp(24px, 5.7dvh, 52px)) scale(1.16) scaleX(1.16);
           filter: blur(0) brightness(1.32);
         }
+      }
+    }
+
+    @media (max-width: 560px) {
+      #battleScreen .hero-command-row {
+        overflow: visible !important;
+      }
+
+      #battleScreen .hero-command-row .side-command {
+        transform: translateY(-18px) !important;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite {
+        animation: enemyBreathWide 2.6s ease-in-out infinite;
+        transform-origin: center bottom !important;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite.enemy-windup {
+        animation: responsiveEnemyWindupFinal 150ms ease-out forwards;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite.enemy-lunge {
+        animation: responsiveEnemyLungeFinal 180ms cubic-bezier(.16, .82, .24, 1) forwards;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite.enemy-return {
+        animation: enemyReturn 240ms ease-out forwards;
+      }
+
+      .skill-cast-pop {
+        top: clamp(96px, 20dvh, 144px) !important;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 24px) !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+      }
+
+      .skill-cast-pop::before,
+      .skill-cast-pop::after,
+      .skill-cast-pop strong::before,
+      .skill-cast-pop strong::after {
+        display: none !important;
+        content: none !important;
+      }
+
+      .skill-cast-pop > img:not(.skill-dragon-img) {
+        width: 36px !important;
+        height: 36px !important;
+        flex: 0 0 36px !important;
+        border: 0 !important;
+        border-radius: 4px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter:
+          drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+          drop-shadow(0 0 8px rgba(89, 205, 255, 0.52)) !important;
+      }
+
+      .skill-cast-pop strong {
+        display: inline-block !important;
+        max-width: calc(100vw - 72px) !important;
+        padding: 0 !important;
+        font-size: 16px !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        color: #fff4c8 !important;
+        text-shadow:
+          0 1px 2px #000,
+          0 0 8px rgba(255, 218, 112, 0.88),
+          0 0 14px rgba(94, 203, 255, 0.62) !important;
+        animation: none !important;
+      }
+    }
+
+    @keyframes enemyBreathWide {
+      0%, 100% {
+        transform: translateY(0) scaleX(1.54);
+        filter: brightness(1.16) contrast(1.08) saturate(1.06);
+      }
+      50% {
+        transform: translateY(-5px) scaleX(1.58) scaleY(1.015);
+        filter: brightness(1.24) contrast(1.1) saturate(1.08);
       }
     }
 
@@ -4601,11 +4937,12 @@
         drop-shadow(0 0 52px rgba(111, 0, 0, 0.82));
       transform: translate(-50%, -50%) translate(210px, -170px) scale(0.58) rotate(-40deg);
       opacity: 0;
-      animation: bleedTalismanCast 720ms cubic-bezier(.08, .76, .15, 1) forwards;
+      animation: bleedTalismanCast 560ms cubic-bezier(.06, .72, .12, 1) forwards;
     }
 
     .bleed-talisman-cast::before,
     .bleed-talisman-cast::after {
+      display: none;
       content: "";
       position: absolute;
       left: -18%;
@@ -4621,11 +4958,42 @@
       opacity: 0;
       transform: rotate(-38deg) scaleX(0.08);
       transform-origin: 72% 50%;
-      animation: bleedSlashTrail 720ms cubic-bezier(.08, .76, .15, 1) forwards;
+      animation: bleedSlashTrail 560ms cubic-bezier(.06, .72, .12, 1) forwards;
     }
 
     .bleed-talisman-cast::after {
       top: 44%;
+      height: 44px;
+      background:
+        linear-gradient(90deg, transparent 0%, rgba(76, 0, 0, 0.05) 14%, rgba(255, 34, 34, 0.42) 45%, rgba(255, 255, 255, 0.24) 51%, rgba(119, 0, 0, 0.34) 72%, transparent 100%);
+      filter: blur(7px);
+      animation-delay: 60ms;
+    }
+
+    .bleed-slash-trail,
+    .bleed-slash-trail::after {
+      position: fixed;
+      z-index: 154;
+      left: 50%;
+      top: 50%;
+      width: min(680px, 104vw);
+      height: 18px;
+      border-radius: 999px;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, transparent 0%, rgba(255, 31, 31, 0.1) 16%, rgba(255, 238, 214, 0.92) 43%, rgba(255, 28, 28, 0.94) 56%, rgba(92, 0, 0, 0.62) 78%, transparent 100%);
+      box-shadow:
+        0 0 18px rgba(255, 34, 34, 0.86),
+        0 0 42px rgba(142, 0, 0, 0.62);
+      opacity: 0;
+      transform: translate(-50%, -50%) rotate(-38deg) scaleX(0.04);
+      transform-origin: 72% 50%;
+      animation: bleedSlashTrail 560ms cubic-bezier(.06, .72, .12, 1) forwards;
+    }
+
+    .bleed-slash-trail::after {
+      content: "";
+      top: 50%;
       height: 44px;
       background:
         linear-gradient(90deg, transparent 0%, rgba(76, 0, 0, 0.05) 14%, rgba(255, 34, 34, 0.42) 45%, rgba(255, 255, 255, 0.24) 51%, rgba(119, 0, 0, 0.34) 72%, transparent 100%);
@@ -4826,23 +5194,23 @@
     @keyframes bleedSlashTrail {
       0% {
         opacity: 0;
-        transform: rotate(-38deg) scaleX(0.04);
+        transform: translate(-50%, -50%) rotate(-38deg) scaleX(0.04);
       }
       24% {
         opacity: 0;
-        transform: rotate(-38deg) scaleX(0.08);
+        transform: translate(-50%, -50%) rotate(-38deg) scaleX(0.08);
       }
       42% {
         opacity: 1;
-        transform: rotate(-38deg) scaleX(1);
+        transform: translate(-50%, -50%) rotate(-38deg) scaleX(1);
       }
       66% {
         opacity: 0.62;
-        transform: rotate(-38deg) scaleX(1.12);
+        transform: translate(-50%, -50%) rotate(-38deg) scaleX(1.12);
       }
       100% {
         opacity: 0;
-        transform: rotate(-38deg) scaleX(1.24);
+        transform: translate(-50%, -50%) rotate(-38deg) scaleX(1.24);
       }
     }
 
@@ -10116,40 +10484,39 @@
 
     @media (max-width: 560px) {
       #battleScreen #enemyImage.enemy-sprite {
-        transform: scaleX(1.28) !important;
         transform-origin: center bottom !important;
       }
 
       @keyframes enemyReturn {
         0% {
-          transform: translateY(clamp(24px, 5.7dvh, 52px)) scale(1.16) scaleX(1.28);
+          transform: translateY(clamp(24px, 5.7dvh, 52px)) scale(1.16) scaleX(1.54);
           filter: blur(0) brightness(1.32);
         }
         100% {
-          transform: translateY(0) scale(1) scaleX(1.28);
+          transform: translateY(0) scale(1) scaleX(1.54);
           filter: brightness(1);
         }
       }
 
       @keyframes responsiveEnemyWindupFinal {
         0% {
-          transform: translateY(0) scale(1) scaleX(1.28);
+          transform: translateY(0) scale(1) scaleX(1.54);
         }
         100% {
-          transform: translateY(clamp(5px, 1.3dvh, 11px)) scale(1.08) scaleX(1.28) rotateX(-5deg);
+          transform: translateY(clamp(5px, 1.3dvh, 11px)) scale(1.08) scaleX(1.54) rotateX(-5deg);
         }
       }
 
       @keyframes responsiveEnemyLungeFinal {
         0% {
-          transform: translateY(clamp(5px, 1.3dvh, 11px)) scale(1.08) scaleX(1.28);
+          transform: translateY(clamp(5px, 1.3dvh, 11px)) scale(1.08) scaleX(1.54);
         }
         62% {
-          transform: translateY(clamp(28px, 6.4dvh, 58px)) scale(1.2) scaleX(1.28);
+          transform: translateY(clamp(28px, 6.4dvh, 58px)) scale(1.2) scaleX(1.54);
           filter: blur(1px) brightness(1.45);
         }
         100% {
-          transform: translateY(clamp(24px, 5.7dvh, 52px)) scale(1.16) scaleX(1.28);
+          transform: translateY(clamp(24px, 5.7dvh, 52px)) scale(1.16) scaleX(1.54);
           filter: blur(0) brightness(1.32);
         }
       }
@@ -10702,3 +11069,1023 @@
           0 0 8px rgba(255, 213, 92, 0.86);
       }
     }
+
+    @media (max-width: 560px) {
+      #battleScreen .hero-command-row {
+        overflow: visible !important;
+      }
+
+      #battleScreen .hero-command-row .side-command {
+        transform: translateY(-18px) !important;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite {
+        animation: enemyBreathWide 2.6s ease-in-out infinite;
+        transform-origin: center bottom !important;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite.enemy-windup {
+        animation: responsiveEnemyWindupFinal 150ms ease-out forwards;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite.enemy-lunge {
+        animation: responsiveEnemyLungeFinal 180ms cubic-bezier(.16, .82, .24, 1) forwards;
+      }
+
+      #battleScreen #enemyImage.enemy-sprite.enemy-return {
+        animation: enemyReturn 240ms ease-out forwards;
+      }
+
+      .skill-cast-pop {
+        top: clamp(96px, 20dvh, 144px) !important;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 24px) !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+      }
+
+      .skill-cast-pop::before,
+      .skill-cast-pop::after,
+      .skill-cast-pop strong::before,
+      .skill-cast-pop strong::after {
+        display: none !important;
+        content: none !important;
+      }
+
+      .skill-cast-pop > img:not(.skill-dragon-img) {
+        width: 36px !important;
+        height: 36px !important;
+        flex: 0 0 36px !important;
+        border: 0 !important;
+        border-radius: 4px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter:
+          drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+          drop-shadow(0 0 8px rgba(89, 205, 255, 0.52)) !important;
+      }
+
+      .skill-cast-pop strong {
+        display: inline-block !important;
+        max-width: calc(100vw - 72px) !important;
+        padding: 0 !important;
+        font-size: 16px !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        color: #fff4c8 !important;
+        text-shadow:
+          0 1px 2px #000,
+          0 0 8px rgba(255, 218, 112, 0.88),
+          0 0 14px rgba(94, 203, 255, 0.62) !important;
+        animation: none !important;
+      }
+    }
+
+    @keyframes enemyBreathWide {
+      0%, 100% {
+        transform: translateY(0) scaleX(1.54);
+        filter: brightness(1.16) contrast(1.08) saturate(1.06);
+      }
+      50% {
+        transform: translateY(-5px) scaleX(1.58) scaleY(1.015);
+        filter: brightness(1.24) contrast(1.1) saturate(1.08);
+      }
+    }
+
+/* Final battle visual overrides: command icons, enemy skill banner, hero-card centering, wide enemy breath. */
+#battleScreen .hero-command-row {
+  overflow: visible !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command,
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  transform: translateY(-18px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+#battleScreen .hero-command-row #team.hero-row > .hero-card {
+  align-self: center !important;
+  justify-self: center !important;
+  transform: translateY(-1px) !important;
+}
+
+.enemy-skill-cast-pop {
+  width: auto !important;
+  min-width: clamp(150px, 42vw, 230px) !important;
+  max-width: calc(100vw - 44px) !important;
+  min-height: clamp(42px, 8dvh, 62px) !important;
+  padding: clamp(6px, 1.4dvh, 10px) clamp(16px, 4vw, 24px) !important;
+  border-radius: 10px !important;
+  border-width: 1px !important;
+  box-shadow:
+    0 0 12px rgba(255, 218, 91, 0.28),
+    inset 0 0 18px rgba(255, 190, 80, 0.1) !important;
+}
+
+.enemy-skill-cast-pop strong {
+  font-size: clamp(22px, 6vw, 34px) !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+@media (max-width: 560px) {
+  .enemy-skill-cast-pop {
+    min-width: clamp(132px, 44vw, 190px) !important;
+    min-height: clamp(34px, 7dvh, 48px) !important;
+    padding: clamp(4px, 1dvh, 7px) clamp(12px, 3.2vw, 18px) !important;
+    border-radius: 8px !important;
+  }
+
+  .enemy-skill-cast-pop strong {
+    font-size: clamp(18px, 5vw, 26px) !important;
+  }
+}
+
+@keyframes enemyBreathWide {
+  0%, 100% {
+    transform: translateY(0) scaleX(1.54);
+    filter: brightness(1.16) contrast(1.08) saturate(1.06);
+  }
+  50% {
+    transform: translateY(-5px) scaleX(1.58) scaleY(1.015);
+    filter: brightness(1.24) contrast(1.1) saturate(1.08);
+  }
+}
+
+#battleScreen #rewardDialog.battle-help-dialog .reward-options {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  align-items: stretch !important;
+  height: auto !important;
+  overflow: auto !important;
+}
+
+#battleScreen #rewardDialog.battle-help-dialog .battle-help-card {
+  min-height: 0 !important;
+  align-content: start !important;
+  justify-items: start !important;
+  padding: 16px !important;
+  gap: 10px !important;
+  text-align: left !important;
+}
+
+#battleScreen #rewardDialog.battle-help-dialog .battle-help-card strong {
+  font-size: clamp(20px, 2.6vw, 30px) !important;
+  line-height: 1.1 !important;
+}
+
+#battleScreen #rewardDialog.battle-help-dialog .battle-help-card span {
+  display: grid !important;
+  gap: 7px !important;
+  font-size: clamp(13px, 1.65vw, 18px) !important;
+  line-height: 1.35 !important;
+}
+
+#battleScreen #rewardDialog.battle-help-dialog .battle-help-card em {
+  display: block !important;
+  color: #e8d7ae !important;
+  font-style: normal !important;
+}
+
+#battleScreen #rewardDialog.battle-help-dialog .battle-help-close {
+  grid-column: 1 / -1 !important;
+  justify-self: center !important;
+  min-width: 120px !important;
+}
+
+/* Final hero-card alignment pass. */
+#battleScreen .hero-command-row #team.hero-row > .hero-card {
+  transform: translateY(-3px) !important;
+}
+
+#battleScreen .hero-command-row #team.hero-row > .hero-card .portrait,
+#battleScreen .hero-command-row #team.hero-row > .hero-card .portrait img,
+#battleScreen .hero-command-row #team.hero-row > .hero-card > img {
+  object-position: center center !important;
+}
+
+/* Final enemy height pass. */
+#battleScreen #enemyImage.enemy-sprite {
+  height: min(112%, clamp(148px, 34dvh, 318px)) !important;
+}
+
+/* Enemy intent panel and final battle UI polish. */
+#battleScreen .enemy-art {
+  position: relative !important;
+}
+
+#battleScreen .intent-box {
+  display: none !important;
+}
+
+#battleScreen .enemy-intent-panel {
+  position: absolute !important;
+  right: clamp(8px, 2.2vw, 14px) !important;
+  bottom: clamp(12px, 3dvh, 24px) !important;
+  z-index: 24 !important;
+  display: grid !important;
+  gap: 4px !important;
+  width: min(44vw, 220px) !important;
+  max-width: calc(100% - 18px) !important;
+  padding: 8px 10px !important;
+  border: 1px solid rgba(255, 214, 92, 0.56) !important;
+  border-radius: 8px !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 224, 116, 0.2), transparent 34%),
+    linear-gradient(135deg, rgba(26, 12, 7, 0.78), rgba(4, 5, 9, 0.72)) !important;
+  box-shadow:
+    0 0 16px rgba(255, 197, 75, 0.2),
+    inset 0 0 18px rgba(255, 172, 54, 0.08) !important;
+  color: #f6e4b3 !important;
+  pointer-events: none !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+#battleScreen .enemy-intent-title {
+  font-size: clamp(11px, 2.2vw, 13px) !important;
+  line-height: 1.05 !important;
+  color: #ffe48b !important;
+  text-shadow: 0 0 8px rgba(255, 213, 99, 0.7) !important;
+}
+
+#battleScreen .enemy-intent-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 22px !important;
+  padding: 3px 5px !important;
+  border: 1px solid rgba(255, 211, 108, 0.2) !important;
+  border-radius: 5px !important;
+  background: rgba(0, 0, 0, 0.26) !important;
+}
+
+#battleScreen .enemy-intent-row.is-next {
+  border-color: rgba(255, 226, 125, 0.78) !important;
+  background: linear-gradient(90deg, rgba(98, 31, 13, 0.62), rgba(17, 12, 6, 0.5)) !important;
+  box-shadow: 0 0 10px rgba(255, 196, 70, 0.2) !important;
+}
+
+#battleScreen .enemy-intent-row.is-ready .enemy-intent-meta {
+  color: #ffcf74 !important;
+  text-shadow: 0 0 8px rgba(255, 106, 46, 0.72) !important;
+}
+
+#battleScreen .enemy-intent-name,
+#battleScreen .enemy-intent-meta {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  font-size: clamp(11px, 2.2vw, 13px) !important;
+  line-height: 1.05 !important;
+}
+
+#battleScreen .enemy-intent-name {
+  color: #fff0bf !important;
+  font-weight: 800 !important;
+}
+
+#battleScreen .enemy-intent-meta {
+  color: #dac48d !important;
+  font-weight: 800 !important;
+}
+
+#battleScreen .battle-menu-gear {
+  width: clamp(34px, 7.2vw, 44px) !important;
+  height: clamp(34px, 7.2vw, 44px) !important;
+  top: clamp(6px, 1.5dvh, 10px) !important;
+  right: clamp(6px, 1.7vw, 10px) !important;
+  font-size: clamp(20px, 4.6vw, 28px) !important;
+  line-height: 1 !important;
+}
+
+#battleScreen .battle-quick-menu {
+  top: clamp(46px, 9dvh, 58px) !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command,
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  transform: none !important;
+  align-self: center !important;
+  width: clamp(42px, 10.5vw, 58px) !important;
+  height: clamp(42px, 10.5vw, 58px) !important;
+  overflow: visible !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command img,
+#battleScreen .hero-command-row #orderCommandButton.side-command img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command strong,
+#battleScreen .hero-command-row #divineCommandButton.side-command span,
+#battleScreen .hero-command-row #orderCommandButton.side-command strong,
+#battleScreen .hero-command-row #orderCommandButton.side-command span {
+  display: none !important;
+}
+
+/* Final command icon fit pass: the order asset is taller than the button ratio, so inset it inside a taller row. */
+#battleScreen .hero-command-row {
+  min-height: clamp(74px, 19vw, 84px) !important;
+  align-items: center !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command,
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  width: clamp(48px, 13vw, 58px) !important;
+  height: clamp(72px, 20vw, 86px) !important;
+  overflow: hidden !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command {
+  transform: translate(44px, -8px) !important;
+}
+
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  transform: translate(-44px, -8px) !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command img,
+#battleScreen .hero-command-row #orderCommandButton.side-command img {
+  width: auto !important;
+  height: calc(100% - 6px) !important;
+  max-width: calc(100% - 2px) !important;
+  max-height: calc(100% - 6px) !important;
+}
+
+.enemy-skill-cast-pop {
+  display: grid !important;
+  place-items: center !important;
+  width: fit-content !important;
+  min-width: clamp(132px, 34vw, 210px) !important;
+  max-width: min(72vw, 300px) !important;
+  min-height: clamp(36px, 7dvh, 52px) !important;
+  padding: clamp(5px, 1.1dvh, 8px) clamp(14px, 3.4vw, 22px) !important;
+  text-align: center !important;
+  border: 1px solid rgba(255, 226, 126, 0.95) !important;
+  border-radius: 9px !important;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255, 222, 128, 0.3), transparent 44%),
+    linear-gradient(100deg, rgba(72, 16, 10, 0.9), rgba(32, 10, 8, 0.88), rgba(7, 7, 11, 0.82)) !important;
+  box-shadow:
+    0 0 20px rgba(255, 210, 82, 0.44),
+    0 0 42px rgba(170, 56, 20, 0.32),
+    inset 0 0 20px rgba(255, 193, 68, 0.14) !important;
+  animation: enemySkillCastFramePulse 780ms ease-in-out infinite alternate !important;
+}
+
+.enemy-skill-cast-pop strong {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  font-size: clamp(22px, 5.2vw, 32px) !important;
+  line-height: 1.05 !important;
+  text-align: center !important;
+  color: #fff3bf !important;
+  text-shadow:
+    0 1px 2px #000,
+    0 0 8px rgba(255, 234, 139, 0.96),
+    0 0 18px rgba(255, 82, 42, 0.58) !important;
+}
+
+@keyframes enemySkillCastFramePulse {
+  from {
+    filter: brightness(1) saturate(1);
+    transform: translate(-50%, -50%) scale(0.99);
+  }
+  to {
+    filter: brightness(1.18) saturate(1.18);
+    transform: translate(-50%, -50%) scale(1.015);
+  }
+}
+
+@media (max-width: 560px) {
+  #battleScreen .enemy-intent-panel {
+    width: min(52vw, 190px) !important;
+    right: 7px !important;
+    bottom: 9px !important;
+    padding: 6px 7px !important;
+    gap: 3px !important;
+  }
+
+  #battleScreen .enemy-intent-row {
+    min-height: 19px !important;
+    padding: 2px 4px !important;
+    gap: 5px !important;
+  }
+
+  #battleScreen .enemy-intent-title,
+  #battleScreen .enemy-intent-name,
+  #battleScreen .enemy-intent-meta {
+    font-size: 10px !important;
+  }
+
+  .enemy-skill-cast-pop {
+    min-width: clamp(112px, 38vw, 168px) !important;
+    max-width: 66vw !important;
+    min-height: clamp(32px, 6dvh, 44px) !important;
+    padding: 5px 13px !important;
+  }
+
+  .enemy-skill-cast-pop strong {
+    font-size: clamp(18px, 5vw, 24px) !important;
+  }
+}
+
+/* Enemy debuff icons live inside the monster scene. */
+#battleScreen .enemy-art #enemyDebuffs.enemy-debuffs {
+  position: absolute !important;
+  left: clamp(8px, 2vw, 14px) !important;
+  top: clamp(8px, 2dvh, 14px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: 26 !important;
+  display: flex !important;
+  flex: none !important;
+  align-items: center !important;
+  gap: clamp(5px, 1.2vw, 8px) !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+}
+
+#battleScreen .enemy-art #enemyDebuffs.enemy-debuffs:empty {
+  display: none !important;
+}
+
+#battleScreen .enemy-art #enemyDebuffs .enemy-debuff {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  grid-template-columns: 1fr !important;
+  width: clamp(36px, 8vw, 48px) !important;
+  height: clamp(36px, 8vw, 48px) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 1px solid rgba(167, 255, 82, 0.62) !important;
+  border-radius: 8px !important;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(105, 255, 82, 0.28), transparent 58%),
+    rgba(5, 8, 6, 0.62) !important;
+  box-shadow:
+    0 0 12px rgba(91, 255, 70, 0.42),
+    inset 0 0 10px rgba(70, 255, 120, 0.14) !important;
+  overflow: visible !important;
+}
+
+#battleScreen .enemy-art #enemyDebuffs .enemy-debuff img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  filter:
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.88))
+    drop-shadow(0 0 9px rgba(79, 255, 78, 0.56)) !important;
+}
+
+#battleScreen .enemy-art #enemyDebuffs .enemy-debuff-turns {
+  position: absolute !important;
+  top: -7px !important;
+  right: -7px !important;
+  display: grid !important;
+  place-items: center !important;
+  min-width: 18px !important;
+  height: 18px !important;
+  padding: 0 4px !important;
+  border: 1px solid rgba(240, 255, 156, 0.95) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #f5ff9d, #5bd538 48%, #16330f) !important;
+  box-shadow:
+    0 0 8px rgba(101, 255, 81, 0.82),
+    0 1px 3px rgba(0, 0, 0, 0.9) !important;
+  color: #071307 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.32) !important;
+}
+
+#battleScreen .enemy-art #enemyDebuffs .enemy-debuff-label {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+}
+
+#battleScreen .enemy-art #enemyDebuffs .enemy-debuff-poison {
+  animation: enemyPoisonDebuffPulse 900ms ease-in-out infinite alternate !important;
+}
+
+#battleScreen .enemy-art #enemyDebuffs .enemy-debuff-burn {
+  border-color: rgba(255, 161, 70, 0.78) !important;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 95, 32, 0.34), transparent 58%),
+    rgba(12, 5, 3, 0.66) !important;
+  box-shadow:
+    0 0 14px rgba(255, 85, 28, 0.52),
+    inset 0 0 12px rgba(255, 174, 54, 0.18) !important;
+  animation: enemyBurnDebuffPulse 760ms ease-in-out infinite alternate !important;
+}
+
+#battleScreen .enemy-art #enemyDebuffs .enemy-debuff-burn img {
+  filter:
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9))
+    drop-shadow(0 0 10px rgba(255, 83, 32, 0.72)) !important;
+}
+
+#battleScreen .enemy-art #enemyDebuffs .enemy-debuff-burn .enemy-debuff-turns {
+  border-color: rgba(255, 231, 153, 0.95) !important;
+  background: linear-gradient(180deg, #fff0a6, #ff9b22 48%, #6e1708) !important;
+  box-shadow:
+    0 0 9px rgba(255, 109, 42, 0.9),
+    0 1px 3px rgba(0, 0, 0, 0.9) !important;
+  color: #260602 !important;
+}
+
+@keyframes enemyPoisonDebuffPulse {
+  from {
+    filter: brightness(1) saturate(1);
+    transform: scale(1);
+  }
+  to {
+    filter: brightness(1.16) saturate(1.22);
+    transform: scale(1.045);
+  }
+}
+
+@keyframes enemyBurnDebuffPulse {
+  from {
+    filter: brightness(1) saturate(1.02);
+    transform: scale(1);
+  }
+  to {
+    filter: brightness(1.2) saturate(1.24);
+    transform: scale(1.055);
+  }
+}
+
+@media (max-width: 560px) {
+  #battleScreen .enemy-art #enemyDebuffs.enemy-debuffs {
+    left: 7px !important;
+    top: 7px !important;
+    gap: 5px !important;
+  }
+
+  #battleScreen .enemy-art #enemyDebuffs .enemy-debuff {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 7px !important;
+  }
+
+  #battleScreen .enemy-art #enemyDebuffs .enemy-debuff-turns {
+    min-width: 16px !important;
+    height: 16px !important;
+    top: -6px !important;
+    right: -6px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* Compact enemy intent list: no frame, no damage, bottom-right text only. */
+#battleScreen .enemy-intent-panel {
+  position: absolute !important;
+  right: clamp(8px, 2vw, 12px) !important;
+  bottom: clamp(20px, 4.2dvh, 34px) !important;
+  z-index: 32 !important;
+  display: grid !important;
+  grid-auto-rows: min-content !important;
+  gap: 1px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: min(190px, 44vw) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+#battleScreen .enemy-intent-title {
+  display: none !important;
+}
+
+#battleScreen .enemy-intent-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, auto) auto !important;
+  align-items: baseline !important;
+  justify-content: end !important;
+  gap: 4px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(255, 232, 166, 0.82) !important;
+  font-size: clamp(8px, 2.15vw, 10px) !important;
+  line-height: 1.08 !important;
+  text-align: right !important;
+  text-shadow: 0 1px 2px #000, 0 0 5px rgba(255, 200, 80, 0.42) !important;
+}
+
+#battleScreen .enemy-intent-row.is-next {
+  color: rgba(255, 235, 166, 0.95) !important;
+}
+
+#battleScreen .enemy-intent-name,
+#battleScreen .enemy-intent-meta {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#battleScreen .enemy-intent-name {
+  max-width: 96px !important;
+  font-weight: 800 !important;
+}
+
+#battleScreen .enemy-intent-meta {
+  font-weight: 900 !important;
+  color: rgba(255, 228, 142, 0.88) !important;
+}
+
+#battleScreen .enemy-intent-panel .enemy-intent-row,
+#battleScreen .enemy-intent-panel .enemy-intent-row.is-next,
+#battleScreen .enemy-intent-panel .enemy-intent-row.is-ready {
+  box-shadow: none !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+/* Final command icon placement: use tall containers so the full vertical art is visible. */
+#battleScreen .turn {
+  display: none !important;
+}
+
+#battleScreen .hero-command-row {
+  overflow: visible !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command,
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  width: clamp(36px, 10vw, 46px) !important;
+  height: clamp(52px, 14vw, 64px) !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command {
+  transform: translate(22px, -10px) !important;
+}
+
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  transform: translate(-22px, -10px) !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command img,
+#battleScreen .hero-command-row #orderCommandButton.side-command img {
+  display: block !important;
+  width: auto !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command:not(.ready),
+#battleScreen .hero-command-row #orderCommandButton.side-command:not(.ready) {
+  opacity: 0.58 !important;
+  filter: grayscale(1) brightness(0.76) !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command.ready,
+#battleScreen .hero-command-row #orderCommandButton.side-command.ready {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Final fix: hero attack name pop and command icons clipping. */
+.attack-name-pop {
+  top: clamp(108px, 22dvh, 150px) !important;
+  display: inline-grid !important;
+  grid-template-columns: 26px auto !important;
+  align-items: center !important;
+  gap: 5px !important;
+  max-width: calc(100vw - 24px) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #fff0bc !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-shadow: 0 1px 2px #000, 0 0 7px rgba(255, 224, 126, 0.78) !important;
+}
+
+.attack-name-pop img {
+  width: 26px !important;
+  height: 26px !important;
+  border: 0 !important;
+  border-radius: 3px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  object-fit: contain !important;
+}
+
+.attack-name-pop span {
+  display: inline-block !important;
+  max-width: calc(100vw - 64px) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command,
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  width: clamp(38px, 10.2vw, 48px) !important;
+  height: clamp(56px, 15vw, 68px) !important;
+  transform: translateY(-10px) !important;
+  overflow: visible !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command {
+  transform: translate(26px, -10px) !important;
+}
+
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  transform: translate(-26px, -10px) !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command img,
+#battleScreen .hero-command-row #orderCommandButton.side-command img {
+  width: auto !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+}
+
+/* Final command icon correction: keep vertical art complete and centered in the party row. */
+#battleScreen .battle-party,
+#battleScreen .hero-command-row {
+  overflow: visible !important;
+}
+
+#battleScreen .turn {
+  display: none !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command,
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  width: clamp(44px, 12vw, 54px) !important;
+  height: clamp(64px, 18vw, 78px) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: grid !important;
+  place-items: center !important;
+  align-self: center !important;
+  justify-self: center !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command {
+  transform: translate(46px, -6px) !important;
+}
+
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  transform: translate(-46px, -6px) !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command img,
+#battleScreen .hero-command-row #orderCommandButton.side-command img {
+  display: block !important;
+  width: auto !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command strong,
+#battleScreen .hero-command-row #divineCommandButton.side-command span,
+#battleScreen .hero-command-row #orderCommandButton.side-command strong,
+#battleScreen .hero-command-row #orderCommandButton.side-command span {
+  display: none !important;
+}
+
+/* Absolute last command icon fit: prevent the vertical order art from being clipped. */
+#battleScreen .hero-command-row {
+  min-height: clamp(74px, 19vw, 84px) !important;
+  align-items: center !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command,
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  width: clamp(48px, 13vw, 58px) !important;
+  height: clamp(72px, 20vw, 86px) !important;
+  overflow: hidden !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command {
+  transform: translate(44px, -8px) !important;
+}
+
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  transform: translate(-44px, -8px) !important;
+}
+
+#battleScreen .hero-command-row #divineCommandButton.side-command img,
+#battleScreen .hero-command-row #orderCommandButton.side-command img {
+  width: auto !important;
+  height: calc(100% - 6px) !important;
+  max-width: calc(100% - 2px) !important;
+  max-height: calc(100% - 6px) !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+}
+
+/* Keep the hero active-skill dragon inside the board area even when mobile skill-pop rules apply. */
+.skill-cast-pop.skill-cast-pop--dragon-board {
+  left: var(--skill-cast-x, 50%) !important;
+  top: var(--skill-cast-y, 50%) !important;
+  display: grid !important;
+  place-items: center !important;
+  width: var(--skill-cast-width, min(520px, 88vw)) !important;
+  height: var(--skill-cast-height, min(520px, 88vw)) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 16px) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  white-space: normal !important;
+  contain: paint !important;
+}
+
+.skill-cast-pop.skill-cast-pop--dragon-board::after {
+  width: min(var(--skill-board-size, 420px), 88%) !important;
+  height: min(var(--skill-board-size, 420px), 88%) !important;
+}
+
+.skill-cast-pop.skill-cast-pop--dragon-board .skill-dragon-img {
+  width: min(var(--skill-board-size, 420px), 86%) !important;
+  max-width: 86% !important;
+  max-height: 86% !important;
+  object-fit: contain !important;
+}
+
+.skill-cast-pop.skill-cast-pop--dragon-board .skill-dragon-trail {
+  width: min(var(--skill-board-size, 420px), 88%) !important;
+  height: min(var(--skill-board-size, 420px), 88%) !important;
+}
+
+.skill-cast-pop.skill-cast-pop--dragon-board strong {
+  position: absolute !important;
+  left: 50% !important;
+  bottom: clamp(10px, 5%, 24px) !important;
+  max-width: calc(100% - 28px) !important;
+  transform: translateX(-50%) !important;
+  white-space: nowrap !important;
+}
+
+/* Final divine status placement: show active divine effects as compact text inside the enemy scene. */
+#battleScreen .enemy-art .divine-status-banner {
+  position: absolute !important;
+  z-index: 32 !important;
+  left: clamp(10px, 2.4vw, 18px) !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: clamp(36px, 10%, 58px) !important;
+  display: none !important;
+  width: min(48%, 270px) !important;
+  max-width: calc(100% - 132px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+}
+
+#battleScreen .enemy-art .divine-status-banner.show {
+  display: grid !important;
+  gap: 3px !important;
+}
+
+#battleScreen .enemy-art .divine-status-item {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  color: #fff4c8 !important;
+  font-size: clamp(10px, 2vw, 12px) !important;
+  line-height: 1.18 !important;
+  text-shadow:
+    0 1px 2px #000,
+    0 0 7px rgba(255, 198, 67, 0.78) !important;
+}
+
+#battleScreen .enemy-art .divine-status-item strong {
+  display: block !important;
+  color: #ffe27f !important;
+  font-size: clamp(13px, 2.5vw, 16px) !important;
+  line-height: 1.05 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+#battleScreen .enemy-art .divine-status-item span {
+  display: block !important;
+  min-width: 0 !important;
+  color: #f1f6ff !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* Final party row polish: keep command icons at the frame edges and make equipped gear icon-only. */
+#battleScreen .hero-command-row #divineCommandButton.side-command {
+  transform: translate(0, -8px) !important;
+}
+
+#battleScreen .hero-command-row #orderCommandButton.side-command {
+  transform: translate(0, -8px) !important;
+}
+
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot {
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+}
+
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot small,
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot span {
+  display: none !important;
+}
+
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot .equipment-slot-icon,
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot > img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+}

@@ -139,16 +139,22 @@ export function createUiEffects({
     await waitForImage(dragonSrc);
 
     const el = document.createElement('div');
-    el.className = 'skill-cast-pop';
+    el.className = 'skill-cast-pop skill-cast-pop--dragon-board';
 
     const boardRect = getBoardEffectRect();
     const centerX = boardRect ? boardRect.left + boardRect.width / 2 : window.innerWidth / 2;
     const centerY = boardRect ? boardRect.top + boardRect.height / 2 : window.innerHeight * 0.58;
+    const boardWidth = boardRect ? Math.min(boardRect.width, window.innerWidth - 24) : window.innerWidth * 0.86;
+    const boardHeight = boardRect ? Math.min(boardRect.height, window.innerHeight - 24) : window.innerHeight * 0.58;
     const dragonSize = boardRect
-      ? Math.min(Math.max(boardRect.width * 1.12, 420), 760)
-      : Math.min(window.innerWidth * 0.86, 760);
+      ? Math.min(Math.max(Math.min(boardWidth, boardHeight) * 0.78, 220), 620)
+      : Math.min(window.innerWidth * 0.72, window.innerHeight * 0.5, 620);
     el.style.left = `${centerX}px`;
     el.style.top = `${centerY}px`;
+    el.style.setProperty('--skill-cast-x', `${centerX}px`);
+    el.style.setProperty('--skill-cast-y', `${centerY}px`);
+    el.style.setProperty('--skill-cast-width', `${Math.max(220, boardWidth)}px`);
+    el.style.setProperty('--skill-cast-height', `${Math.max(220, boardHeight)}px`);
     el.style.setProperty('--skill-board-size', `${dragonSize}px`);
 
     const dragonTrail = document.createElement('div');
@@ -220,11 +226,15 @@ export function createUiEffects({
   async function showBleedTalismanCastEffect() {
     const seal = document.createElement('div');
     seal.className = 'bleed-talisman-cast';
+    const slash = document.createElement('div');
+    slash.className = 'bleed-slash-trail';
     document.body.appendChild(seal);
-    await wait(420);
+    document.body.appendChild(slash);
+    await wait(320);
     shakeBoard();
-    await wait(300);
+    await wait(240);
     seal.remove();
+    slash.remove();
   }
 
   function showChaosDoomApplyEffect() {

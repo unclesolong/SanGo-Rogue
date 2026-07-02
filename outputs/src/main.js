@@ -1,6 +1,6 @@
 ﻿import { width, height, characterRoster } from './config/constants.js?v=board-7x6-20260702a';
-import { battleBalance } from './config/balance.js?v=command-gauge-20260701b';
-import { teamElements, traitRules } from './data/traits.js?v=energy-double-20260701f';
+import { battleBalance } from './config/balance.js?v=poison-combo-multiplier-20260702a';
+import { teamElements, traitRules } from './data/traits.js?v=dark-poison-help-20260702a';
 import { heroDatabase } from './data/heroes.js?v=dragon-soul-burst-20260701f';
 import { rogueRewards } from './data/rogueRewards.js?v=pursuit-order-20260701a';
 import { equipmentRewards } from './data/equipmentRewards.js?v=weapon-icons-20260701a';
@@ -16,22 +16,22 @@ import {
   pickEquipmentRewards,
 } from './progression/equipmentProgress.js?v=gem-runes-20260701a';
 import { getDomRefs } from './ui/dom.js';
-import { createUiEffects } from './ui/effects.js?v=yellow-bleed-blade-20260702a';
+import { createUiEffects } from './ui/effects.js?v=dragon-skill-contained-20260702a';
 import { createAudioController } from './ui/audio.js?v=bomb-empty-drop-20260702c';
-import { renderEnemyDebuffs as renderEnemyDebuffsView, renderHeroRow } from './ui/renderBattle.js?v=divine-rework-20260701a';
+import { renderHeroRow } from './ui/renderBattle.js?v=enemy-poison-debuff-20260702a';
 import { createTalentScreenController } from './ui/talentScreen.js?v=talent-board-module-20260702a';
 import { calculateBombDamage as calculateBombDamageValue } from './battle/damage.js';
 import { applyHeroAttackPresentation, getHeroAttackPresentation } from './battle/heroPresentation.js?v=hero-presentation-20260702a';
 import { canActivateHeroSkill, createHeroSkillDialogModel, createHeroSkillSystem } from './battle/skills.js?v=dragon-soul-burst-20260701f';
 import {
   createEnemySkillCooldowns,
+  getEnemyActionIntents,
   getEnemyAttackType,
-  getNextEnemySkillIntent,
   getReadyEnemySkill,
   resetEnemySkillCooldown,
   resolveEnemyAction,
   tickEnemySkillCooldowns,
-} from './battle/turns.js?v=yellow-bleed-blade-20260702a';
+} from './battle/turns.js?v=enemy-intent-panel-20260702a';
 import {
   applyDivineFlag as applyDivineFlagEffect,
   applyOrderReward as applyOrderRewardEffect,
@@ -338,7 +338,45 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function renderEnemyDebuffs() {
       const el = document.getElementById('enemyDebuffs');
       if (!el) return;
-      el.innerHTML = renderEnemyDebuffsView({ debuffs: enemyDebuffs });
+      el.textContent = '';
+      enemyDebuffs.forEach((debuff) => {
+        const chip = document.createElement('div');
+        chip.className = `enemy-debuff enemy-debuff-${debuff.type}`;
+        const counter = debuff.type === 'vulnerability' ? debuff.layers : debuff.turns;
+        const label = debuff.type === 'vulnerability'
+          ? `易傷 x${debuff.layers}`
+          : debuff.type === 'burn'
+            ? `燃燒 ${debuff.turns}`
+            : debuff.type === 'poison'
+              ? `中毒 ${debuff.turns}`
+              : `${Math.round((debuff.amount || 0) * 100)}% ${debuff.turns}`;
+        chip.title = debuff.description || label;
+        chip.setAttribute('aria-label', label);
+
+        const defaultEnemyDebuffIcons = {
+          burn: 'assets/effects/burn_debuff_icon_256.png',
+          poison: 'assets/effects/poison_debuff_icon_256.png',
+        };
+        const icon = debuff.icon ?? defaultEnemyDebuffIcons[debuff.type] ?? '';
+        if (icon) {
+          const img = document.createElement('img');
+          img.src = icon;
+          img.alt = debuff.name || label;
+          chip.appendChild(img);
+        }
+
+        const turns = document.createElement('span');
+        turns.className = 'enemy-debuff-turns';
+        turns.textContent = counter ?? '';
+        chip.appendChild(turns);
+
+        const text = document.createElement('span');
+        text.className = 'enemy-debuff-label';
+        text.textContent = label;
+        chip.appendChild(text);
+
+        el.appendChild(chip);
+      });
       return;
       el.innerHTML = enemyDebuffs.map((debuff) => `
         <div class="enemy-debuff" title="${debuff.description || debuff.name}">
@@ -356,7 +394,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         }
         if (debuff.type === 'burn' || debuff.type === 'poison') {
           debuff.fresh = false;
-          const dotDamage = Math.round(enemyMaxHp * (debuff.amount || 0));
+          const dotDamage = Math.round(debuff.damage ?? enemyMaxHp * (debuff.amount || 0));
           const dealt = damageEnemy(dotDamage, { fixed: true });
           if (debuff.type === 'burn') {
             showEnemyBurnEffect();
@@ -415,32 +453,35 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           type: 'burn',
           name: '燃燒',
           description: '每回合受到最大 HP 5% 傷害。',
+          icon: 'assets/effects/burn_debuff_icon_256.png',
           amount,
           turns: durationTurns,
           fresh: false,
-          icon: 'assets/rogue/buffs/buff_attack_up_.png',
         });
       }
       renderEnemyDebuffs();
       showEnemyStatusCallout('燃燒');
     }
 
-    function addEnemyPoison(durationTurns = 2, amount = 0.05) {
+    function addEnemyPoison(durationTurns = 2, damageOrRate = Math.round(playerHero.attack * battleBalance.poisonDamageAtkPerTurn)) {
+      const damage = damageOrRate > 0 && damageOrRate <= 1
+        ? Math.round(enemyMaxHp * damageOrRate)
+        : Math.round(damageOrRate);
       const existing = enemyDebuffs.find((debuff) => debuff.type === 'poison');
       if (existing) {
-        existing.turns = Math.max(existing.turns, durationTurns);
-        existing.amount = Math.max(existing.amount || 0, amount);
+        existing.turns = Math.max(0, existing.turns || 0) + durationTurns;
+        existing.damage = Math.max(existing.damage || 0, damage);
         existing.fresh = false;
       } else {
         enemyDebuffs.push({
           id: 'poison',
           type: 'poison',
           name: '中毒',
-          description: '每回合受到最大 HP 5% 傷害。',
-          amount,
+          description: `每回合受到 ${damage} 毒傷。`,
+          icon: 'assets/effects/poison_debuff_icon_256.png',
+          damage,
           turns: durationTurns,
           fresh: false,
-          icon: 'assets/POSION.png',
         });
       }
       renderEnemyDebuffs();
@@ -680,6 +721,11 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
 
     function getComboBaseMultiplier(combo) {
       return 1 + Math.max(0, combo - 1) * battleBalance.comboMultiplierStep;
+    }
+
+    function getPoisonComboMultiplier(combo) {
+      const key = Math.min(7, Math.max(1, combo));
+      return battleBalance.poisonComboMultipliers?.[key] ?? 1;
     }
 
     function getBuff(type) {
@@ -2013,6 +2059,99 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       rewardSourceCell = null;
       rewardMode = 'rogue';
       rewardDialogEl.classList.remove('show');
+      rewardDialogEl.classList.remove('battle-help-dialog');
+    }
+
+    function renderBattleHelpCards(sections) {
+      return sections.map((section) => `
+        <article class="reward-card battle-help-card">
+          <strong>${section.title}</strong>
+          <span>${section.lines.map((line) => `<em>${line}</em>`).join('')}</span>
+        </article>
+      `).join('');
+    }
+
+    function openBattleHelpDialog(kind) {
+      closeBattleQuickMenu();
+      rewardSourceCell = null;
+      rewardMode = 'help';
+      rewardDialogEl.classList.add('battle-help-dialog');
+      const titleEl = rewardDialogEl.querySelector('strong');
+      const flavorEl = rewardDialogEl.querySelector('.roster-flavor');
+      const help = {
+        orb: {
+          title: '消除說明',
+          flavor: '這裡列出五色珠的基本效果；英雄、武器、天賦、軍令、神令可能再追加額外效果。',
+          sections: [
+            {
+              title: '屬性珠',
+              lines: [
+                '火珠：造成攻擊傷害，3/4/5/6/7+ 消 = 1/1.2/1.5/2/3 倍攻擊。',
+                '木珠：獲得護盾，3/4/5/6/7+ 消 = 玩家最大 HP 的 5/10/15/20/25%。',
+                '雷珠：獲得英雄能量，3/4/5/6/7+ 消 = 10/14/20/26/30。',
+                '光珠：回復 HP，3/4/5/6/7+ 消 = 回復力的 10/12/15/20/25%。4 消以上會先清除 1 個負面狀態；沒有可清除狀態時，額外回復玩家最大 HP 的 5%。',
+                '暗珠：觸發毒箭，使敵人中毒。3/4/5/6/7+ 消 = 中毒 1/2/3/4/5 回合；重複上毒會累加回合。',
+                '毒傷：每回合傷害 = 英雄攻擊力 10% x 毒傷 Combo 倍率；再次上毒時，每回合毒傷保留較高的傷害值。',
+              ],
+            },
+            {
+              title: 'Combo 與大型消除',
+              lines: [
+                '一般 Combo 倍率會影響攻擊、護盾、英雄能量與回復：1/2/3/4/5/6/7 Combo = 1/1.15/1.3/1.45/1.6/1.75/1.9 倍。',
+                '毒傷 Combo 倍率只影響毒箭的每回合毒傷：1/2/3/4/5/6/7+ Combo = 1.1/1.4/1.8/2.5/3/3.5/4 倍。',
+                '單次消除 8 顆以上：奇策連鎖，軍令 +1、神令 +1。',
+                '單次消除 10 顆以上：額外獲得 1 個 BONUS 效果。',
+              ],
+            },
+          ],
+        },
+        order: {
+          title: '軍令說明',
+          flavor: '軍令滿時可選擇一次戰術效果；消除 4 顆以上會增加軍令，奇策連鎖也會額外增加。',
+          sections: [
+            {
+              title: '目前軍令',
+              lines: [
+                '猛攻令：攻擊 +25%，持續 5 回合；取得後開啟戰意，被動紅珠 3 消以上可疊攻擊 +5%，最多 10 層。',
+                '追擊令：持續 3 回合；攻擊後追加 50% 攻擊力追擊。取得後開啟被動追擊，紅珠 3 消以上有 30% 機率追加 50% 攻擊力追擊。',
+                '連擊令：持續 5 回合；Combo 傷害提升，且 Combo 3/5 以上會追加連擊傷害。',
+                '疾風令：獲得一次額外移動。',
+                '妖術令：選擇並轉換 10 顆珠子。',
+              ],
+            },
+          ],
+        },
+        divine: {
+          title: '神令說明',
+          flavor: '神令滿時可選擇一次神令旗效果；消除 5 顆以上會增加神令，奇策連鎖也會額外增加。',
+          sections: [
+            {
+              title: '目前神令',
+              lines: [
+                '火攻令：轉換火珠，並讓消除引爆周遭九宮格。',
+                '東風令：火珠天降提高，火珠變為強化火珠，持續 3 回合。',
+                '青龍現世：下一次指定顏色消除傷害 x3。',
+                '七星燈：生成 5 顆彩虹珠。',
+                '箭雨：造成固定傷害，並附加燃燒與中毒。',
+                '八陣圖：無敵、減傷，並讓所有屬性珠也產生護盾。',
+                '空城計：降低敵人攻擊。',
+                '天雷令：摧毀隨機顏色珠。',
+                '奇門遁甲：交換兩種珠色。',
+                '天公將軍：雷珠與光珠也可攻擊，並讓任意 3 消觸發天公之怒。',
+              ],
+            },
+          ],
+        },
+      }[kind];
+      if (!help) return;
+      if (titleEl) titleEl.textContent = help.title;
+      if (flavorEl) flavorEl.textContent = help.flavor;
+      rewardOptionsEl.innerHTML = `
+        ${renderBattleHelpCards(help.sections)}
+        <button class="reward-skip battle-help-close" type="button">關閉</button>
+      `;
+      rewardOptionsEl.querySelector('.battle-help-close')?.addEventListener('click', closeRewardDialog);
+      rewardDialogEl.classList.add('show');
     }
 
     function skipEquipmentReward() {
@@ -2583,7 +2722,6 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             attackEvents.push({ color, count, damage: bonusDamage, attackType: 'fire', label: '強化火珠爆裂', skill: true });
             addEnemyBurn();
           }
-          if (color === 'red' && count >= 4) triggerBoardBurst(count >= 5 ? '烈焰斬' : '火焰爆擊', 'fire');
           showCardDamage('red', damage);
           addLog(`${rule.label}特性 ${count} 消，最終 COMBO x${finalComboMultiplier.toFixed(1)}，趙雲蓄力 ${damage}。`);
           if (getBuff('attack_up')) showBuffFlash('猛攻 +25%');
@@ -2608,22 +2746,15 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           }
         } else if (rule.type === 'energy') {
           energyGain += Math.round(value * finalComboMultiplier);
-          if (count >= 4) {
-            const thunderDamage = Math.round(playerHero.attack * battleBalance.thunderStrikeAtk * getPlayerAttackMultiplier() * finalComboMultiplier);
-            totalDamage += thunderDamage;
-            attackEvents.push({ color: 'yellow', count, damage: thunderDamage, attackType: 'thunder', label: '雷擊', skill: true });
-            if (count >= 5) {
-              const bombed = destroyRandomNonSpecialOrb();
-              const bombDamage = applyBombDamage(bombed, 'yellow', true);
-              totalDamage += bombDamage;
-              if (bombDamage > 0) attackEvents.push({ color: 'yellow', count, damage: bombDamage, attackType: 'thunder', label: '炸珠雷爆', skill: true });
-            }
-          }
         } else if (rule.type === 'heal') {
           healGain += Math.round(playerHero.recovery * value * finalComboMultiplier);
           if (count >= 4 && !cleanseOnePlayerDebuff()) healGain += Math.round(playerMaxHp * battleBalance.lightCleanseExtraHealMaxHp);
-        } else if (rule.type === 'vulnerability') {
-          addEnemyVulnerability(value, count, finalComboMultiplier);
+        } else if (rule.type === 'poison') {
+          const poisonComboMultiplier = getPoisonComboMultiplier(combo);
+          const poisonDamage = Math.round(playerHero.attack * battleBalance.poisonDamageAtkPerTurn * poisonComboMultiplier);
+          showBuffFlash('毒箭');
+          addEnemyPoison(value, poisonDamage);
+          addLog(`暗珠 ${count} 消，Combo x${poisonComboMultiplier.toFixed(1)}，使敵人中毒 ${value} 回合，每回合 ${poisonDamage} 毒傷。`);
         }
       }
       const comboOrder = getBuff('combo_damage');
@@ -2981,20 +3112,47 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       barEl.classList.toggle('has-shield', safeShield > 0);
     }
 
+    function renderEnemyIntentPanel(monster) {
+      const panel = document.getElementById('enemyIntentPanel');
+      if (!panel) return;
+      const intents = getEnemyActionIntents(monster, {
+        currentTurn: enemyTurn,
+        skillCooldowns: enemySkillCooldowns,
+        attackMultiplier: divineStates.enemyAttackMultiplier,
+      });
+      panel.textContent = '';
+
+      const title = document.createElement('strong');
+      title.className = 'enemy-intent-title';
+      title.textContent = '敵方行動';
+      panel.appendChild(title);
+
+      intents.forEach((intent, index) => {
+        const row = document.createElement('div');
+        row.className = `enemy-intent-row ${index === 0 ? 'is-next' : ''} ${intent.turnsRemaining <= 0 ? 'is-ready' : ''}`;
+
+        const name = document.createElement('span');
+        name.className = 'enemy-intent-name';
+        name.textContent = intent.name;
+
+        const meta = document.createElement('span');
+        meta.className = 'enemy-intent-meta';
+        const timing = intent.turnsRemaining <= 0 ? '即將' : `${intent.turnsRemaining} 回合`;
+        meta.textContent = timing;
+
+        row.append(name, meta);
+        panel.appendChild(row);
+      });
+    }
+
     function updateStats() {
       const currentStage = getCurrentStage();
       document.getElementById('enemyHp').textContent = enemyHp;
       document.getElementById('enemyMaxHp').textContent = ` / ${enemyMaxHp}`;
       document.getElementById('playerHp').textContent = playerHp;
       document.getElementById('playerMaxHp').textContent = playerMaxHp;
-      const nextSkillIntent = getNextEnemySkillIntent(currentStage, {
-        actionCount: enemyActionCount,
-        currentTurn: enemyTurn,
-        skillCooldowns: enemySkillCooldowns,
-      });
-      document.getElementById('enemyTurn').textContent = nextSkillIntent
-        ? `${nextSkillIntent.name} ${nextSkillIntent.turnsRemaining}`
-        : enemyTurn;
+      document.getElementById('enemyTurn').textContent = enemyTurn;
+      renderEnemyIntentPanel(currentStage);
       const turnBox = document.querySelector('.turn');
       if (turnBox) {
         let intentLabel = document.getElementById('enemyIntentLabel');
@@ -3415,7 +3573,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (event.target === skillDialogEl) closeSkillDialog();
     });
     rewardDialogEl.addEventListener('click', (event) => {
-      if (event.target === rewardDialogEl && rewardMode === 'equipmentDetail') closeRewardDialog();
+      if (event.target === rewardDialogEl && ['equipmentDetail', 'help'].includes(rewardMode)) closeRewardDialog();
     });
     skillConfirmEl.addEventListener('click', () => {
       if (pendingSkillColor) activateHeroSkill(pendingSkillColor);
@@ -3457,6 +3615,9 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     };
     document.getElementById('battleToStage').addEventListener('click', goBattleStageSelect);
     document.getElementById('battleToMenu').addEventListener('click', goBattleMainMenu);
+    document.getElementById('battleHelpOrb')?.addEventListener('click', () => openBattleHelpDialog('orb'));
+    document.getElementById('battleHelpOrder')?.addEventListener('click', () => openBattleHelpDialog('order'));
+    document.getElementById('battleHelpDivine')?.addEventListener('click', () => openBattleHelpDialog('divine'));
     document.getElementById('battleQuickStage')?.addEventListener('click', goBattleStageSelect);
     document.getElementById('battleQuickMenuHome')?.addEventListener('click', goBattleMainMenu);
     document.getElementById('battleMenuGear')?.addEventListener('click', (event) => {
