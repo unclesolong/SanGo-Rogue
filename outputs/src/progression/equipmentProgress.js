@@ -2,7 +2,7 @@ export const equipmentSlots = {
   weapon: '武器',
   armor: '甲冑',
   commandSeal: '兵符',
-  treasure: '寶物',
+  treasure: '寶石',
 };
 
 export const equipmentRarityRates = [

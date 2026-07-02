@@ -2,9 +2,9 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>五色珠卡牌戰鬥原型</title>
-  <link rel="stylesheet" href="styles/battle.css?v=earthquake-shatter-vfx-20260701a">
+  <link rel="stylesheet" href="styles/battle.css?v=battle-board-fullwidth-20260702k">
 </head>
 <body>
   <audio id="battleBgm" src="assets/audio/rogue_sanguo_demon_battle_loop_60s.wav" loop preload="auto"></audio>
@@ -54,7 +54,7 @@
         <section class="city-hero">
           <div class="announcement">
             <strong>公告</strong>
-            <span>恭喜主公戰勝「虎牢魔君」，獲得【龍將・呂布】！</span>
+            <span>恭喜主公戰勝「虎牢魔君」，獲得【龍將?呂布】！</span>
           </div>
           <div class="city-logo">
             <h1>三國妖異志</h1>
@@ -123,7 +123,7 @@
 
     <section id="stageScreen" class="screen menu-screen">
       <div class="chapter-panel stage-select-panel">
-        <button id="backMenu" class="stage-back-button" type="button" aria-label="返回主選單">‹</button>
+        <button id="backMenu" class="stage-back-button" type="button" aria-label="返回主選單">?</button>
         <section class="stage-intro">
           <div class="stage-title-block">
             <div class="stage-kicker">第一大關</div>
@@ -133,16 +133,28 @@
           <div class="stage-seal" aria-hidden="true"><span>妖</span></div>
         </section>
         <section class="stage-info-row" aria-label="關卡資訊">
-          <article><strong>敵人屬性</strong><span>妖族</span></article>
-          <article><strong>關卡機制</strong><span>火魔性</span></article>
-          <article><strong>首通獎勵</strong><span>100 玉</span></article>
+          <article>
+            <img src="assets/stage-icons/icon-demon-mask.png" alt="">
+            <strong>敵人屬性</strong>
+            <span>妖族</span>
+          </article>
+          <article>
+            <img src="assets/stage-icons/icon-fire-orb.png" alt="">
+            <strong>關卡機制</strong>
+            <span>火魔性</span>
+          </article>
+          <article>
+            <img src="assets/stage-icons/icon-crimson-jade.png" alt="">
+            <strong>首通獎勵</strong>
+            <span>100 玉</span>
+          </article>
         </section>
         <section class="stage-drop-row" aria-label="可能掉落">
-          <span class="drop-spear"></span>
-          <span class="drop-armor"></span>
-          <span class="drop-crest"></span>
-          <span class="drop-gem"></span>
-          <span class="drop-chest"></span>
+          <span><img src="assets/stage-icons/icon-soldier-token.png" alt="兵符"></span>
+          <span><img src="assets/stage-icons/icon-war-scroll.png" alt="軍令卷軸"></span>
+          <span><img src="assets/stage-icons/icon-divine-talisman.png" alt="神令符牌"></span>
+          <span><img src="assets/stage-icons/icon-fire-gem.png" alt="火玉"></span>
+          <span><img src="assets/stage-icons/icon-assault-crest.png" alt="猛攻令"></span>
         </section>
         <div id="stageMap" class="stage-map"></div>
       </div>
@@ -157,6 +169,7 @@
           <button id="battleToMenu" class="command-orb" type="button">主選單</button>
         </div>
       </div>
+      <div id="divineStatusBanner" class="divine-status-banner" aria-live="polite" hidden></div>
       <div class="enemy enemy-layer">
         <div class="enemy-art">
           <div class="stage-smoke"></div>
@@ -229,7 +242,8 @@
 
       <div id="victoryPanel" class="victory-panel" aria-live="polite">
         <div class="victory-box">
-          <div class="victory-title">Victory</div>
+          <div id="victoryTitle" class="victory-title">Victory</div>
+          <div id="victorySubtitle" class="victory-subtitle"></div>
           <button id="nextStage" type="button">Next Stage</button>
         </div>
       </div>
@@ -273,7 +287,8 @@
     </section>
   </main>
 
-  <script type="module" src="src/main.js?v=earthquake-shatter-sfx-20260701a"></script>
+  <script type="module" src="src/main.js?v=bomb-empty-drop-20260702c"></script>
 </body>
 </html>
+
 

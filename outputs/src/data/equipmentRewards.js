@@ -5,6 +5,7 @@ export const equipmentRewards = [
     rarity: 'R',
     slot: 'weapon',
     school: '火珠流',
+    icon: 'assets/equipment/weapons/flame_battle_saber.png',
     skill: {
       id: 'burning_fire_slash',
       name: '焚火斬',
@@ -21,6 +22,7 @@ export const equipmentRewards = [
     rarity: 'R',
     slot: 'weapon',
     school: '四消流',
+    icon: 'assets/equipment/weapons/army_breaking_halberd.png',
     skill: {
       id: 'break_formation',
       name: '破陣',
@@ -36,6 +38,7 @@ export const equipmentRewards = [
     rarity: 'R',
     slot: 'weapon',
     school: '爆擊流',
+    icon: 'assets/equipment/weapons/red_wolf_longbow.png',
     skill: {
       id: 'hunt',
       name: '獵殺',
@@ -48,6 +51,7 @@ export const equipmentRewards = [
   {
     id: 'black_iron_armor_r',
     name: '黑鐵戰甲',
+    icon: 'assets/equipment-icons/black-iron-armor-r.png',
     rarity: 'R',
     slot: 'armor',
     school: '基礎防禦流',
@@ -63,6 +67,7 @@ export const equipmentRewards = [
   {
     id: 'red_flame_leather_armor_r',
     name: '赤焰皮甲',
+    icon: 'assets/equipment-icons/red-flame-leather-armor-r.png',
     rarity: 'R',
     slot: 'armor',
     school: '火珠反擊流',
@@ -78,6 +83,7 @@ export const equipmentRewards = [
   {
     id: 'army_breaking_light_armor_r',
     name: '破軍輕甲',
+    icon: 'assets/equipment-icons/army-breaking-light-armor-r.png',
     rarity: 'R',
     slot: 'armor',
     school: '低血狂戰流',
@@ -96,6 +102,7 @@ export const equipmentRewards = [
     rarity: 'SR',
     slot: 'weapon',
     school: '引爆流',
+    icon: 'assets/equipment/weapons/asura_sky_halberd.png',
     skill: {
       id: 'asura_war_will',
       name: '修羅戰意',
@@ -112,6 +119,7 @@ export const equipmentRewards = [
     rarity: 'SR',
     slot: 'weapon',
     school: 'Combo 流',
+    icon: 'assets/equipment/weapons/dragon_soul_saber.png',
     skill: {
       id: 'dragon_soul_awaken',
       name: '龍魂覺醒',
@@ -128,6 +136,7 @@ export const equipmentRewards = [
     rarity: 'SR',
     slot: 'weapon',
     school: '追擊流',
+    icon: 'assets/equipment/weapons/hulao_heavy_crossbow.png',
     skill: {
       id: 'ten_thousand_arrows',
       name: '萬箭追魂',
@@ -141,6 +150,7 @@ export const equipmentRewards = [
   {
     id: 'hulao_heavy_armor_sr',
     name: '虎牢重甲',
+    icon: 'assets/equipment-icons/hulao-heavy-armor-sr.png',
     rarity: 'SR',
     slot: 'armor',
     school: '護盾反擊流',
@@ -157,6 +167,7 @@ export const equipmentRewards = [
   {
     id: 'flame_dragon_scale_armor_sr',
     name: '炎龍鱗甲',
+    icon: 'assets/equipment-icons/flame-dragon-scale-armor-sr.png',
     rarity: 'SR',
     slot: 'armor',
     school: '引爆續航流',
@@ -167,6 +178,119 @@ export const equipmentRewards = [
       effects: [
         { type: 'fire_bomb_heal_per_count', count: 5, value: 0.05 },
         { type: 'low_hp_fire_bomb_heal_bonus', hpBelow: 0.5, value: 0.08 },
+      ],
+    },
+  },
+  {
+    id: 'sunfire_rune_r',
+    name: '烈陽符石',
+    rarity: 'R',
+    slot: 'treasure',
+    school: '火珠生成',
+    icon: 'assets/equipment/gems/sunfire_rune.png',
+    skill: {
+      id: 'sunfire_birth',
+      name: '烈陽生火',
+      description: '每回合開始，隨機產生 3 顆火珠。',
+      effects: [
+        { type: 'turn_start_spawn_orbs', color: 'red', count: 3 },
+      ],
+    },
+  },
+  {
+    id: 'flowing_fire_rune_r',
+    name: '流火符石',
+    rarity: 'R',
+    slot: 'treasure',
+    school: '火珠累積',
+    icon: 'assets/equipment/gems/flowing_fire_rune.png',
+    skill: {
+      id: 'flowing_fire_accumulation',
+      name: '流火積焰',
+      description: '每累積消除 10 顆珠子，生成 1 顆強化火珠。',
+      effects: [
+        { type: 'cleared_orb_spawn_enhanced_fire', count: 10, spawnCount: 1 },
+      ],
+    },
+  },
+  {
+    id: 'sky_eye_rune_r',
+    name: '天眼符石',
+    rarity: 'R',
+    slot: 'treasure',
+    school: '控盤',
+    icon: 'assets/equipment/gems/sky_eye_rune.png',
+    skill: {
+      id: 'sky_eye_step',
+      name: '天眼步',
+      description: '每回合第一次拖曳，可以多移動 1 格。',
+      effects: [
+        { type: 'first_move_extra_swap_range', value: 1 },
+      ],
+    },
+  },
+  {
+    id: 'seven_star_fire_jade_sr',
+    name: '七星火玉',
+    rarity: 'SR',
+    slot: 'treasure',
+    school: '彩虹 Build',
+    icon: 'assets/equipment/gems/seven_star_fire_jade.png',
+    skill: {
+      id: 'seven_star_rainbow',
+      name: '七星映虹',
+      description: '每回合開始，生成 1 顆彩虹珠。',
+      effects: [
+        { type: 'turn_start_spawn_orbs', color: 'rainbow', count: 1 },
+      ],
+    },
+  },
+  {
+    id: 'guigu_war_scroll_sr',
+    name: '鬼谷兵書',
+    rarity: 'SR',
+    slot: 'treasure',
+    school: '神令流',
+    icon: 'assets/equipment/gems/guigu_war_scroll.png',
+    skill: {
+      id: 'guigu_divine_cycle',
+      name: '鬼谷神策',
+      description: '每累積消除 20 顆珠子，神令能量 +1。',
+      effects: [
+        { type: 'cleared_orb_gain_divine', count: 20, value: 1 },
+      ],
+    },
+  },
+  {
+    id: 'heavenfire_spirit_jade_sr',
+    name: '天火靈玉',
+    rarity: 'SR',
+    slot: 'treasure',
+    school: '火珠爆發',
+    icon: 'assets/equipment/gems/heavenfire_spirit_jade.png',
+    skill: {
+      id: 'heavenfire_skyfall',
+      name: '天火垂落',
+      description: '天降火珠機率提升 20%。',
+      effects: [
+        { type: 'red_skyfall_weight_bonus', value: 0.2 },
+      ],
+    },
+  },
+  {
+    id: 'nine_luminaries_pearl_sr',
+    name: '九曜天珠',
+    rarity: 'SR',
+    slot: 'treasure',
+    school: '護盾強化',
+    icon: 'assets/equipment/gems/nine_luminaries_pearl.png',
+    skill: {
+      id: 'nine_luminaries_guard',
+      name: '九曜護命',
+      description: '護盾增加量效果提升 200%，且護盾反擊傷害提升 150%。',
+      effects: [
+        { type: 'shield_gain_multiplier', value: 2 },
+        { type: 'shield_counter_damage_bonus', value: 1.5 },
       ],
     },
   },

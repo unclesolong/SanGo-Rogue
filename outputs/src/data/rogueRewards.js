@@ -17,7 +17,7 @@ export const rogueRewards = [
     type: 'follow_up',
     value: 0.5,
     durationTurns: 3,
-    description: '3 回合內，消除任意顏色珠 >=3 並攻擊後，追加 50% 玩家傷害。獲得被動「追擊」：之後每回合消除紅珠 >=3，有 30% 機率追擊一次，追加 50% 玩家傷害。',
+    description: '3 回合內，消除任意顏色珠 >=3 後，追加 50% 玩家傷害。獲得被動「追擊」：之後每回合消除紅珠 >=3，有 30% 機率追擊一次，追加 50% 玩家傷害。',
     icon: 'assets/rogue/buffs/buff_follow_up_.png',
     buffIcon: 'assets/rogue/buffs/buff_follow_up_.png',
     sfx: 'assets/audio/sfx_order_pursuit_zhuijiling_troops_tujin_01.wav',

@@ -20,6 +20,7 @@ export function getDomRefs() {
     orderCommandButtonEl: document.getElementById('orderCommandButton'),
     divineGaugeTextEl: document.getElementById('divineGaugeText'),
     orderGaugeTextEl: document.getElementById('orderGaugeText'),
+    divineStatusBannerEl: document.getElementById('divineStatusBanner'),
     rewardDialogEl: document.getElementById('rewardDialog'),
     rewardOptionsEl: document.getElementById('rewardOptions'),
     battleBgmEl: document.getElementById('battleBgm'),

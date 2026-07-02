@@ -2,11 +2,11 @@
 import { battleBalance } from './config/balance.js?v=command-gauge-20260701b';
 import { teamElements, traitRules } from './data/traits.js?v=energy-double-20260701f';
 import { heroDatabase } from './data/heroes.js?v=dragon-soul-burst-20260701f';
-import { rogueRewards } from './data/rogueRewards.js?v=command-gauge-20260701b';
-import { equipmentRewards } from './data/equipmentRewards.js?v=hulao-armor-20260701a';
-import { divineFlagsPack } from './data/divineFlags.js';
+import { rogueRewards } from './data/rogueRewards.js?v=pursuit-order-20260701a';
+import { equipmentRewards } from './data/equipmentRewards.js?v=weapon-icons-20260701a';
+import { divineFlagsPack } from './data/divineFlags.js?v=divine-rework-20260701a';
 import { attackArts } from './data/attackArts.js';
-import { stageData } from './data/monsters.js';
+import { stageData } from './data/monsters.js?v=boss10-poison-3orbs-20260702a';
 import { createMonsterBattleState, getMonsterArt, getMonsterPreviewDamage, getMonsterTurnCooldown, getStageMonster } from './data/monsterCatalog.js';
 import { completeStage, createStageProgress, createStageSelectModel } from './progression/stageProgress.js';
 import {
@@ -15,11 +15,11 @@ import {
   equipmentSlots,
   getEquipmentSlotLabels,
   pickEquipmentRewards,
-} from './progression/equipmentProgress.js?v=hulao-armor-20260701a';
+} from './progression/equipmentProgress.js?v=gem-runes-20260701a';
 import { getDomRefs } from './ui/dom.js';
-import { createUiEffects } from './ui/effects.js?v=enemy-skill-pop-20260701a';
-import { createAudioController } from './ui/audio.js?v=earthquake-shatter-sfx-20260701a';
-import { renderEnemyDebuffs as renderEnemyDebuffsView, renderHeroRow } from './ui/renderBattle.js?v=hulao-armor-20260701a';
+import { createUiEffects } from './ui/effects.js?v=bomb-empty-drop-20260702c';
+import { createAudioController } from './ui/audio.js?v=bomb-empty-drop-20260702c';
+import { renderEnemyDebuffs as renderEnemyDebuffsView, renderHeroRow } from './ui/renderBattle.js?v=divine-rework-20260701a';
 import { calculateBombDamage as calculateBombDamageValue } from './battle/damage.js';
 import { canActivateHeroSkill, createHeroSkillDialogModel, createHeroSkillSystem } from './battle/skills.js?v=dragon-soul-burst-20260701f';
 import {
@@ -30,7 +30,7 @@ import {
   resetEnemySkillCooldown,
   resolveEnemyAction,
   tickEnemySkillCooldowns,
-} from './battle/turns.js';
+} from './battle/turns.js?v=boss10-poison-orbs-20260701a';
 import {
   applyDivineFlag as applyDivineFlagEffect,
   applyOrderReward as applyOrderRewardEffect,
@@ -40,7 +40,7 @@ import {
   canUseOrder,
   pickDivineRewards,
   pickOrderRewards,
-} from './battle/rewards.js';
+} from './battle/rewards.js?v=divine-rework-20260701a';
 
 const colors = teamElements.map((elementId) => traitRules[elementId]);
     
@@ -83,6 +83,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     let battleRound = 1;
     let playerStatusEffects = [];
     let enemyShield = 0;
+    let enemyShieldTurns = 0;
     let enemyDamageReduction = 0;
     let enemyVulnerability = 0;
     let enemyDebuffs = [];
@@ -91,6 +92,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     let animMode = '';
     let swapAnim = null;
     let dropKeys = new Set();
+    let boardRefillTimer = null;
+    let pendingBoardRefillPreventAutoMatches = false;
     let chargeDamage = {};
     let activeBuffs = [];
     const frozenOrbAssetByColor = {
@@ -101,6 +104,15 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       light: 'assets/frozen-clean/LIGHT STONE FROZEN CLEAN.png',
       dark: 'assets/frozen-clean/DARK STONE FROZEN CLEAN.png',
     };
+    const cleanOrbAssetByColor = {
+      red: 'assets/FIRE STONE CLEAN.png',
+      enhancedRed: 'assets/EXTRA FIRE STONE CLEAN.png',
+      green: 'assets/EARTH STONE CLEAN.png',
+      yellow: 'assets/SPARK STONE CLEAN.png',
+      light: 'assets/LIGHT STONE CLEAN.png',
+      dark: 'assets/DARK STONE CLEAN.png',
+    };
+    let chaosDoom = null;
     let orderPassives = {
       battleSpirit: false,
       pursuit: false,
@@ -119,6 +131,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       enhancedColorMultiplier: {},
       damageReductionTurns: 0,
       damageReductionRate: 0,
+      fireAttackBombTurns: 0,
+      eastWindTurns: 0,
+      allColorsShieldTurns: 0,
+      heavenGeneralThunderTurns: 0,
     };
     let bgmStarted = false;
     let heroCardPressTimer = null;
@@ -145,6 +161,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       orderCommandButtonEl,
       divineGaugeTextEl,
       orderGaugeTextEl,
+      divineStatusBannerEl,
       rewardDialogEl,
       rewardOptionsEl,
       battleBgmEl,
@@ -182,10 +199,31 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     let equipmentBattleState = {
       dragonSoulStacks: 0,
       fireBombsSinceHeal: 0,
+      flowingFireCleared: 0,
+      guiguCleared: 0,
+      skyEyeUsedThisTurn: false,
     };
 
     function randomColor() {
-      return colors[Math.floor(Math.random() * colors.length)].id;
+      if (divineStates.eastWindTurns > 0 && Math.random() < 0.3) return 'enhancedRed';
+      const redBonus = sumEquipmentEffect('red_skyfall_weight_bonus');
+      if (redBonus <= 0) {
+        const picked = colors[Math.floor(Math.random() * colors.length)].id;
+        return divineStates.eastWindTurns > 0 && picked === 'red' ? 'enhancedRed' : picked;
+      }
+
+      const weighted = colors.map((color) => ({
+        id: color.id,
+        weight: color.id === 'red' ? 1 + redBonus * colors.length : 1,
+      }));
+      const totalWeight = weighted.reduce((sum, color) => sum + color.weight, 0);
+      let roll = Math.random() * totalWeight;
+      for (const color of weighted) {
+        roll -= color.weight;
+        if (roll <= 0) return divineStates.eastWindTurns > 0 && color.id === 'red' ? 'enhancedRed' : color.id;
+      }
+      const fallback = weighted[weighted.length - 1].id;
+      return divineStates.eastWindTurns > 0 && fallback === 'red' ? 'enhancedRed' : fallback;
     }
 
     function getTeamMaxHp() {
@@ -210,10 +248,11 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     async function gainPlayerShield(amount) {
-      await showBattleMessage(`獲得護盾 +${amount}`, 'shield');
-      showPlayerGain(amount, 'shield');
+      const shieldAmount = Math.round(amount * (1 + sumEquipmentEffect('shield_gain_multiplier')));
+      await showBattleMessage(`獲得護盾 +${shieldAmount}`, 'shield');
+      showPlayerGain(shieldAmount, 'shield');
       await wait(320);
-      addPlayerShield(amount);
+      addPlayerShield(shieldAmount);
       updateStats();
       renderTeam();
       await wait(180);
@@ -286,15 +325,21 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           debuff.fresh = false;
           return;
         }
-        if (debuff.type === 'burn') {
+        if (debuff.type === 'burn' || debuff.type === 'poison') {
           debuff.fresh = false;
-          const burnDamage = Math.round(enemyMaxHp * (debuff.amount || 0));
-          const dealt = damageEnemy(burnDamage, { fixed: true });
-          showEnemyBurnEffect();
-          playBurnSfx();
-          animateAttack(dealt, true, 'red', '燃燒');
-          addLog(`燃燒造成 ${dealt} 傷害。`);
-          resolveEnemyDefeat('燃燒');
+          const dotDamage = Math.round(enemyMaxHp * (debuff.amount || 0));
+          const dealt = damageEnemy(dotDamage, { fixed: true });
+          if (debuff.type === 'burn') {
+            showEnemyBurnEffect();
+            playBurnSfx();
+            animateAttack(dealt, true, 'red', '燃燒');
+            addLog(`燃燒造成 ${dealt} 傷害。`);
+            resolveEnemyDefeat('燃燒');
+          } else {
+            animateAttack(dealt, true, 'green', '中毒');
+            addLog(`中毒造成 ${dealt} 傷害。`);
+            resolveEnemyDefeat('中毒');
+          }
         }
         debuff.turns--;
         if (debuff.type === 'vulnerability') debuff.layers = Math.max(0, (debuff.layers || 0) - 1);
@@ -329,10 +374,11 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       addLog(`暗特性 ${count} 消，敵人易傷 +${gained} 層（COMBO x${comboMultiplier.toFixed(2)}）。`);
     }
 
-    function addEnemyBurn() {
+    function addEnemyBurn(durationTurns = battleBalance.enhancedFireBurnTurns, amount = battleBalance.enhancedFireBurnMaxHp) {
       const existing = enemyDebuffs.find((debuff) => debuff.type === 'burn');
       if (existing) {
-        existing.turns = Math.max(existing.turns, battleBalance.enhancedFireBurnTurns);
+        existing.turns = Math.max(existing.turns, durationTurns);
+        existing.amount = Math.max(existing.amount || 0, amount);
         existing.fresh = false;
       } else {
         enemyDebuffs.push({
@@ -340,14 +386,36 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           type: 'burn',
           name: '燃燒',
           description: '每回合受到最大 HP 5% 傷害。',
-          amount: battleBalance.enhancedFireBurnMaxHp,
-          turns: battleBalance.enhancedFireBurnTurns,
+          amount,
+          turns: durationTurns,
           fresh: false,
           icon: 'assets/rogue/buffs/buff_attack_up_.png',
         });
       }
       renderEnemyDebuffs();
       showEnemyStatusCallout('燃燒');
+    }
+
+    function addEnemyPoison(durationTurns = 2, amount = 0.05) {
+      const existing = enemyDebuffs.find((debuff) => debuff.type === 'poison');
+      if (existing) {
+        existing.turns = Math.max(existing.turns, durationTurns);
+        existing.amount = Math.max(existing.amount || 0, amount);
+        existing.fresh = false;
+      } else {
+        enemyDebuffs.push({
+          id: 'poison',
+          type: 'poison',
+          name: '中毒',
+          description: '每回合受到最大 HP 5% 傷害。',
+          amount,
+          turns: durationTurns,
+          fresh: false,
+          icon: 'assets/POSION.png',
+        });
+      }
+      renderEnemyDebuffs();
+      showEnemyStatusCallout('中毒');
     }
 
     function applyPlayerDamage(amount) {
@@ -377,7 +445,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         damage -= blocked;
         addLog(`護盾抵擋 ${blocked} 傷害。`);
         if (shieldCounterReady) {
-          const counterDamage = Math.round(blocked * battleBalance.shieldCounterRate);
+          const counterMultiplier = 1 + sumEquipmentEffect('shield_counter_damage_bonus');
+          const counterDamage = Math.round(blocked * battleBalance.shieldCounterRate * counterMultiplier);
           if (counterDamage > 0) pendingShieldCounterDamage += counterDamage;
           shieldCounterReady = false;
         }
@@ -413,6 +482,18 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     function applyTurnStartEquipmentEffects() {
+      equipmentBattleState.skyEyeUsedThisTurn = false;
+      let spawned = 0;
+      getEquipmentEffects('turn_start_spawn_orbs').forEach((effect) => {
+        spawnRandomOrbs(effect.color ?? 'red', effect.count ?? 0);
+        spawned += effect.count ?? 0;
+        if (effect.color === 'rainbow') addLog(`七星火玉生成 ${effect.count ?? 0} 顆彩虹珠。`);
+        else addLog(`烈陽符石生成 ${effect.count ?? 0} 顆火珠。`);
+      });
+      if (spawned > 0) {
+        showBuffFlash(`符石生珠 +${spawned}`);
+        renderBoard();
+      }
       const shieldStacks = sumEquipmentEffect('turn_start_shield_stack');
       if (shieldStacks <= 0 || playerHp <= 0) return;
       const shieldAmount = Math.round(playerMaxHp * 0.05 * shieldStacks);
@@ -423,12 +504,56 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       addLog(`虎牢守勢獲得 ${shieldAmount} 護盾。`);
     }
 
+    function resolveClearedOrbGemEffects(clearedCount) {
+      if (clearedCount <= 0) return;
+
+      const flowingFire = getEquipmentEffects('cleared_orb_spawn_enhanced_fire')[0];
+      if (flowingFire) {
+        equipmentBattleState.flowingFireCleared += clearedCount;
+        let spawnCount = 0;
+        while (equipmentBattleState.flowingFireCleared >= (flowingFire.count ?? 10)) {
+          equipmentBattleState.flowingFireCleared -= flowingFire.count ?? 10;
+          spawnCount += flowingFire.spawnCount ?? 1;
+        }
+        if (spawnCount > 0) {
+          const conversion = convertRandomOrbsToColor('enhancedRed', spawnCount);
+          showBoardConversions(conversion.cells);
+          showBuffFlash(`流火 +${conversion.count}`);
+          addLog(`流火符石生成 ${conversion.count} 顆強化火珠。`);
+          renderBoard();
+        }
+      }
+
+      const guigu = getEquipmentEffects('cleared_orb_gain_divine')[0];
+      if (guigu) {
+        equipmentBattleState.guiguCleared += clearedCount;
+        let gain = 0;
+        while (equipmentBattleState.guiguCleared >= (guigu.count ?? 20)) {
+          equipmentBattleState.guiguCleared -= guigu.count ?? 20;
+          gain += guigu.value ?? 1;
+        }
+        if (gain > 0) {
+          divineGauge = Math.min(battleBalance.divineGaugeMax, divineGauge + gain);
+          renderCommandGauges();
+          showBuffFlash(`鬼谷神策 +${gain}`);
+          addLog(`鬼谷兵書使神令能量 +${gain}。`);
+        }
+      }
+    }
+
     function tickRogueTurnBuffs() {
       if (playerShieldTurns > 0) {
         playerShieldTurns--;
         if (playerShieldTurns <= 0) {
           playerShield = 0;
           addLog('木護盾消散。');
+        }
+      }
+      if (enemyShieldTurns > 0) {
+        enemyShieldTurns--;
+        if (enemyShieldTurns <= 0 && enemyShield > 0) {
+          enemyShield = 0;
+          addLog('敵方護盾消散。');
         }
       }
     }
@@ -462,7 +587,23 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function resetEquipmentRuntimeForSlot(slot) {
       if (slot === 'weapon') equipmentBattleState.dragonSoulStacks = 0;
       if (slot === 'armor') equipmentBattleState.fireBombsSinceHeal = 0;
+      if (slot === 'treasure') {
+        equipmentBattleState.flowingFireCleared = 0;
+        equipmentBattleState.guiguCleared = 0;
+        equipmentBattleState.skyEyeUsedThisTurn = false;
+      }
       equipmentTurnAttackBonus = 0;
+    }
+
+    function resetEquipmentBattleState() {
+      equipmentTurnAttackBonus = 0;
+      equipmentBattleState = {
+        dragonSoulStacks: 0,
+        fireBombsSinceHeal: 0,
+        flowingFireCleared: 0,
+        guiguCleared: 0,
+        skyEyeUsedThisTurn: false,
+      };
     }
 
     function getEquipmentFireDamageMultiplier() {
@@ -621,6 +762,11 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           icon: 'assets/LIGHT STONE FROZEN.png',
           value: '',
         },
+        doom: {
+          name: '即死',
+          icon: 'assets/DARK STONE FROZEN.png',
+          value: '',
+        },
       };
       return {
         ...statusMeta[effect.type],
@@ -657,6 +803,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       tickFrozenOrbs();
       tickEnemyDebuffs();
       tickDivineStates();
+      renderDivineStatusBanner();
       renderBuffs();
     }
 
@@ -675,6 +822,45 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (changed) renderBoard();
     }
 
+    function tickPoisonOrbs() {
+      const exploded = [];
+      let totalDamage = 0;
+      let poisonDamage = 100;
+      let poisonTurns = 2;
+      board.forEach((row, y) => row.forEach((cell, x) => {
+        if (!cell?.poison) return;
+        cell.poison.turns--;
+        if (cell.poison.turns <= 0) {
+          exploded.push({ x, y });
+          totalDamage += cell.poison.explosionDamage ?? 75;
+          poisonDamage = cell.poison.poisonDamage ?? poisonDamage;
+          poisonTurns = cell.poison.poisonTurns ?? poisonTurns;
+        }
+      }));
+      if (!exploded.length) {
+        renderBoard();
+        return false;
+      }
+      showBoardPoisonBursts(exploded);
+      playBombSfx();
+      exploded.forEach(({ x, y }) => {
+        board[y][x] = makeOrb();
+      });
+      const dealt = applyPlayerDamage(totalDamage);
+      addPlayerStatus({
+        type: 'poison',
+        name: '中毒',
+        damage: poisonDamage,
+        turns: poisonTurns,
+        icon: 'assets/POSION.png',
+        description: `毒珠爆炸後中毒，每回合 ${poisonDamage} 傷害。`,
+      });
+      addLog(`毒珠爆炸 ${exploded.length} 顆，造成 ${dealt} 傷害並使玩家中毒。`);
+      renderBoard();
+      updateStats();
+      return playerHp <= 0;
+    }
+
     function tickDivineStates() {
       if (divineStates.invincibleTurns > 0) divineStates.invincibleTurns--;
       if (divineStates.enemyAttackDebuffTurns > 0) {
@@ -685,11 +871,80 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         divineStates.damageReductionTurns--;
         if (divineStates.damageReductionTurns <= 0) divineStates.damageReductionRate = 0;
       }
+      if (divineStates.fireAttackBombTurns > 0) divineStates.fireAttackBombTurns--;
+      if (divineStates.eastWindTurns > 0) divineStates.eastWindTurns--;
+      if (divineStates.allColorsShieldTurns > 0) divineStates.allColorsShieldTurns--;
+      if (divineStates.heavenGeneralThunderTurns > 0) divineStates.heavenGeneralThunderTurns--;
       Object.keys(divineStates.enabledAttackColors).forEach((color) => {
         divineStates.enabledAttackColors[color]--;
         if (divineStates.enabledAttackColors[color] <= 0) delete divineStates.enabledAttackColors[color];
       });
       if (ironWallTurns > 0) ironWallTurns--;
+    }
+
+    function formatTurns(turns) {
+      return turns > 0 ? `${turns} 回合` : '';
+    }
+
+    function renderDivineStatusBanner() {
+      if (!divineStatusBannerEl) return;
+      const items = [];
+      if (divineStates.fireAttackBombTurns > 0) {
+        items.push({
+          name: '火攻令',
+          text: `消除任意珠會引爆周遭九宮格並造成炸珠傷害（${formatTurns(divineStates.fireAttackBombTurns)}）`,
+        });
+      }
+      if (divineStates.eastWindTurns > 0) {
+        items.push({
+          name: '東風令',
+          text: `天降火珠 +30%，天降火珠必為強化火珠（${formatTurns(divineStates.eastWindTurns)}）`,
+        });
+      }
+      if (divineStates.nextColorDamage) {
+        const targetLabel = traitRules[divineStates.nextColorDamage.targetColor]?.label || '指定顏色';
+        items.push({
+          name: '青龍現世',
+          text: `下一次${targetLabel}消除傷害 x${divineStates.nextColorDamage.damageMultiplier}`,
+        });
+      }
+      if (divineStates.invincibleTurns > 0 || divineStates.damageReductionTurns > 0 || divineStates.allColorsShieldTurns > 0) {
+        const effects = [];
+        if (divineStates.invincibleTurns > 0) effects.push(`無敵 ${formatTurns(divineStates.invincibleTurns)}`);
+        if (divineStates.damageReductionTurns > 0) effects.push(`減傷 ${Math.round(divineStates.damageReductionRate * 100)}% ${formatTurns(divineStates.damageReductionTurns)}`);
+        if (divineStates.allColorsShieldTurns > 0) effects.push(`所有屬性珠都產生護盾 ${formatTurns(divineStates.allColorsShieldTurns)}`);
+        items.push({ name: '八陣圖', text: effects.join('，') });
+      }
+      if (divineStates.enemyAttackDebuffTurns > 0 && divineStates.enemyAttackMultiplier < 1) {
+        items.push({
+          name: '空城計',
+          text: `敵人攻擊降為 ${Math.round(divineStates.enemyAttackMultiplier * 100)}%（${formatTurns(divineStates.enemyAttackDebuffTurns)}）`,
+        });
+      }
+      const heavenGeneralActive = divineStates.enabledAttackColors.yellow || divineStates.enabledAttackColors.light;
+      if (heavenGeneralActive || divineStates.heavenGeneralThunderTurns > 0) {
+        const thunderText = divineStates.heavenGeneralThunderTurns > 0
+          ? `任意三消觸發天公之怒（${formatTurns(divineStates.heavenGeneralThunderTurns)}）`
+          : '天公之怒已結束';
+        items.push({
+          name: '天公將軍',
+          text: `黃珠 / 光珠可攻擊至本戰鬥結束，${thunderText}`,
+        });
+      }
+      if (items.length === 0) {
+        divineStatusBannerEl.innerHTML = '';
+        divineStatusBannerEl.classList.remove('show');
+        divineStatusBannerEl.hidden = true;
+        return;
+      }
+      divineStatusBannerEl.hidden = false;
+      divineStatusBannerEl.classList.add('show');
+      divineStatusBannerEl.innerHTML = items.map((item) => `
+        <div class="divine-status-item">
+          <strong>${item.name}</strong>
+          <span>${item.text}</span>
+        </div>
+      `).join('');
     }
 
     function showBuffFlash(text) {
@@ -719,6 +974,139 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     async function showBattleMessage(text, type = '') {
       showBuffFlash(text);
       await wait(200);
+    }
+
+    function getChaosDoomSkill(stageInfo) {
+      return stageInfo?.openingSkill?.effectType === 'chaos_doom' ? stageInfo.openingSkill : null;
+    }
+
+    function syncChaosDoomStatus() {
+      playerStatusEffects = playerStatusEffects.filter((effect) => effect.type !== 'doom');
+      if (chaosDoom?.active) {
+        playerStatusEffects.push({
+          type: 'doom',
+          name: '即死',
+          turns: chaosDoom.turns,
+          icon: 'assets/DARK STONE FROZEN.png',
+          description: `${chaosDoom.turns} 回合後 HP 歸 0。消除 ${chaosDoom.required} 顆${getOrbColorLabel(chaosDoom.targetColor)}珠可解除。`,
+        });
+      }
+      renderBuffs();
+    }
+
+    function renderChaosDoomWarning() {
+      let panel = enemyArtEl.querySelector('.chaos-doom-warning');
+      if (!chaosDoom?.active) {
+        panel?.remove();
+        return;
+      }
+      if (!panel) {
+        panel = document.createElement('div');
+        panel.className = 'chaos-doom-warning';
+        enemyArtEl.appendChild(panel);
+      }
+      const label = getOrbColorLabel(chaosDoom.targetColor);
+      const orbSrc = cleanOrbAssetByColor[chaosDoom.targetColor] ?? cleanOrbAssetByColor.red;
+      panel.innerHTML = `
+        <img src="${orbSrc}" alt="${label}珠">
+        <div>
+          <strong>${label}*${chaosDoom.cleared}/${chaosDoom.required}</strong>
+          <span>需要消除 ${chaosDoom.required} 顆${label}珠</span>
+        </div>
+        <em>${chaosDoom.turns}回合</em>
+      `;
+    }
+
+    function renderBossGhostfireAura(enabled) {
+      enemyArtEl.classList.toggle('boss-chaos-field', enabled);
+      enemyImageEl.classList.toggle('boss-chaos-sprite', enabled);
+      let aura = enemyArtEl.querySelector('.boss-ghostfire-aura');
+      if (!enabled) {
+        aura?.remove();
+        return;
+      }
+      if (aura) return;
+      aura = document.createElement('div');
+      aura.className = 'boss-ghostfire-aura';
+      aura.innerHTML = Array.from({ length: 9 }, (_, index) => `<i style="--i:${index}"></i>`).join('');
+      enemyArtEl.appendChild(aura);
+    }
+
+    function applyChaosDoomOpening(stageInfo) {
+      const skill = getChaosDoomSkill(stageInfo);
+      if (!skill) {
+        chaosDoom = null;
+        syncChaosDoomStatus();
+        renderChaosDoomWarning();
+        return;
+      }
+      const targetColors = skill.targetColors?.length ? skill.targetColors : ['red', 'green', 'yellow', 'light', 'dark'];
+      const targetColor = targetColors[Math.floor(Math.random() * targetColors.length)];
+      chaosDoom = {
+        active: true,
+        skillName: skill.name,
+        targetColor,
+        required: skill.requiredClears ?? 10,
+        cleared: 0,
+        turns: skill.durationTurns ?? 5,
+      };
+      syncChaosDoomStatus();
+      renderChaosDoomWarning();
+      addLog(`${skill.name}：即死倒數 ${chaosDoom.turns} 回合。消除 ${chaosDoom.required} 顆${getOrbColorLabel(targetColor)}珠可解除。`);
+      window.setTimeout(() => {
+        playChaosThunderSfx();
+        uiEffects.showChaosStormEffect?.();
+        showEnemySkillCastIntro({ name: skill.name, variant: 'chaos' });
+        window.setTimeout(() => uiEffects.showChaosDoomApplyEffect?.(), 520);
+        showBuffFlash(`即死倒數 ${chaosDoom?.turns ?? 0} 回合`);
+      }, 260);
+    }
+
+    function clearChaosDoom() {
+      if (!chaosDoom?.active) return;
+      const label = getOrbColorLabel(chaosDoom.targetColor);
+      addLog(`累積消除 ${chaosDoom.required} 顆${label}珠，混沌開天解除。`);
+      showBuffFlash('即死解除');
+      chaosDoom = null;
+      syncChaosDoomStatus();
+      renderChaosDoomWarning();
+    }
+
+    function recordChaosDoomClears(pendingTraits) {
+      if (!chaosDoom?.active) return;
+      const cleared = pendingTraits
+        .filter((effect) => effect.color === chaosDoom.targetColor)
+        .reduce((sum, effect) => sum + effect.count, 0);
+      if (cleared <= 0) return;
+      chaosDoom.cleared = Math.min(chaosDoom.required, chaosDoom.cleared + cleared);
+      addLog(`混沌開天：${getOrbColorLabel(chaosDoom.targetColor)}珠 ${chaosDoom.cleared}/${chaosDoom.required}。`);
+      if (chaosDoom.cleared >= chaosDoom.required) {
+        clearChaosDoom();
+      } else {
+        syncChaosDoomStatus();
+        renderChaosDoomWarning();
+      }
+    }
+
+    function tickChaosDoomCounter() {
+      if (!chaosDoom?.active) return false;
+      chaosDoom.turns--;
+      if (chaosDoom.turns <= 0) {
+        const damage = playerHp;
+        chaosDoom = null;
+        playerHp = 0;
+        if (damage > 0) showPlayerDamage(damage);
+        addLog('混沌開天倒數結束，玩家即死。');
+        resultEl.textContent = '混沌開天：即死';
+        flashResult();
+        syncChaosDoomStatus();
+        renderChaosDoomWarning();
+        updateStats();
+        return true;
+      }
+      syncChaosDoomStatus();
+      renderChaosDoomWarning();
+      return false;
     }
 
     async function playBattleStep(text, action, type = '') {
@@ -761,6 +1149,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       audioController.playThunderSfx();
     }
 
+    function playChaosThunderSfx() {
+      audioController.playChaosThunderSfx?.();
+    }
+
     function playCourageExplosionSfx() {
       audioController.playCourageExplosionSfx();
     }
@@ -785,14 +1177,27 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       audioController.playSkillCastSfx(skill);
     }
 
+    function playComboOrderSfx() {
+      audioController.playComboOrderSfx?.();
+    }
+
     function playAttackEventSfx(event) {
+      if (event.sfx === 'comboOrder') playComboOrderSfx();
       if (event.attackType === 'thunder' || event.sfx === 'thunder') playThunderSfx();
       if (event.sfx === 'courageExplosion' || event.label?.includes('爆破')) playCourageExplosionSfx();
+    }
+
+    function showBoardPoisonBursts(cells = []) {
+      uiEffects.showBoardPoisonBursts?.(cells);
     }
 
     function playEnemyActionSfx(skill) {
       if (skill?.effectType === 'freeze') {
         playFreezeSfx();
+        return;
+      }
+      if (skill?.effectType === 'aoe_shield') {
+        playThunderSfx();
         return;
       }
       if (skill?.effectType === 'freeze_board_orbs') return;
@@ -885,12 +1290,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       board[target.y][target.x] = null;
       showBoardBombs([target]);
       playBombSfx();
-      dropKeys = collapseBoard();
-      renderBoard();
-      window.setTimeout(() => {
-        dropKeys = new Set();
-        renderBoard();
-      }, 260);
+      scheduleBoardRefillAfterBomb();
       return 1;
     }
 
@@ -905,6 +1305,25 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           if (board[y]?.[x] && !board[y][x].special) board[y][x] = makeOrb();
         });
       }
+    }
+
+    function scheduleBoardRefillAfterBomb({ preventAutoMatches = false, delay = 2000 } = {}) {
+      pendingBoardRefillPreventAutoMatches = pendingBoardRefillPreventAutoMatches || preventAutoMatches;
+      dropKeys = new Set();
+      renderBoard();
+
+      if (boardRefillTimer) window.clearTimeout(boardRefillTimer);
+      boardRefillTimer = window.setTimeout(() => {
+        boardRefillTimer = null;
+        dropKeys = collapseBoard();
+        if (pendingBoardRefillPreventAutoMatches) stabilizeBoardMatchesWithoutClearing();
+        pendingBoardRefillPreventAutoMatches = false;
+        renderBoard();
+        window.setTimeout(() => {
+          dropKeys = new Set();
+          renderBoard();
+        }, 360);
+      }, delay);
     }
 
     function destroyRandomNonSpecialOrbs(requestedCount, { preventAutoMatches = false, visual = 'bomb' } = {}) {
@@ -929,13 +1348,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         showBoardBombs(bombedCells);
         playBombSfx();
       }
-      dropKeys = collapseBoard();
-      if (preventAutoMatches) stabilizeBoardMatchesWithoutClearing();
-      renderBoard();
-      window.setTimeout(() => {
-        dropKeys = new Set();
-        renderBoard();
-      }, 260);
+      scheduleBoardRefillAfterBomb({ preventAutoMatches });
       return bombedCells.length;
     }
 
@@ -959,12 +1372,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (destroyed > 0) {
         showBoardBombs(bombedCells);
         playBombSfx();
-        dropKeys = collapseBoard();
-        renderBoard();
-        window.setTimeout(() => {
-          dropKeys = new Set();
-          renderBoard();
-        }, 260);
+        scheduleBoardRefillAfterBomb();
         if (color === 'red') resolveFireBombEquipmentEffects(destroyed, { allowChain: allowEquipmentChain });
       }
       return destroyed;
@@ -973,7 +1381,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function freezeRandomBoardOrbs(effect) {
       const candidates = [];
       board.forEach((row, y) => row.forEach((cell, x) => {
-        if (cell && !cell.special && !cell.frozen) candidates.push({ x, y });
+        if (cell && !cell.special && !cell.frozen && !cell.poison) candidates.push({ x, y });
       }));
       if (!candidates.length) return 0;
       const count = Math.min(
@@ -1005,9 +1413,36 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       return shattered;
     }
 
+    function spawnPoisonBoardOrbs(effect) {
+      const candidates = [];
+      board.forEach((row, y) => row.forEach((cell, x) => {
+        if (cell && !cell.special && !cell.frozen && !cell.poison) candidates.push({ x, y });
+      }));
+      if (!candidates.length) return 0;
+      const count = Math.min(effect.count ?? 5, candidates.length);
+      for (let i = 0; i < count; i++) {
+        const index = Math.floor(Math.random() * candidates.length);
+        const target = candidates.splice(index, 1)[0];
+        const minTurns = effect.minTurns ?? 1;
+        const maxTurns = Math.max(minTurns, effect.maxTurns ?? 3);
+        const turns = minTurns + Math.floor(Math.random() * (maxTurns - minTurns + 1));
+        board[target.y][target.x].poison = {
+          turns,
+          explosionDamage: effect.explosionDamage ?? 75,
+          poisonDamage: effect.poisonDamage ?? 100,
+          poisonTurns: effect.poisonTurns ?? 2,
+        };
+      }
+      renderBoard();
+      showBuffFlash(`毒珠 x${count}`);
+      addLog(`魔戟雷破賜予棋盤 ${count} 顆毒珠。`);
+      return count;
+    }
+
     function applyEnemyBoardEffect(effect) {
       if (effect.type === 'freeze_random_orbs') return freezeRandomBoardOrbs(effect);
       if (effect.type === 'shatter_random_orbs') return shatterRandomBoardOrbs(effect);
+      if (effect.type === 'spawn_poison_orbs') return spawnPoisonBoardOrbs(effect);
       return 0;
     }
 
@@ -1113,6 +1548,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function tickPlayerStatuses() {
       let dotDamage = 0;
       playerStatusEffects.forEach((effect) => {
+        if (effect.type === 'doom') return;
         if (effect.type === 'burn' || effect.type === 'poison') dotDamage += effect.damage;
         effect.turns--;
       });
@@ -1144,6 +1580,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const shieldBlocked = Math.min(enemyShield, damage);
       if (shieldBlocked > 0) {
         enemyShield -= shieldBlocked;
+        if (enemyShield <= 0) enemyShieldTurns = 0;
         damage -= shieldBlocked;
         addLog(`敵人護盾吸收 ${shieldBlocked} 傷害。`);
       }
@@ -1154,7 +1591,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function resolveEnemyDefeat(source = '') {
       if (enemyHp > 0) return false;
       if (!victoryResolving) {
-        if (source) addLog(`${getCurrentStage().name} 被擊破。`);
+        if (source) addLog(`${getStagePresentation(stage).name} 被擊破。`);
         showVictory();
       }
       return true;
@@ -1170,24 +1607,96 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
 
+    const stagePresentation = [
+      {
+        id: 'mob_yellow_turban_demon_soldier',
+        name: '黃巾妖兵',
+        title: '妖兵',
+        status: '降防 / 凍珠',
+        icon: 'assets/monsters/clean/mob_yellow_turban_demon_soldier_green_clean.png',
+      },
+      {
+        id: 'mob_ghostfire_spear_soldier',
+        name: '鬼火燎營',
+        title: '鬼火槍兵',
+        status: '灼燒 / 連擊',
+        icon: 'assets/monsters/clean/mob_ghostfire_spear_soldier_green_clean.png',
+      },
+      {
+        id: 'mob_rotten_shell_shield',
+        name: '妖甲巨斧',
+        title: '重甲斧妖',
+        status: '護盾 / 碎珠',
+        icon: 'assets/monsters/clean/MONSTER_3_clean.png',
+      },
+      {
+        id: 'mob_snake_shadow_warlock',
+        name: '妖影術士',
+        title: '蛇影術士',
+        status: '毒霧 / 暗咒',
+        icon: 'assets/monsters/clean/MONSTER_4_clean.png',
+      },
+      {
+        id: 'mob_bloodmoon_wolf_general',
+        name: '血月狼將',
+        title: '狼牙妖將',
+        status: '血月 / 追擊',
+        icon: 'assets/monsters/clean/MONSTER__5_clean.png',
+      },
+      {
+        id: 'mob_dark_gate_warrior',
+        name: '魔門力士',
+        title: '魔門戰魁',
+        status: '延遲 / 重擊',
+        icon: 'assets/monsters/clean/MONSTER_6_clean.png',
+      },
+      {
+        id: 'mob_red_flame_demon_lady',
+        name: '奈蝕妖姬',
+        title: '赤焰妖姬',
+        status: '雙擊 / 衰弱',
+        icon: 'assets/monsters/clean/MONSTER_7_clean.png',
+      },
+      {
+        id: 'mob_black_sun_demon_rider',
+        name: '冥幽鬼騎',
+        title: '黑日鬼騎',
+        status: '突襲 / 雷影',
+        icon: 'assets/monsters/clean/MONSTER_8_clean.png',
+      },
+      {
+        id: 'mob_baqi_remnant',
+        name: '八岐妖魂',
+        title: '八岐殘魂',
+        status: '凍結 / 妖魂',
+        icon: 'assets/monsters/clean/MONSTER_9_clean.png',
+      },
+      {
+        id: 'mob_hulao_demon_lu',
+        name: '虎牢魔君',
+        title: '妖門魔君',
+        status: '雷盾 / 首領',
+        icon: 'assets/monsters/clean/MONSTER_10_clean.png',
+      },
+    ];
+
+    function getStagePresentation(stageInfoOrNo) {
+      const stageNo = typeof stageInfoOrNo === 'number' ? stageInfoOrNo : stageInfoOrNo?.stageNo;
+      const stageId = typeof stageInfoOrNo === 'object' ? stageInfoOrNo?.id : stageData[stageNo - 1]?.id;
+      return stagePresentation.find((item, index) => item.id === stageId || index + 1 === stageNo) ?? {
+        name: typeof stageInfoOrNo === 'object' ? stageInfoOrNo?.name : `第 ${stageNo} 關`,
+        title: '妖魔',
+        status: '妖力',
+        icon: typeof stageInfoOrNo === 'object' ? getMonsterArt(stageInfoOrNo) : 'assets/monster-yellow-turban-clean.png',
+      };
+    }
+
     function renderStageMap() {
-      const stageLabels = [
-        '黃巾妖兵',
-        '鬼火燎營',
-        '妖甲巨斧',
-        '妖影術士',
-        '血月狼將',
-        '魔門力士',
-        '奈蝕妖姬',
-        '冥幽鬼騎',
-        '八岐妖魂',
-        '虎牢魔君',
-      ];
       stageMapEl.innerHTML = createStageSelectModel(stageData, stageProgress).map((data) => `
         <button class="stage-node ${data.locked ? 'locked' : ''} ${data.cleared ? 'cleared' : ''}" data-stage="${data.stageNo}" type="button" ${data.locked ? 'disabled' : ''}>
-          <i aria-hidden="true"></i>
-          <span>${data.stageNo}. ${stageLabels[data.stageNo - 1] ?? data.name}</span>
-          <small>${data.locked ? '未解鎖' : data.cleared ? '已通關' : `妖力 ${data.hp}`}</small>
+          <i aria-hidden="true"><img src="${getStagePresentation(data).icon}" alt=""></i>
+          <span>${data.stageNo}. ${getStagePresentation(data).name}</span>
+          <small>${data.locked ? '未解鎖' : data.cleared ? '已通關' : getStagePresentation(data).status}</small>
           ${data.locked ? '<b aria-hidden="true">鎖</b>' : ''}
         </button>
       `).join('');
@@ -1202,7 +1711,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           clearOrderPassives();
           showScreen('battle');
           startStage(true);
-          addLog(`虎牢妖門 ${selectedStage}：${stageData[selectedStage - 1].name} 出現。`);
+          addLog(`虎牢妖門 ${selectedStage}：${getStagePresentation(selectedStage).name} 出現。`);
         });
       });
     }
@@ -1222,21 +1731,29 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     function cellClass(cell) {
+      if (!cell) return 'empty';
       const raw = rawCellColor(cell);
       const frozen = cell?.frozen ? ' frozen' : '';
-      if (raw === 'enhancedRed') return `red extra-fire${frozen}`;
-      if (raw === 'rainbow') return `rainbow${frozen}`;
-      return `${cellColor(cell)}${frozen}`;
+      const poison = cell?.poison ? ' poison-orb' : '';
+      if (raw === 'enhancedRed') return `red extra-fire${frozen}${poison}`;
+      if (raw === 'rainbow') return `rainbow${frozen}${poison}`;
+      return `${cellColor(cell)}${frozen}${poison}`;
     }
 
     function matchColor(cell) {
       if (cell?.special) return null;
+      if (cell?.poison) return null;
       if (cell?.frozen && cell.frozen.canMatch === false) return null;
       const color = cellColor(cell);
       return color === 'rainbow' ? null : color;
     }
 
     function createBoard() {
+      if (boardRefillTimer) {
+        window.clearTimeout(boardRefillTimer);
+        boardRefillTimer = null;
+      }
+      pendingBoardRefillPreventAutoMatches = false;
       board = Array.from({ length: height }, () => Array.from({ length: width }, () => makeOrb()));
       while (findMatches().groups.length) {
         board = Array.from({ length: height }, () => Array.from({ length: width }, () => makeOrb()));
@@ -1251,6 +1768,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         hero: playerHero,
         ready: canActivateHeroSkill(playerHero),
         equipmentLabels: getEquipmentSlotLabels(equipmentProgress),
+        equipmentItems: equipmentProgress.slots,
       });
       bindHeroCardSkillPress(teamEl.querySelector('.hero-card'));
       bindEquipmentSlotPress(teamEl.querySelectorAll('[data-equipment-slot]'));
@@ -1339,6 +1857,18 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       return pickEquipmentRewards(equipmentRewards, count, equipmentProgress);
     }
 
+    function renderEquipmentRewardIcon(equipment, className = 'equipment-reward-icon') {
+      if (equipment.icon) return `<img class="${className}" src="${equipment.icon}" alt="${equipment.name}">`;
+      const slotLabel = equipmentSlots[equipment.slot] ?? '裝備';
+      const rarityClass = equipment.rarity === 'SR' ? 'is-sr' : 'is-r';
+      return `
+        <span class="${className} equipment-fallback-icon ${rarityClass}" aria-hidden="true">
+          <b>${equipment.rarity}</b>
+          <i>${slotLabel}</i>
+        </span>
+      `;
+    }
+
     function openRewardDialog(cell) {
       rewardSourceCell = cell;
       rewardMode = 'rogue';
@@ -1387,10 +1917,11 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       }
 
       rewardDialogEl.querySelector('strong').textContent = '選擇通關獎勵';
-      rewardDialogEl.querySelector('.roster-flavor').textContent = '選擇一件裝備加入本章配置。武器只能裝在武器欄，甲冑只能裝在甲冑欄。';
+      rewardDialogEl.querySelector('.roster-flavor').textContent = '選擇一件裝備加入本章配置。武器、甲冑、兵符、寶石只能裝在對應欄位。';
       rewardOptionsEl.innerHTML = `
         ${rewards.map((equipment) => `
         <button class="reward-card equipment-reward-card" data-equipment="${equipment.id}" type="button">
+          ${renderEquipmentRewardIcon(equipment)}
           <small>${equipment.rarity} / ${equipment.school}</small>
           <strong>${equipment.name}</strong>
           <em>${equipment.skill.name}</em>
@@ -1422,6 +1953,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       rewardDialogEl.querySelector('.roster-flavor').textContent = '點擊空白處關閉。';
       rewardOptionsEl.innerHTML = `
         <article class="reward-card equipment-detail-card">
+          ${renderEquipmentRewardIcon(equipment, 'equipment-detail-icon')}
           <small>${equipment.rarity} / ${equipment.school}</small>
           <strong>${equipment.name}</strong>
           <em>${equipment.skill.name}</em>
@@ -1566,12 +2098,42 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       }
       showBoardBombs(bombedCells);
       if (destroyed > 0) playBombSfx();
-      dropKeys = collapseBoard();
+      if (destroyed > 0) scheduleBoardRefillAfterBomb();
       addOrderGauge(destroyed);
       addDivineGauge(destroyed);
       addOverflowRewards(destroyed);
       applyBombDamage(destroyed, 'yellow');
       return destroyed;
+    }
+
+    function destroySurroundingOrbsForFireAttack(cells) {
+      if (divineStates.fireAttackBombTurns <= 0) return 0;
+      const matchedCells = [...cells];
+      const matched = new Set(matchedCells.map(({ x, y }) => `${x},${y}`));
+      const targets = new Map();
+      matchedCells.forEach(({ x, y }) => {
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const tx = x + dx;
+            const ty = y + dy;
+            const key = `${tx},${ty}`;
+            if (tx < 0 || tx >= width || ty < 0 || ty >= height || matched.has(key)) continue;
+            const cell = board[ty][tx];
+            if (!cell || cell.special) continue;
+            targets.set(key, { x: tx, y: ty });
+          }
+        }
+      });
+      const bombedCells = [...targets.values()];
+      bombedCells.forEach(({ x, y }) => {
+        board[y][x] = null;
+      });
+      if (bombedCells.length > 0) {
+        showBoardBombs(bombedCells);
+        playBombSfx();
+        addLog(`火攻令引爆周遭 ${bombedCells.length} 顆珠。`);
+      }
+      return bombedCells.length;
     }
 
     function swapBoardColors(first, second) {
@@ -1600,9 +2162,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         showBuffFlash,
         destroyBoardColor,
         swapBoardColors,
+        addEnemyBurn,
+        addEnemyPoison,
         resultEl,
       });
       flashResult();
+      renderDivineStatusBanner();
     }
 
     function convertRandomBoardColor() {
@@ -1679,7 +2244,16 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             if (frozenSrc) button.style.backgroundImage = `url("${frozenSrc}")`;
             button.title = `冰凍 ${cell.frozen.turns} 回合`;
           }
+          if (cell?.poison) {
+            button.style.backgroundImage = 'url("assets/POSION_CLEAN.png")';
+            button.title = `毒珠 ${cell.poison.turns} 回合後爆炸`;
+            const timer = document.createElement('span');
+            timer.className = 'poison-orb-turns';
+            timer.textContent = cell.poison.turns;
+            button.appendChild(timer);
+          }
           button.setAttribute('aria-label', `${x + 1},${y + 1}`);
+          if (!cell) button.disabled = true;
           button.addEventListener('click', () => clickOrb(x, y));
           boardEl.appendChild(button);
         }
@@ -1687,7 +2261,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     function clickOrb(x, y) {
-      if (busy || enemyHp <= 0 || playerHp <= 0) return;
+      if (busy || boardRefillTimer || enemyHp <= 0 || playerHp <= 0) return;
       if (resolvePendingOrderColorConvert(x, y)) return;
       if (board[y][x]?.frozen && board[y][x].frozen.canMove === false) {
         selected = null;
@@ -1707,7 +2281,9 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
 
       const dx = Math.abs(selected.x - x);
       const dy = Math.abs(selected.y - y);
-      if (dx + dy !== 1) {
+      const extraSwapRange = equipmentBattleState.skyEyeUsedThisTurn ? 0 : sumEquipmentEffect('first_move_extra_swap_range');
+      const maxSwapDistance = 1 + extraSwapRange;
+      if (dx + dy < 1 || dx + dy > maxSwapDistance) {
         selected = { x, y };
         renderBoard();
         return;
@@ -1722,6 +2298,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         return;
       }
       busy = true;
+      if (extraSwapRange > 0 && dx + dy > 1) {
+        equipmentBattleState.skyEyeUsedThisTurn = true;
+        showBuffFlash('天眼步');
+      } else if (extraSwapRange > 0) {
+        equipmentBattleState.skyEyeUsedThisTurn = true;
+      }
       swap(first, second);
       swapAnim = { first, second };
       selected = null;
@@ -1746,12 +2328,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
 
     async function resolvePlayerTurnEnd({ allowExtraMove = true } = {}) {
       tickPlayerStatuses();
+      const poisonOrbsKilled = tickPoisonOrbs();
+      const chaosDoomKilled = tickChaosDoomCounter();
       tickRogueTurnBuffs();
-      if (playerHp <= 0) {
+      if (poisonOrbsKilled || chaosDoomKilled || playerHp <= 0) {
         addLog('玩家倒下了。');
-        updateStats();
-        renderTeam();
-        busy = false;
+        showDefeat();
         return;
       }
       const gale = getBuff('extra_move');
@@ -1786,8 +2368,16 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           await showVictory();
           return;
         }
+        if (playerHp <= 0) {
+          showDefeat();
+          return;
+        }
       }
       tickBuffs();
+      if (playerHp <= 0) {
+        showDefeat();
+        return;
+      }
       if (enemyHp <= 0) {
         await showVictory();
         return;
@@ -1805,6 +2395,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       let combo = 0;
       let fourMatchCount = 0;
       let fiveMatchCount = 0;
+      let totalClearedThisMove = 0;
       const attackEvents = [];
       const pendingTraits = [];
 
@@ -1817,6 +2408,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         addOrderGauge(cells.length);
         addDivineGauge(cells.length);
         addOverflowRewards(cells.length);
+        totalClearedThisMove += cells.length;
         const comboCounts = {};
         const comboEnhanced = {};
         groups.forEach((group) => {
@@ -1838,7 +2430,20 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         await wait(230);
         playOrbClearSfx();
         await wait(200);
+        const fireAttackBombed = destroySurroundingOrbsForFireAttack(cells);
+        if (fireAttackBombed > 0) {
+          const bombDamage = applyBombDamage(fireAttackBombed, 'red', true);
+          totalDamage += bombDamage;
+          if (bombDamage > 0) {
+            attackEvents.push({ color: 'red', count: fireAttackBombed, damage: bombDamage, attackType: 'fire', label: '火攻爆破', skill: true });
+          }
+        }
         clearCells(cells);
+        if (fireAttackBombed > 0) {
+          dropKeys = new Set();
+          renderBoard();
+          await wait(2000);
+        }
         dropKeys = collapseBoard();
         placeSpecialCreatesAfterCollapse(specialCreates);
         renderBoard();
@@ -1854,6 +2459,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       }
 
       await wait(220);
+      recordChaosDoomClears(pendingTraits);
+      resolveClearedOrbGemEffects(totalClearedThisMove);
       const fourMatchEffect = getEquipmentEffects('four_match_turn_attack_stack')[0];
       if (fourMatchEffect && fourMatchCount > 0) {
         const stacks = Math.min(fourMatchCount, fourMatchEffect.maxStacks ?? fourMatchCount);
@@ -1882,6 +2489,16 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         const { color, count, value, enhanced } = effect;
         const rule = traitRules[color];
         if (!rule) continue;
+        if (divineStates.allColorsShieldTurns > 0 && rule.type !== 'shield') {
+          const shieldValue = getTraitValue(traitRules.green, count);
+          shieldGain += Math.round(playerMaxHp * shieldValue * finalComboMultiplier);
+          if (count >= 4) ironWallTurns = Math.max(ironWallTurns, 1);
+        }
+        if (divineStates.heavenGeneralThunderTurns > 0 && count >= 3) {
+          const thunderDamage = Math.round(playerHero.attack * battleBalance.thunderStrikeAtk * getPlayerAttackMultiplier() * finalComboMultiplier);
+          totalDamage += thunderDamage;
+          attackEvents.push({ color: 'yellow', count, damage: thunderDamage, attackType: 'thunder', label: '天公之怒', skill: true });
+        }
         if (rule.type === 'attack' || divineStates.enabledAttackColors[color] > 0) {
           let multiplier = getPlayerAttackMultiplier() * finalComboMultiplier;
           let consumedDragonMultiplier = 1;
@@ -1963,6 +2580,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           damage: comboBonusDamage,
           attackType: 'fire',
           label: combo >= 5 ? '連擊令・五連破' : '連擊令・三連破',
+          sfx: 'comboOrder',
           skill: true,
         });
       }
@@ -2020,22 +2638,22 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             await wait(120);
           }
         }
-        const followUp = enemyHp > 0 ? getBuff('follow_up') : null;
-        if (followUp && !followUpUsed) {
-          followUpUsed = true;
-          const followDamage = Math.round(playerHero.attack * followUp.value * getPlayerAttackMultiplier() * finalComboMultiplier);
-          let followDealt = 0;
-          await playBattleStep('追擊令・突進！', () => {
-            followDealt = damageEnemy(followDamage);
-            totalDamage += followDealt;
-            shootBeam('red', true);
-            animateAttack(followDealt, true, 'red', '追擊');
-            addLog(`追擊令追加 ${followDealt} 傷害。`);
-            updateStats();
-          }, 'red');
-          if (resolveEnemyDefeat('追擊令')) return;
-          await wait(120);
-        }
+      }
+      const followUp = enemyHp > 0 ? getBuff('follow_up') : null;
+      if (followUp && !followUpUsed && pendingTraits.length > 0) {
+        followUpUsed = true;
+        const followDamage = Math.round(playerHero.attack * followUp.value * getPlayerAttackMultiplier() * finalComboMultiplier);
+        let followDealt = 0;
+        await playBattleStep('追擊令・突進！', () => {
+          followDealt = damageEnemy(followDamage);
+          totalDamage += followDealt;
+          shootBeam('red', true);
+          animateAttack(followDealt, true, 'red', '追擊');
+          addLog(`追擊令追加 ${followDealt} 傷害。`);
+          updateStats();
+        }, 'red');
+        if (resolveEnemyDefeat('追擊令')) return;
+        await wait(120);
       }
       if (!followUpUsed && orderPassives.pursuit && turnRedCount >= 3 && enemyHp > 0 && attackEvents.length && Math.random() < 0.3) {
         followUpUsed = true;
@@ -2111,7 +2729,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     async function activateHeroSkill(color) {
-      if (busy || enemyHp <= 0 || playerHp <= 0) return;
+      if (busy || boardRefillTimer || enemyHp <= 0 || playerHp <= 0) return;
       if (playerHero.energy < playerHero.maxEnergy) return;
       closeSkillDialog();
       busy = true;
@@ -2311,7 +2929,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function updateStats() {
       const currentStage = getCurrentStage();
       document.getElementById('enemyHp').textContent = enemyHp;
-      document.getElementById('enemyMaxHp').textContent = enemyMaxHp;
+      document.getElementById('enemyMaxHp').textContent = ` / ${enemyMaxHp}`;
       document.getElementById('playerHp').textContent = playerHp;
       document.getElementById('playerMaxHp').textContent = playerMaxHp;
       document.getElementById('enemyTurn').textContent = enemyTurn;
@@ -2347,6 +2965,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (heroEnergyText) heroEnergyText.textContent = `${playerHero.energy}/${playerHero.maxEnergy}`;
       if (heroEnergyFill) heroEnergyFill.style.width = `${Math.min(100, playerHero.energy / playerHero.maxEnergy * 100)}%`;
       renderCommandGauges();
+      renderDivineStatusBanner();
     }
 
     function animateAttack(damage, skill = false, color = 'light', label = '') {
@@ -2442,6 +3061,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         await showEnemySkillCastIntro(skill);
         if (action.shieldGain > 0) {
           enemyShield += action.shieldGain;
+          enemyShieldTurns = Math.max(enemyShieldTurns, action.shieldTurns ?? 0);
           if (action.damageReduction !== null) enemyDamageReduction = action.damageReduction;
           addLog(`${label}，獲得 ${skill.shield ?? 0} 護盾。`);
           updateStats();
@@ -2560,9 +3180,32 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       enemyArtEl.classList.add('dead');
       await wait(1000);
       resultEl.textContent = 'Victory';
+      const victoryTitle = document.getElementById('victoryTitle');
+      const victorySubtitle = document.getElementById('victorySubtitle');
+      if (victoryTitle) victoryTitle.textContent = 'Victory';
+      if (victorySubtitle) victorySubtitle.textContent = '';
+      victoryPanelEl.classList.remove('defeat');
       document.getElementById('nextStage').textContent = '回到關卡選擇';
       victoryPanelEl.classList.remove('show');
       openEquipmentRewardDialog();
+    }
+
+    function showDefeat() {
+      if (victoryResolving) return;
+      victoryResolving = true;
+      busy = true;
+      selected = null;
+      playerHp = 0;
+      pendingShieldCounterDamage = 0;
+      resultEl.textContent = 'DEFECT';
+      updateStats();
+      renderTeam();
+      const victoryTitle = document.getElementById('victoryTitle');
+      const victorySubtitle = document.getElementById('victorySubtitle');
+      if (victoryTitle) victoryTitle.textContent = 'DEFECT';
+      if (victorySubtitle) victorySubtitle.textContent = '失敗';
+      document.getElementById('nextStage').textContent = '回到關卡頁面';
+      victoryPanelEl.classList.add('defeat', 'show');
     }
 
     function startStage(resetTeam = false) {
@@ -2574,6 +3217,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         playerHero.energy = 0;
         playerShield = 0;
         playerShieldTurns = 0;
+        resetEquipmentBattleState();
         orderGauge = 0;
         divineGauge = 0;
         playerStatusEffects = [];
@@ -2588,6 +3232,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           enhancedColorMultiplier: {},
           damageReductionTurns: 0,
           damageReductionRate: 0,
+          fireAttackBombTurns: 0,
+          eastWindTurns: 0,
+          allColorsShieldTurns: 0,
+          heavenGeneralThunderTurns: 0,
         };
       }
       playerHp = Math.min(playerHp, playerMaxHp);
@@ -2599,6 +3247,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       enemySkillCooldowns = createEnemySkillCooldowns(currentStage);
       battleRound = 1;
       enemyShield = monsterBattleState.shield;
+      enemyShieldTurns = 0;
       enemyDamageReduction = monsterBattleState.damageReduction;
       enemyVulnerability = monsterBattleState.vulnerability;
       enemyDebuffs = monsterBattleState.debuffs;
@@ -2610,21 +3259,27 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       chargeDamage = {};
       closeSkillDialog();
       victoryPanelEl.classList.remove('show');
+      victoryPanelEl.classList.remove('defeat');
       enemyArtEl.classList.remove('dead', 'hit', 'skill-hit', 'attack');
-      enemyNameEl.textContent = currentStage.name;
+      enemyNameEl.textContent = getStagePresentation(currentStage).name;
       document.getElementById('enemyImage').src = getMonsterArt(currentStage);
-      document.getElementById('enemyImage').alt = currentStage.name;
-      applyTurnStartEquipmentEffects();
+      document.getElementById('enemyImage').alt = getStagePresentation(currentStage).name;
+      renderBossGhostfireAura(currentStage.id === 'mob_hulao_demon_lu');
       updateStats();
       renderEnemyDebuffs();
       renderBuffs();
       renderCommandGauges();
       createBoard();
+      applyTurnStartEquipmentEffects();
+      renderBoard();
+      updateStats();
       renderTeam();
+      applyChaosDoomOpening(currentStage);
     }
 
     function nextStage() {
       victoryPanelEl.classList.remove('show');
+      victoryPanelEl.classList.remove('defeat');
       resultEl.textContent = '';
       renderStageMap();
       showScreen('stage');
@@ -2636,8 +3291,9 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       logEl.innerHTML = '';
       resultEl.textContent = '';
       victoryPanelEl.classList.remove('show');
+      victoryPanelEl.classList.remove('defeat');
       startStage(true);
-      addLog(`虎牢妖門 ${stage}：${stageData[stage - 1].name} 出現。`);
+      addLog(`虎牢妖門 ${stage}：${getStagePresentation(stage).name} 出現。`);
     }
 
     function wait(ms) {

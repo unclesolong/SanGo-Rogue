@@ -2,6 +2,34 @@ function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function waitForImage(src, timeout = 900) {
+  return new Promise((resolve) => {
+    if (!src) {
+      resolve();
+      return;
+    }
+    const img = new Image();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    const timer = window.setTimeout(finish, timeout);
+    img.onload = async () => {
+      window.clearTimeout(timer);
+      try {
+        if (img.decode) await img.decode();
+      } catch {
+        // Decoding can fail on cached images; the loaded image is still usable.
+      }
+      finish();
+    };
+    img.onerror = finish;
+    img.src = src;
+  });
+}
+
 function fallbackColorValue(color) {
   return getComputedStyle(document.documentElement).getPropertyValue(`--${color}`).trim() || '#ffe2a3';
 }
@@ -19,6 +47,25 @@ export function createUiEffects({
   const activeBoardCallouts = [];
   const activeEnemyDamageFloats = [];
   const activeOverflowCallouts = [];
+
+  function getBoardEffectRect() {
+    const cells = Array.from(boardEl?.querySelectorAll?.('.gem-cell') || []);
+    if (!cells.length) return boardEl?.getBoundingClientRect?.();
+
+    const rects = cells.map((cell) => cell.getBoundingClientRect());
+    const left = Math.min(...rects.map((rect) => rect.left));
+    const top = Math.min(...rects.map((rect) => rect.top));
+    const right = Math.max(...rects.map((rect) => rect.right));
+    const bottom = Math.max(...rects.map((rect) => rect.bottom));
+    return {
+      left,
+      top,
+      right,
+      bottom,
+      width: right - left,
+      height: bottom - top,
+    };
+  }
 
   function showBuffFlash(text) {
     const el = document.createElement('div');
@@ -88,28 +135,47 @@ export function createUiEffects({
   }
 
   async function showSkillCastIntro(skill = {}) {
+    const dragonSrc = skill.dragonArt || 'assets/vfx/hero-dragon-soul-ai.png';
+    await waitForImage(dragonSrc);
+
     const el = document.createElement('div');
     el.className = 'skill-cast-pop';
 
-    if (skill.icon) {
-      const icon = document.createElement('img');
-      icon.src = skill.icon;
-      icon.alt = '';
-      el.appendChild(icon);
-    }
+    const boardRect = getBoardEffectRect();
+    const centerX = boardRect ? boardRect.left + boardRect.width / 2 : window.innerWidth / 2;
+    const centerY = boardRect ? boardRect.top + boardRect.height / 2 : window.innerHeight * 0.58;
+    const dragonSize = boardRect
+      ? Math.min(Math.max(boardRect.width * 1.12, 420), 760)
+      : Math.min(window.innerWidth * 0.86, 760);
+    el.style.left = `${centerX}px`;
+    el.style.top = `${centerY}px`;
+    el.style.setProperty('--skill-board-size', `${dragonSize}px`);
+
+    const dragonTrail = document.createElement('div');
+    dragonTrail.className = 'skill-dragon-trail';
+    dragonTrail.style.setProperty('--skill-board-size', `${dragonSize}px`);
+    el.appendChild(dragonTrail);
+
+    const dragon = document.createElement('img');
+    dragon.className = 'skill-dragon-img';
+    dragon.src = dragonSrc;
+    dragon.alt = '';
+    dragon.style.setProperty('--skill-board-size', `${dragonSize}px`);
+    el.appendChild(dragon);
 
     const name = document.createElement('strong');
     name.textContent = skill.name || '主動技能';
     el.appendChild(name);
 
     document.body.appendChild(el);
-    await wait(980);
+    await wait(1560);
     el.remove();
   }
 
   async function showEnemySkillCastIntro(skill = {}) {
     const el = document.createElement('div');
     el.className = 'enemy-skill-cast-pop';
+    if (skill.variant) el.classList.add(`enemy-skill-cast-pop--${skill.variant}`);
 
     const name = document.createElement('strong');
     name.textContent = skill.name || '妖術發動';
@@ -124,6 +190,60 @@ export function createUiEffects({
     document.body.appendChild(el);
     await wait(880);
     el.remove();
+  }
+
+  function showChaosStormEffect() {
+    if (!enemyArtEl) return;
+    const storm = document.createElement('div');
+    storm.className = 'chaos-storm-effect';
+    storm.innerHTML = `
+      <div class="chaos-cloud-ring ring-a"></div>
+      <div class="chaos-cloud-ring ring-b"></div>
+      <div class="chaos-cloud-core"></div>
+      <div class="chaos-lightning bolt-a"></div>
+      <div class="chaos-lightning bolt-b"></div>
+      <div class="chaos-lightning bolt-c"></div>
+    `;
+    enemyArtEl.appendChild(storm);
+    shakeBattleStage();
+    window.setTimeout(() => storm.remove(), 1700);
+  }
+
+  function showChaosDoomApplyEffect() {
+    const targetEl = teamEl?.querySelector('.hero-card') || document.querySelector('.battle-party');
+    if (!enemyImageEl || !targetEl) return;
+    const sourceRect = enemyImageEl.getBoundingClientRect();
+    const targetRect = targetEl.getBoundingClientRect();
+    const startX = sourceRect.left + sourceRect.width * 0.52;
+    const startY = sourceRect.top + sourceRect.height * 0.36;
+    const endX = targetRect.left + targetRect.width / 2;
+    const endY = targetRect.top + targetRect.height * 0.48;
+
+    const curse = document.createElement('div');
+    curse.className = 'chaos-doom-projectile';
+    curse.style.left = `${startX}px`;
+    curse.style.top = `${startY}px`;
+    curse.style.setProperty('--tx', `${endX - startX}px`);
+    curse.style.setProperty('--ty', `${endY - startY}px`);
+    document.body.appendChild(curse);
+
+    window.setTimeout(() => {
+      targetEl.classList.remove('chaos-doom-marked');
+      void targetEl.offsetWidth;
+      targetEl.classList.add('chaos-doom-marked');
+      const seal = document.createElement('div');
+      seal.className = 'chaos-doom-seal';
+      targetEl.appendChild(seal);
+      const label = document.createElement('div');
+      label.className = 'chaos-doom-label';
+      label.textContent = '即死';
+      targetEl.appendChild(label);
+      window.setTimeout(() => seal.remove(), 1180);
+      window.setTimeout(() => label.remove(), 1180);
+      window.setTimeout(() => targetEl.classList.remove('chaos-doom-marked'), 1180);
+    }, 720);
+
+    window.setTimeout(() => curse.remove(), 980);
   }
 
   function showAttackEffect(type = 'slash') {
@@ -161,6 +281,35 @@ export function createUiEffects({
       document.body.appendChild(marker);
       window.setTimeout(() => marker.remove(), 1120);
       window.setTimeout(() => bomb.remove(), 1360);
+    });
+  }
+
+  function showBoardPoisonBursts(cells = []) {
+    if (!boardEl || !cells.length) return;
+    const children = [...boardEl.querySelectorAll('.orb')];
+    const columns = Math.max(1, Math.round(Math.sqrt(children.length)));
+    cells.forEach(({ x, y }, index) => {
+      const cellEl = children[y * columns + x];
+      if (!cellEl) return;
+      const rect = cellEl.getBoundingClientRect();
+      const burst = document.createElement('div');
+      burst.className = 'board-poison-pop';
+      burst.style.left = `${rect.left + rect.width / 2}px`;
+      burst.style.top = `${rect.top + rect.height / 2}px`;
+      burst.style.width = `${Math.max(38, rect.width * 1.28)}px`;
+      burst.style.height = `${Math.max(38, rect.height * 1.28)}px`;
+      burst.style.setProperty('--poison-delay', `${Math.min(index * 32, 220)}ms`);
+      document.body.appendChild(burst);
+
+      const marker = document.createElement('div');
+      marker.className = 'board-poison-marker';
+      marker.style.left = `${rect.left}px`;
+      marker.style.top = `${rect.top}px`;
+      marker.style.width = `${rect.width}px`;
+      marker.style.height = `${rect.height}px`;
+      document.body.appendChild(marker);
+      window.setTimeout(() => marker.remove(), 1180);
+      window.setTimeout(() => burst.remove(), 1380);
     });
   }
 
@@ -451,12 +600,15 @@ export function createUiEffects({
     showOverflowCallout,
     showSkillCastIntro,
     showEnemySkillCastIntro,
+    showChaosStormEffect,
+    showChaosDoomApplyEffect,
     showEnemyStatusCallout,
     showEnemyBurnEffect,
     animateAttack,
     showComboPop,
     showAttackEffect,
     showBoardBombs,
+    showBoardPoisonBursts,
     showBoardShatters,
     showBoardConversions,
     getPlayerAttackEffectType,

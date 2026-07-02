@@ -167,6 +167,43 @@ export function createAudioController({
     });
   }
 
+  function playChaosThunderSfx() {
+    const playSynthFallback = () => {
+      const context = playNoiseBurst({ duration: 1.25, volume: 0.9, filterType: 'lowpass', startFreq: 1400, endFreq: 58, power: 1.1 });
+      if (!context) return;
+      const now = context.currentTime;
+
+      const rumble = context.createOscillator();
+      const rumbleGain = context.createGain();
+      rumble.type = 'sawtooth';
+      rumble.frequency.setValueAtTime(42, now);
+      rumble.frequency.exponentialRampToValueAtTime(24, now + 1.05);
+      rumbleGain.gain.setValueAtTime(0.58, now);
+      rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 1.28);
+      rumble.connect(rumbleGain).connect(context.destination);
+      rumble.start(now);
+      rumble.stop(now + 1.3);
+
+      [0.08, 0.24, 0.48, 0.74].forEach((delay, index) => {
+        const snap = context.createOscillator();
+        const gain = context.createGain();
+        const start = now + delay;
+        snap.type = index % 2 ? 'square' : 'sawtooth';
+        snap.frequency.setValueAtTime(index % 2 ? 840 : 1560, start);
+        snap.frequency.exponentialRampToValueAtTime(index % 2 ? 210 : 380, start + 0.16);
+        gain.gain.setValueAtTime(index === 0 ? 0.42 : 0.3, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+        snap.connect(gain).connect(context.destination);
+        snap.start(start);
+        snap.stop(start + 0.24);
+      });
+    };
+
+    const sound = new Audio('assets/audio/sfx_boss_chaos_thunder_01.wav');
+    sound.volume = 0.92;
+    sound.play().catch(playSynthFallback);
+  }
+
   function playCourageExplosionSfx() {
     const context = playNoiseBurst({ duration: 0.62, volume: 0.86, startFreq: 1500, endFreq: 72, power: 1.75 });
     if (!context) return;
@@ -280,6 +317,36 @@ export function createAudioController({
       playHeroVoice(skill.sfx);
       return;
     }
+    if (skill.id === 'active_dragon_soul_burst' || skill.name?.includes('龍')) {
+      const context = playNoiseBurst({ duration: 0.72, volume: 0.58, filterType: 'bandpass', startFreq: 1800, endFreq: 260, power: 1.15 });
+      if (!context) return;
+      const now = context.currentTime;
+
+      const roar = context.createOscillator();
+      const roarGain = context.createGain();
+      roar.type = 'sawtooth';
+      roar.frequency.setValueAtTime(92, now);
+      roar.frequency.exponentialRampToValueAtTime(48, now + 0.58);
+      roarGain.gain.setValueAtTime(0.38, now);
+      roarGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+      roar.connect(roarGain).connect(context.destination);
+      roar.start(now);
+      roar.stop(now + 0.72);
+
+      [392, 587, 784, 1175].forEach((freq, index) => {
+        const osc = context.createOscillator();
+        const gain = context.createGain();
+        osc.type = index < 2 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, now + 0.08 + index * 0.07);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.8, now + 0.34 + index * 0.06);
+        gain.gain.setValueAtTime(index === 0 ? 0.28 : 0.18, now + 0.08 + index * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.46 + index * 0.06);
+        osc.connect(gain).connect(context.destination);
+        osc.start(now + 0.08 + index * 0.07);
+        osc.stop(now + 0.5 + index * 0.06);
+      });
+      return;
+    }
     const context = getSfxContext();
     if (!context) {
       playOrbClearSfx();
@@ -307,6 +374,10 @@ export function createAudioController({
     sound.play().catch(() => {});
   }
 
+  function playComboOrderSfx() {
+    playHeroVoice('assets/audio/sfx_combo_angry_hahh_1s.wav');
+  }
+
   function playPassiveSfx() {
     playHeroVoice('assets/audio/sfx_hero_zhaoyun_passive_courage_trigger_ding_01.wav');
   }
@@ -325,12 +396,14 @@ export function createAudioController({
     playShatterSfx,
     playCounterSfx,
     playThunderSfx,
+    playChaosThunderSfx,
     playCourageExplosionSfx,
     playBurnSfx,
     playFreezeSfx,
     playOverflowSfx,
     playBonusSfx,
     playSkillCastSfx,
+    playComboOrderSfx,
     playHeroVoice,
     playPassiveSfx,
     playRewardSfx,
@@ -359,6 +432,10 @@ export function playCounterSfx() {
 
 export function playThunderSfx() {
   throw new Error('Use createAudioController().playThunderSfx after audio refs are available.');
+}
+
+export function playChaosThunderSfx() {
+  throw new Error('Use createAudioController().playChaosThunderSfx after audio refs are available.');
 }
 
 export function playCourageExplosionSfx() {

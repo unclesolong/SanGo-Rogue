@@ -10,4 +10,4 @@ export {
   calculateDivineGaugeGain,
   canUseDivine,
   pickDivineRewards,
-} from './divine.js';
+} from './divine.js?v=divine-rework-20260701a';

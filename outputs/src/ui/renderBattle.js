@@ -16,10 +16,11 @@ export function renderHeroCard({ hero, ready = false } = {}) {
   `;
 }
 
-function renderEquipmentSlot(label, slot) {
+function renderEquipmentSlot(label, slot, item = null) {
   const [slotName, itemName] = String(label).split('\n');
   return `
     <button class="card equipment-card ${itemName ? 'equipped-slot' : 'locked-slot'}" data-equipment-slot="${slot}" type="button">
+      ${item?.icon ? `<img class="equipment-slot-icon" src="${item.icon}" alt="${item.name}">` : ''}
       <small>${slotName}</small>
       <span>${itemName ?? ''}</span>
     </button>
@@ -30,14 +31,15 @@ export function renderHeroRow({
   hero,
   ready = false,
   equipmentLabels = ['武器', '甲冑', '兵符', '寶物'],
+  equipmentItems = {},
 } = {}) {
   const [weapon, armor, commandSeal, treasure] = equipmentLabels;
   return `
-    ${renderEquipmentSlot(weapon, 'weapon')}
-    ${renderEquipmentSlot(armor, 'armor')}
+    ${renderEquipmentSlot(weapon, 'weapon', equipmentItems.weapon)}
+    ${renderEquipmentSlot(armor, 'armor', equipmentItems.armor)}
     ${renderHeroCard({ hero, ready })}
-    ${renderEquipmentSlot(commandSeal, 'commandSeal')}
-    ${renderEquipmentSlot(treasure, 'treasure')}
+    ${renderEquipmentSlot(commandSeal, 'commandSeal', equipmentItems.commandSeal)}
+    ${renderEquipmentSlot(treasure, 'treasure', equipmentItems.treasure)}
   `;
 }
 
@@ -47,7 +49,9 @@ export function renderEnemyDebuffs({ debuffs = [] } = {}) {
       ? `易傷 x${debuff.layers}`
       : debuff.type === 'burn'
         ? `燃燒 ${debuff.turns}`
-        : `${Math.round((debuff.amount || 0) * 100)}% ${debuff.turns}`;
+        : debuff.type === 'poison'
+          ? `中毒 ${debuff.turns}`
+          : `${Math.round((debuff.amount || 0) * 100)}% ${debuff.turns}`;
     return `
       <div class="enemy-debuff" title="${debuff.description || debuff.name}">
         <img src="${debuff.icon}" alt="${debuff.name}">

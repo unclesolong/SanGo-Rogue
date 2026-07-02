@@ -60,6 +60,7 @@ export function resolveEnemyAction(monster, {
     label,
     damage,
     shieldGain: useSkill && ['shield', 'aoe_shield'].includes(skill.effectType) ? skill.shield ?? 0 : 0,
+    shieldTurns: useSkill && ['shield', 'aoe_shield'].includes(skill.effectType) ? skill.durationTurns ?? 0 : 0,
     damageReduction: useSkill && skill.effectType === 'shield' ? 0.2 : null,
     endsAfterShield: useSkill && skill.effectType === 'shield',
     playerStatuses: useSkill ? getPlayerStatusesFromSkill(skill) : [],
@@ -137,6 +138,7 @@ export function getEnemyAttackType(skill) {
   if (!skill) return 'slash';
   if (skill.effectType === 'poison') return 'poison';
   if (skill.effectType === 'burn') return 'fire';
+  if (skill.effectType === 'aoe_shield') return 'thunder';
   if (['freeze', 'damage_slow', 'damage_debuff', 'freeze_board_orbs'].includes(skill.effectType)) return 'dark';
   if (skill.effectType === 'shatter_board_orbs') return 'thunder';
   if (['dash_damage', 'multi_hit'].includes(skill.effectType)) return 'slash';
@@ -233,19 +235,33 @@ function getPlayerStatusesFromSkill(skill) {
 }
 
 function getBoardEffectsFromSkill(skill) {
+  const effects = [];
+  if (skill.poisonOrbCount > 0) {
+    effects.push({
+      type: 'spawn_poison_orbs',
+      count: skill.poisonOrbCount,
+      minTurns: skill.poisonOrbMinTurns ?? 1,
+      maxTurns: skill.poisonOrbMaxTurns ?? 3,
+      explosionDamage: skill.poisonOrbDamage ?? 75,
+      poisonDamage: skill.poisonDotDamage ?? 100,
+      poisonTurns: skill.poisonDurationTurns ?? 2,
+    });
+  }
   if (skill.effectType === 'shatter_board_orbs') {
-    return [{
+    effects.push({
       type: 'shatter_random_orbs',
       count: skill.shatterCount ?? skill.params?.shatterCount ?? 10,
-    }];
+    });
+    return effects;
   }
-  if (skill.effectType !== 'freeze_board_orbs') return [];
-  return [{
+  if (skill.effectType !== 'freeze_board_orbs') return effects;
+  effects.push({
     type: 'freeze_random_orbs',
     count: skill.params.freezeCount,
     boardFraction: skill.params.boardFraction,
     durationTurns: skill.params.durationTurns ?? 3,
     canMoveFrozenOrbs: skill.params.canMoveFrozenOrbs ?? false,
     canMatchFrozenOrbs: skill.params.canMatchFrozenOrbs ?? true,
-  }];
+  });
+  return effects;
 }
