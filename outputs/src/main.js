@@ -5,7 +5,6 @@ import { heroDatabase } from './data/heroes.js?v=dragon-soul-burst-20260701f';
 import { rogueRewards } from './data/rogueRewards.js?v=pursuit-order-20260701a';
 import { equipmentRewards } from './data/equipmentRewards.js?v=weapon-icons-20260701a';
 import { divineFlagsPack } from './data/divineFlags.js?v=divine-rework-20260701a';
-import { attackArts } from './data/attackArts.js';
 import { stageData } from './data/monsters.js?v=yellow-bleed-blade-20260702a';
 import { createMonsterBattleState, getMonsterArt, getMonsterPreviewDamage, getMonsterTurnCooldown, getStageMonster } from './data/monsterCatalog.js';
 import { completeStage, createStageProgress, createStageSelectModel } from './progression/stageProgress.js';
@@ -22,6 +21,7 @@ import { createAudioController } from './ui/audio.js?v=bomb-empty-drop-20260702c
 import { renderEnemyDebuffs as renderEnemyDebuffsView, renderHeroRow } from './ui/renderBattle.js?v=divine-rework-20260701a';
 import { createTalentScreenController } from './ui/talentScreen.js?v=talent-board-module-20260702a';
 import { calculateBombDamage as calculateBombDamageValue } from './battle/damage.js';
+import { applyHeroAttackPresentation, getHeroAttackPresentation } from './battle/heroPresentation.js?v=hero-presentation-20260702a';
 import { canActivateHeroSkill, createHeroSkillDialogModel, createHeroSkillSystem } from './battle/skills.js?v=dragon-soul-burst-20260701f';
 import {
   createEnemySkillCooldowns,
@@ -1237,16 +1237,16 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       playEnemyAttackSfx();
     }
 
-    function getAttackArt(count) {
-      return attackArts.find((art) => count >= art.min) ?? attackArts[attackArts.length - 1];
-    }
-
-    function showAttackName(count, { playVoice = true } = {}) {
-      const art = getAttackArt(count);
-      if (playVoice) playHeroVoice(art.voice);
+    function showAttackName(event, { playVoice = true } = {}) {
+      const presentation = event.presentation || getHeroAttackPresentation(playerHero, event);
+      if (!presentation?.name && !presentation?.icon) return;
+      if (playVoice && presentation.voice) playHeroVoice(presentation.voice);
       const el = document.createElement('div');
       el.className = 'attack-name-pop';
-      el.innerHTML = `<img src="${art.icon}" alt=""><span>${playerHero.name}・${art.name}</span>`;
+      const icon = presentation.icon ? `<img src="${presentation.icon}" alt="">` : '';
+      const heroName = presentation.heroName || playerHero.name || playerHero.hero;
+      const actionName = presentation.name || event.label || '攻擊';
+      el.innerHTML = `${icon}<span>${heroName}・${actionName}</span>`;
       document.body.appendChild(el);
       window.setTimeout(() => el.remove(), 1000);
     }
@@ -2570,13 +2570,13 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             redOrbBonusDamage = 0;
           }
           totalDamage += damage;
-          attackEvents.push({
+          attackEvents.push(applyHeroAttackPresentation(playerHero, {
+            source: 'orb_match',
             color,
             count,
             damage,
             attackType: color === 'yellow' ? 'thunder' : color === 'red' && count >= 5 ? 'fire' : color,
-            vfx: color === 'red' && count >= 3 && count <= 4 ? 'spearThrust' : '',
-          });
+          }));
           if (color === 'red' && enhanced) {
             const bonusDamage = Math.round(playerHero.attack * battleBalance.enhancedFireFlatAtk * getPlayerAttackMultiplier() * finalComboMultiplier * consumedDragonMultiplier * fireDamageMultiplier);
             totalDamage += bonusDamage;
@@ -2664,12 +2664,13 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
 
       let followUpUsed = false;
       for (const event of attackEvents) {
-        const actionName = event.label || getAttackArt(event.count).name;
-        showAttackName(event.count, { playVoice: !event.skill });
+        const presentation = event.presentation || getHeroAttackPresentation(playerHero, event);
+        const actionName = event.label || presentation?.name || '攻擊';
+        showAttackName({ ...event, presentation }, { playVoice: !event.skill });
         let dealt = 0;
         await playBattleStep(`${playerHero.hero}・${actionName}`, () => {
           playAttackEventSfx(event);
-          if (event.vfx !== 'spearThrust') shootBeam(event.color);
+          if (!['spearThrust', 'spearShot'].includes(event.vfx)) shootBeam(event.color);
           dealt = damageEnemy(event.damage);
           addLog(`${actionName}造成 ${dealt} 傷害。`);
           updateStats();
@@ -3118,7 +3119,43 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           await uiEffects.showIceTalismanCastEffect?.();
         }
         if (skill.effectType === 'bleed') {
-          await uiEffects.showBleedTalismanCastEffect?.();
+          playEnemyActionSfx(skill);
+          const bladeAnimation = uiEffects.showBleedTalismanCastEffect?.() ?? Promise.resolve();
+          await wait(420);
+          showClawSlashes();
+          flashTargetHit(document.querySelector('.battle-party'));
+          let dealt = 0;
+          if (hits?.length) {
+            for (let index = 0; index < hits.length; index++) {
+              const hitDamage = applyPlayerDamage(hits[index]);
+              dealt += hitDamage;
+              if (hits[index] > 0 && enemyHp > 0) resolveOnHitEquipmentEffects();
+              addLog(`${label} 第 ${index + 1} 擊，玩家受到 ${hitDamage} 傷害。`);
+              if (index < hits.length - 1) await wait(120);
+            }
+          } else {
+            dealt = damage > 0 ? applyPlayerDamage(damage) : 0;
+            if (damage > 0 && enemyHp > 0) resolveOnHitEquipmentEffects();
+            addLog(`${label}，玩家受到 ${dealt} 傷害。`);
+          }
+          action.playerStatuses.forEach((status) => addPlayerStatus(status));
+          if (skill.description) addLog(skill.description);
+          if (playerHp <= 0) addLog('玩家隊伍倒下了。');
+          await bladeAnimation;
+          if (pendingShieldCounterDamage > 0 && enemyHp > 0) {
+            const counterDamage = pendingShieldCounterDamage;
+            pendingShieldCounterDamage = 0;
+            await playBattleStep(`護盾反擊 ${counterDamage}`, () => {
+              playCounterSfx();
+              const dealtCounter = damageEnemy(counterDamage);
+              showBuffFlash(`護盾反擊 ${dealtCounter}`);
+              animateAttack(dealtCounter, true, 'green', '護盾反擊');
+              addLog(`護盾反擊造成 ${dealtCounter} 傷害。`);
+              updateStats();
+            }, 'green');
+            resolveEnemyDefeat('護盾反擊');
+          }
+          return;
         }
         if (action.shieldGain > 0) {
           enemyShield += action.shieldGain;

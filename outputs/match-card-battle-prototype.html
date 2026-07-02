@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>五色珠卡牌戰鬥原型</title>
-  <link rel="stylesheet" href="styles/battle.css?v=monster-pressure-scale-20260702a">
+  <link rel="stylesheet" href="styles/battle.css?v=skill-pop-compact-20260702a">
 </head>
 <body>
   <audio id="battleBgm" src="assets/audio/rogue_sanguo_demon_battle_loop_60s.wav" loop preload="auto"></audio>
@@ -227,16 +227,6 @@
           <div class="stage-smoke"></div>
           <div class="stage-embers"></div>
           <div id="attackEffectLayer" class="attack-effect-layer"></div>
-          <button id="divineCommandButton" class="side-command side-command-left" type="button">
-            <img src="assets/GOD CLEAN.png" alt="">
-            <strong>神令</strong>
-            <span id="divineGaugeText"></span>
-          </button>
-          <button id="orderCommandButton" class="side-command side-command-right" type="button">
-            <img src="assets/ORDER CLEAN.png" alt="">
-            <strong>軍令</strong>
-            <span id="orderGaugeText"></span>
-          </button>
           <button id="battleMenuGear" class="battle-menu-gear" type="button" aria-label="戰鬥選單">⚙</button>
           <div id="battleQuickMenu" class="battle-quick-menu" hidden>
             <button id="battleQuickStage" type="button">關卡</button>
@@ -262,7 +252,19 @@
       </div>
 
       <div class="battle-party">
-        <div id="team" class="team hero-row"></div>
+        <div class="hero-command-row">
+          <button id="divineCommandButton" class="side-command side-command-left" type="button">
+            <img src="assets/GOD CLEAN.png" alt="">
+            <strong>神令</strong>
+            <span id="divineGaugeText"></span>
+          </button>
+          <div id="team" class="team hero-row"></div>
+          <button id="orderCommandButton" class="side-command side-command-right" type="button">
+            <img src="assets/ORDER CLEAN.png" alt="">
+            <strong>軍令</strong>
+            <span id="orderGaugeText"></span>
+          </button>
+        </div>
         <div class="player-status">
           <div id="buffRow" class="buff-row player-buff-row"></div>
           <div class="player-status-row">
@@ -344,7 +346,7 @@
     </section>
   </main>
 
-  <script type="module" src="src/main.js?v=monster-pressure-scale-20260702a"></script>
+  <script type="module" src="src/main.js?v=hero-presentation-20260702a"></script>
 </body>
 </html>
 

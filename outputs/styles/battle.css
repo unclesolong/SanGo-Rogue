@@ -14,6 +14,167 @@
       --blood: #9b2f27;
     }
 
+    @media (max-width: 560px) {
+      #battleScreen {
+        --hero-row-h: clamp(66px, 10.2dvh, 78px);
+      }
+
+      #battleScreen .hero-command-row {
+        grid-row: 3 !important;
+        display: grid !important;
+        grid-template-columns: clamp(38px, 10.8vw, 50px) minmax(0, 1fr) clamp(38px, 10.8vw, 50px) !important;
+        align-items: center !important;
+        gap: clamp(4px, 1.2vw, 7px) !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: clamp(3px, 0.7dvh, 5px) clamp(9px, 2.4vw, 13px) !important;
+        overflow: hidden !important;
+      }
+
+      #battleScreen .hero-command-row #team.hero-row {
+        grid-row: auto !important;
+        grid-column: 2 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        align-self: stretch !important;
+        gap: clamp(3px, 0.9vw, 5px) !important;
+        width: 100% !important;
+        height: clamp(52px, 8.6dvh, 62px) !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+
+      #battleScreen .hero-command-row #team.hero-row > .hero-card,
+      #battleScreen .hero-command-row #team.hero-row > .equipment-card,
+      #battleScreen .hero-command-row #team.hero-row > .locked-slot {
+        flex: 0 1 clamp(41px, 12.2vw, 54px) !important;
+        width: clamp(41px, 12.2vw, 54px) !important;
+        height: clamp(48px, 13.8vw, 58px) !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+      }
+
+      #battleScreen .hero-command-row #team.hero-row > .hero-card {
+        flex-basis: clamp(48px, 14.2vw, 62px) !important;
+        width: clamp(48px, 14.2vw, 62px) !important;
+      }
+
+      #battleScreen .hero-command-row .side-command {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        left: auto !important;
+        align-self: center !important;
+        justify-self: center !important;
+        width: clamp(38px, 10.8vw, 50px) !important;
+        height: clamp(38px, 10.8vw, 50px) !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 0.42 !important;
+        filter: grayscale(1) brightness(0.58) saturate(0.35) !important;
+      }
+
+      #battleScreen .hero-command-row .side-command::before {
+        display: none !important;
+      }
+
+      #battleScreen .hero-command-row .side-command::after {
+        inset: -8px !important;
+        background: radial-gradient(circle at 50% 50%, rgba(255, 229, 122, 0.34), transparent 64%) !important;
+        opacity: 0 !important;
+      }
+
+      #battleScreen .hero-command-row .side-command img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+      }
+
+      #battleScreen .hero-command-row .side-command.ready {
+        opacity: 1 !important;
+        filter: none !important;
+        animation: commandReadyGlow 900ms ease-in-out infinite alternate;
+      }
+
+      #battleScreen .hero-command-row .side-command.ready::after {
+        opacity: 1 !important;
+      }
+
+      #battleScreen .hero-command-row .side-command.ready img {
+        filter:
+          drop-shadow(0 0 7px rgba(255, 246, 176, 0.94))
+          drop-shadow(0 0 16px rgba(255, 183, 37, 0.82)) !important;
+      }
+
+      #battleScreen .battle-menu-gear {
+        top: 4px !important;
+        right: 4px !important;
+        width: clamp(22px, 6vw, 28px) !important;
+        height: clamp(22px, 6vw, 28px) !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: #ffe48e !important;
+        font-size: clamp(18px, 5.5vw, 24px) !important;
+        line-height: 1 !important;
+        text-shadow:
+          0 1px 3px #000,
+          0 0 8px rgba(255, 213, 92, 0.86);
+      }
+
+      #battleScreen #enemyImage.enemy-sprite {
+        transform: scaleX(1.16) !important;
+        transform-origin: center bottom !important;
+      }
+
+      @keyframes enemyReturn {
+        0% {
+          transform: translateY(clamp(24px, 5.7dvh, 52px)) scale(1.16) scaleX(1.16);
+          filter: blur(0) brightness(1.32);
+        }
+        100% {
+          transform: translateY(0) scale(1) scaleX(1.16);
+          filter: brightness(1);
+        }
+      }
+
+      @keyframes responsiveEnemyWindupFinal {
+        0% {
+          transform: translateY(0) scale(1) scaleX(1.16);
+        }
+        100% {
+          transform: translateY(clamp(5px, 1.3dvh, 11px)) scale(1.08) scaleX(1.16) rotateX(-5deg);
+        }
+      }
+
+      @keyframes responsiveEnemyLungeFinal {
+        0% {
+          transform: translateY(clamp(5px, 1.3dvh, 11px)) scale(1.08) scaleX(1.16);
+        }
+        62% {
+          transform: translateY(clamp(28px, 6.4dvh, 58px)) scale(1.2) scaleX(1.16);
+          filter: blur(1px) brightness(1.45);
+        }
+        100% {
+          transform: translateY(clamp(24px, 5.7dvh, 52px)) scale(1.16) scaleX(1.16);
+          filter: blur(0) brightness(1.32);
+        }
+      }
+    }
+
     /* Responsive Battle Pass 2026-07-02: mobile portrait source of truth. */
     @media (max-width: 560px) {
       #battleScreen {
@@ -3035,6 +3196,14 @@
 
     .player-status-row strong {
       color: var(--text);
+    }
+
+    .hero-command-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
     }
 
     .player-bar {
@@ -9719,8 +9888,20 @@
       #battleScreen .side-command {
         position: relative;
         isolation: isolate;
-        overflow: hidden !important;
+        overflow: visible !important;
         contain: paint;
+        width: clamp(36px, 10.5vw, 48px) !important;
+        height: clamp(36px, 10.5vw, 48px) !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 0.42;
+        filter: grayscale(1) brightness(0.58) saturate(0.35);
+        transition: opacity 180ms ease, filter 180ms ease, transform 180ms ease;
       }
 
       #battleScreen .side-command::before {
@@ -9736,16 +9917,39 @@
       }
 
       #battleScreen .side-command::after {
-        inset: 0 !important;
+        inset: -7px !important;
         z-index: 0;
-        background:
-          radial-gradient(circle at 50% 48%, rgba(255, 213, 93, var(--command-aura-alpha)), transparent 54%),
-          linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.22));
+        background: radial-gradient(circle at 50% 48%, rgba(255, 213, 93, var(--command-aura-alpha)), transparent 62%);
+        opacity: 0;
       }
 
       #battleScreen .side-command img {
         position: relative;
         z-index: 1;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
+        filter: none !important;
+        opacity: 1;
+      }
+
+      #battleScreen .side-command.ready {
+        opacity: 1;
+        filter: none;
+        animation: commandReadyGlow 900ms ease-in-out infinite alternate;
+      }
+
+      #battleScreen .side-command.ready::after {
+        opacity: 1;
+        background:
+          radial-gradient(circle at 50% 48%, rgba(255, 229, 122, 0.36), transparent 62%),
+          radial-gradient(circle at 50% 50%, rgba(255, 157, 31, 0.22), transparent 72%);
+      }
+
+      #battleScreen .side-command.ready img {
+        filter:
+          drop-shadow(0 0 7px rgba(255, 246, 176, 0.94))
+          drop-shadow(0 0 16px rgba(255, 183, 37, 0.82)) !important;
       }
 
       #battleScreen .enemy-art {
@@ -9772,6 +9976,182 @@
         height: calc(var(--board-size) * 6 / 7);
         grid-template-columns: repeat(7, minmax(0, 1fr));
         grid-template-rows: repeat(6, minmax(0, 1fr));
+      }
+
+      #battleScreen .hero-command-row {
+        grid-row: 3;
+        display: grid;
+        grid-template-columns: clamp(36px, 10.5vw, 48px) minmax(0, 1fr) clamp(36px, 10.5vw, 48px);
+        align-items: center;
+        gap: clamp(4px, 1.25vw, 7px);
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        margin: 0;
+        padding: clamp(2px, 0.55dvh, 4px) clamp(8px, 2.3vw, 12px);
+        overflow: visible;
+      }
+
+      #battleScreen .hero-command-row .side-command-left {
+        grid-column: 1;
+        justify-self: center;
+      }
+
+      #battleScreen .hero-command-row .side-command-right {
+        grid-column: 3;
+        justify-self: center;
+      }
+
+      #battleScreen .hero-command-row .hero-row {
+        grid-column: 2;
+        align-self: center;
+        min-width: 0;
+        height: 100% !important;
+        max-height: 100%;
+        padding: 0 !important;
+        overflow: visible;
+      }
+
+      #battleScreen .battle-party {
+        display: contents;
+      }
+
+      #battleScreen .battle-menu-gear {
+        top: clamp(3px, 0.9vw, 5px) !important;
+        right: clamp(3px, 0.9vw, 5px) !important;
+        width: clamp(22px, 6vw, 28px) !important;
+        height: clamp(22px, 6vw, 28px) !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: #ffe48e !important;
+        font-size: clamp(18px, 5.5vw, 24px) !important;
+        line-height: 1 !important;
+        text-shadow:
+          0 1px 3px #000,
+          0 0 8px rgba(255, 213, 92, 0.86);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .skill-cast-pop {
+        top: clamp(84px, 18dvh, 124px) !important;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 24px) !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+      }
+
+      .skill-cast-pop::before,
+      .skill-cast-pop::after,
+      .skill-cast-pop strong::before,
+      .skill-cast-pop strong::after {
+        display: none !important;
+        content: none !important;
+      }
+
+      .skill-cast-pop > img:not(.skill-dragon-img) {
+        width: 36px !important;
+        height: 36px !important;
+        flex: 0 0 36px !important;
+        border: 0 !important;
+        border-radius: 4px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        filter:
+          drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95))
+          drop-shadow(0 0 8px rgba(89, 205, 255, 0.52)) !important;
+      }
+
+      .skill-cast-pop strong {
+        display: inline !important;
+        max-width: calc(100vw - 72px) !important;
+        padding: 0 !important;
+        font-size: 16px !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        color: #fff4c8 !important;
+        text-shadow:
+          0 1px 2px #000,
+          0 0 8px rgba(255, 218, 112, 0.88),
+          0 0 14px rgba(94, 203, 255, 0.62) !important;
+        animation: none !important;
+      }
+    }
+
+    @media (max-width: 560px) and (min-height: 760px) {
+      #battleScreen .battlefield {
+        grid-template-rows:
+          0
+          minmax(0, 1fr)
+          var(--hero-row-h)
+          var(--status-h)
+          auto !important;
+      }
+
+      #battleScreen .board-wrap {
+        align-self: end !important;
+        height: auto !important;
+        min-height: 0 !important;
+      }
+    }
+
+    @media (max-width: 560px) {
+      #battleScreen #enemyImage.enemy-sprite {
+        transform: scaleX(1.28) !important;
+        transform-origin: center bottom !important;
+      }
+
+      @keyframes enemyReturn {
+        0% {
+          transform: translateY(clamp(24px, 5.7dvh, 52px)) scale(1.16) scaleX(1.28);
+          filter: blur(0) brightness(1.32);
+        }
+        100% {
+          transform: translateY(0) scale(1) scaleX(1.28);
+          filter: brightness(1);
+        }
+      }
+
+      @keyframes responsiveEnemyWindupFinal {
+        0% {
+          transform: translateY(0) scale(1) scaleX(1.28);
+        }
+        100% {
+          transform: translateY(clamp(5px, 1.3dvh, 11px)) scale(1.08) scaleX(1.28) rotateX(-5deg);
+        }
+      }
+
+      @keyframes responsiveEnemyLungeFinal {
+        0% {
+          transform: translateY(clamp(5px, 1.3dvh, 11px)) scale(1.08) scaleX(1.28);
+        }
+        62% {
+          transform: translateY(clamp(28px, 6.4dvh, 58px)) scale(1.2) scaleX(1.28);
+          filter: blur(1px) brightness(1.45);
+        }
+        100% {
+          transform: translateY(clamp(24px, 5.7dvh, 52px)) scale(1.16) scaleX(1.28);
+          filter: blur(0) brightness(1.32);
+        }
       }
     }
     .zhao-spear-thrust {
@@ -10149,7 +10529,7 @@
         background: transparent !important;
         box-shadow: none !important;
         color: #ffe38a;
-        font-size: 14px !important;
+        font-size: 15px !important;
         line-height: 1.05;
         font-weight: 1000;
         text-align: center;
@@ -10198,5 +10578,127 @@
         max-width: 46px;
         font-size: clamp(7px, 2vw, 9px);
         padding: 0 2px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      #battleScreen {
+        --hero-row-h: clamp(66px, 10.2dvh, 78px);
+      }
+
+      #battleScreen .hero-command-row {
+        grid-row: 3 !important;
+        display: grid !important;
+        grid-template-columns: clamp(38px, 10.8vw, 50px) minmax(0, 1fr) clamp(38px, 10.8vw, 50px) !important;
+        align-items: center !important;
+        gap: clamp(4px, 1.2vw, 7px) !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: clamp(3px, 0.7dvh, 5px) clamp(9px, 2.4vw, 13px) !important;
+        overflow: hidden !important;
+      }
+
+      #battleScreen .hero-command-row #team.hero-row {
+        grid-row: auto !important;
+        grid-column: 2 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        align-self: stretch !important;
+        gap: clamp(3px, 0.9vw, 5px) !important;
+        width: 100% !important;
+        height: clamp(52px, 8.6dvh, 62px) !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+
+      #battleScreen .hero-command-row #team.hero-row > .hero-card,
+      #battleScreen .hero-command-row #team.hero-row > .equipment-card,
+      #battleScreen .hero-command-row #team.hero-row > .locked-slot {
+        flex: 0 1 clamp(41px, 12.2vw, 54px) !important;
+        width: clamp(41px, 12.2vw, 54px) !important;
+        height: clamp(48px, 13.8vw, 58px) !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+      }
+
+      #battleScreen .hero-command-row #team.hero-row > .hero-card {
+        flex-basis: clamp(48px, 14.2vw, 62px) !important;
+        width: clamp(48px, 14.2vw, 62px) !important;
+      }
+
+      #battleScreen .hero-command-row .side-command {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        left: auto !important;
+        align-self: center !important;
+        justify-self: center !important;
+        width: clamp(38px, 10.8vw, 50px) !important;
+        height: clamp(38px, 10.8vw, 50px) !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 0.42 !important;
+        filter: grayscale(1) brightness(0.58) saturate(0.35) !important;
+      }
+
+      #battleScreen .hero-command-row .side-command::before {
+        display: none !important;
+      }
+
+      #battleScreen .hero-command-row .side-command::after {
+        inset: -8px !important;
+        background: radial-gradient(circle at 50% 50%, rgba(255, 229, 122, 0.34), transparent 64%) !important;
+        opacity: 0 !important;
+      }
+
+      #battleScreen .hero-command-row .side-command img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+      }
+
+      #battleScreen .hero-command-row .side-command.ready {
+        opacity: 1 !important;
+        filter: none !important;
+        animation: commandReadyGlow 900ms ease-in-out infinite alternate;
+      }
+
+      #battleScreen .hero-command-row .side-command.ready::after {
+        opacity: 1 !important;
+      }
+
+      #battleScreen .hero-command-row .side-command.ready img {
+        filter:
+          drop-shadow(0 0 7px rgba(255, 246, 176, 0.94))
+          drop-shadow(0 0 16px rgba(255, 183, 37, 0.82)) !important;
+      }
+
+      #battleScreen .battle-menu-gear {
+        top: 4px !important;
+        right: 4px !important;
+        width: clamp(22px, 6vw, 28px) !important;
+        height: clamp(22px, 6vw, 28px) !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: #ffe48e !important;
+        font-size: clamp(18px, 5.5vw, 24px) !important;
+        line-height: 1 !important;
+        text-shadow:
+          0 1px 3px #000,
+          0 0 8px rgba(255, 213, 92, 0.86);
       }
     }
