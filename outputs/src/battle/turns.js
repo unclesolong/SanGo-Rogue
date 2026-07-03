@@ -1,4 +1,4 @@
-const monsterSkillCatalog = {
+﻿const monsterSkillCatalog = {
   monster_freeze_board_third: {
     effectType: 'freeze_board_orbs',
     params: {
@@ -174,12 +174,20 @@ export function getEnemyActionIntents(monster, {
 
 export function getEnemyAttackType(skill) {
   if (!skill) return 'slash';
-  if (skill.effectType === 'poison') return 'poison';
-  if (skill.effectType === 'burn') return 'fire';
-  if (skill.effectType === 'bleed') return 'slash';
+  if (skill.effectType === 'poison') {
+    return [{
+      type: 'poison',
+      name: '中毒',
+      damage: skill.dotDamage ?? 100,
+      turns: skill.durationTurns ?? 3,
+      icon: skill.icon ?? 'assets/effects/debuff_poison_ai.png',
+      description: skill.description ?? '每回合受到毒傷。',
+    }];
+  }  if (skill.effectType === 'bleed') return 'slash';
   if (skill.effectType === 'aoe_shield') return 'thunder';
-  if (['freeze', 'damage_slow', 'damage_debuff', 'freeze_board_orbs'].includes(skill.effectType)) return 'dark';
+  if (['freeze', 'damage_slow', 'damage_debuff', 'armor_break', 'freeze_board_orbs', 'baqi_soul_bite', 'snake_soul_bind'].includes(skill.effectType)) return 'dark';
   if (skill.effectType === 'shatter_board_orbs') return 'thunder';
+  if (['flame_array_marks', 'thunder_hoof_route'].includes(skill.effectType)) return skill.effectType === 'flame_array_marks' ? 'fire' : 'thunder';
   if (['dash_damage', 'multi_hit'].includes(skill.effectType)) return 'slash';
   if (skill.name?.includes('雷')) return 'thunder';
   return 'slash';
@@ -228,11 +236,11 @@ function getEnemyActionDamage(monster, skill, {
 }) {
   let damage = monster.attack;
   if (useSkill) {
-    if (['freeze_board_orbs', 'shatter_board_orbs'].includes(skill.effectType)) damage = 0;
+    if (['freeze_board_orbs', 'shatter_board_orbs', 'flame_array_marks', 'thunder_hoof_route', 'snake_soul_bind'].includes(skill.effectType)) damage = 0;
     else if (skill.power) damage = Math.round(monster.attack * skill.power);
     if (skill.effectType === 'damage_bonus' && playerStatusCount) damage += skill.bonusDamage ?? 0;
     if (skill.effectType === 'dash_damage') damage += skill.bonusDamage ?? 0;
-    if (skill.effectType === 'multi_hit') {
+    if (skill.effectType === 'multi_hit' || skill.effectType === 'baqi_soul_bite') {
       damage = Math.round(monster.attack * (skill.power ?? 0.75) * (skill.hitCount ?? 2));
     }
   }
@@ -240,7 +248,7 @@ function getEnemyActionDamage(monster, skill, {
 }
 
 function getEnemyActionHits(monster, skill, attackMultiplier) {
-  if (skill.effectType !== 'multi_hit') return null;
+  if (skill.effectType !== 'multi_hit' && skill.effectType !== 'baqi_soul_bite') return null;
   const hitCount = skill.hitCount ?? 2;
   const power = skill.power ?? 0.7;
   return Array.from({ length: hitCount }, () => Math.round(monster.attack * power * attackMultiplier));
@@ -257,14 +265,23 @@ function getPlayerStatusesFromSkill(skill) {
       description: skill.description ?? '每回合受到火傷。',
     }];
   }
-  if (skill.effectType === 'poison') return [{ type: 'poison', damage: skill.dotDamage ?? 100, turns: skill.durationTurns ?? 3 }];
+  if (skill.effectType === 'poison') {
+    return [{
+      type: 'poison',
+      name: '中毒',
+      damage: skill.dotDamage ?? 100,
+      turns: skill.durationTurns ?? 3,
+      icon: skill.icon ?? 'assets/effects/debuff_poison_ai.png',
+      description: skill.description ?? '每回合受到毒傷。',
+    }];
+  }
   if (skill.effectType === 'bleed') {
     return [{
       type: 'bleed',
       name: '流血',
       damage: skill.bleedDamage ?? skill.dotDamage ?? 75,
       turns: skill.durationTurns ?? 5,
-      icon: skill.icon ?? 'assets/effects/bleed_blade_cast.png',
+      icon: skill.icon ?? 'assets/effects/debuff_bleed_ai.png',
       description: skill.description ?? '每回合受到流血傷害。',
     }];
   }
@@ -278,7 +295,35 @@ function getPlayerStatusesFromSkill(skill) {
       description: skill.description ?? '攻擊力下降。',
     }];
   }
-  if (skill.effectType === 'damage_slow') return [{ type: 'slow', name: '遲緩', turns: skill.durationTurns ?? 1 }];
+  if (skill.effectType === 'damage_bonus' && skill.markTurns) {
+    return [{
+      type: 'huntMark',
+      name: '獵印',
+      turns: skill.markTurns,
+      icon: skill.markIcon ?? 'assets/effects/debuff_hunt_mark_ai.png',
+      description: skill.markDescription ?? '被血月鎖定，下一次血月撕裂會更痛。',
+    }];
+  }
+  if (skill.effectType === 'damage_slow') {
+    return [{
+      type: 'slow',
+      name: '封攻',
+      turns: skill.durationTurns ?? 1,
+      icon: skill.icon ?? 'assets/effects/debuff_slow_ai.png',
+      description: skill.description ?? '火珠可以消除，但不會發動攻擊。',
+    }];
+  }
+  if (skill.effectType === 'armor_break') {
+    return [{
+      type: 'armorBreak',
+      name: '裂甲',
+      turns: skill.durationTurns ?? 3,
+      icon: skill.icon ?? 'assets/effects/debuff_armor_break_ai.png',
+      shieldReduction: skill.shieldReduction ?? 0.5,
+      fixedDamageBonus: skill.fixedDamageBonus ?? 100,
+      description: skill.description ?? '護盾獲得量下降，受到固定傷害時額外增加傷害。',
+    }];
+  }
   if (skill.effectType === 'freeze' && Math.random() < (skill.chance ?? 0.35)) return [{ type: 'freeze', name: '冰結', turns: skill.durationTurns ?? 1 }];
   return [];
 }
@@ -296,10 +341,54 @@ function getBoardEffectsFromSkill(skill) {
       poisonTurns: skill.poisonDurationTurns ?? 2,
     });
   }
+  if (skill.emberMarkCount > 0) {
+    effects.push({
+      type: 'spawn_ember_marks',
+      count: skill.emberMarkCount,
+      durationTurns: skill.emberMarkTurns ?? 3,
+      icon: skill.emberMarkIcon,
+    });
+  }
+  if (skill.flameArrayMarkCount > 0) {
+    effects.push({
+      type: 'spawn_flame_array_marks',
+      count: skill.flameArrayMarkCount,
+      durationTurns: skill.flameArrayTurns ?? 8,
+      explosionDamage: skill.flameArrayDamage ?? 150,
+      brandBonusDamage: skill.brandBonusDamage ?? 50,
+      icon: skill.flameArrayIcon,
+    });
+  }
+  if (skill.thunderHoofRouteCount > 0) {
+    effects.push({
+      type: 'spawn_thunder_hoof_route',
+      count: skill.thunderHoofRouteCount ?? 3,
+      durationTurns: skill.thunderHoofTurns ?? 3,
+      requiredClears: skill.thunderHoofRequiredClears ?? 3,
+      blankTurns: skill.thunderHoofBlankTurns ?? 5,
+      icon: skill.thunderHoofIcon,
+    });
+  }
+  if (skill.soulLockDurationTurns > 0) {
+    effects.push({
+      type: 'lock_non_dark_orbs',
+      durationTurns: skill.soulLockDurationTurns ?? 2,
+      icon: skill.soulLockIcon,
+    });
+  }
+  if (skill.snakeSoulCount > 0) {
+    effects.push({
+      type: 'spawn_snake_soul_orbs',
+      count: skill.snakeSoulCount ?? 6,
+      requiredLightClears: skill.requiredLightClears ?? 5,
+      icon: skill.snakeSoulIcon,
+    });
+  }
   if (skill.effectType === 'shatter_board_orbs') {
     effects.push({
-      type: 'shatter_random_orbs',
+      type: skill.blankTurns ? 'blank_random_orbs' : 'shatter_random_orbs',
       count: skill.shatterCount ?? skill.params?.shatterCount ?? 10,
+      durationTurns: skill.blankTurns ?? skill.params?.blankTurns ?? 0,
     });
     return effects;
   }
@@ -311,6 +400,7 @@ function getBoardEffectsFromSkill(skill) {
     durationTurns: skill.params.durationTurns ?? 3,
     canMoveFrozenOrbs: skill.params.canMoveFrozenOrbs ?? false,
     canMatchFrozenOrbs: skill.params.canMatchFrozenOrbs ?? true,
+    lockedOrbIcon: skill.params.lockedOrbIcon,
   });
   return effects;
 }

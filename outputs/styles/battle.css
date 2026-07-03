@@ -1152,10 +1152,10 @@
     .poster-start-action {
       position: absolute;
       z-index: 2;
-      left: 20%;
-      top: 54%;
-      width: 60%;
-      height: 23%;
+      left: 14%;
+      top: 58%;
+      width: 72%;
+      height: 28%;
       border: 0;
       border-radius: 999px;
       background: transparent;
@@ -2240,10 +2240,13 @@
       padding: 16px;
       color: #f5d99c;
       background:
-        radial-gradient(circle at 48% 45%, rgba(180, 42, 24, 0.24), transparent 36%),
+        linear-gradient(180deg, rgba(5, 6, 8, 0.2), rgba(5, 6, 8, 0.7)),
         radial-gradient(circle at 30% 70%, rgba(54, 128, 42, 0.12), transparent 26%),
         radial-gradient(circle at 72% 28%, rgba(120, 42, 180, 0.16), transparent 25%),
+        url("../assets/talents/talent-board-bg-ai.png"),
         linear-gradient(180deg, #08090b, #050506);
+      background-size: cover, auto, auto, cover, auto;
+      background-position: center;
     }
 
     body:has(#talentScreen.active) {
@@ -2359,17 +2362,21 @@
       border-radius: 4px;
       overflow: hidden;
       background:
+        linear-gradient(180deg, rgba(3, 4, 7, 0.34), rgba(3, 4, 7, 0.74)),
+        url("../assets/talents/talent-board-bg-ai.png"),
         radial-gradient(circle at 50% 50%, rgba(255, 90, 44, 0.16), transparent 18%),
         radial-gradient(circle at 50% 50%, transparent 0 37%, rgba(132, 78, 35, 0.18) 38%, transparent 39%),
         radial-gradient(circle at 50% 50%, transparent 0 49%, rgba(132, 78, 35, 0.14) 50%, transparent 51%),
         rgba(5, 6, 8, 0.8);
+      background-size: auto, cover, auto, auto, auto, auto;
+      background-position: center;
     }
 
     .talent-hero-title {
       position: absolute;
       top: 18px;
       left: 50%;
-      z-index: 4;
+      z-index: 3;
       transform: translateX(-50%);
       display: grid;
       min-width: 320px;
@@ -2436,10 +2443,27 @@
     }
 
     .talent-node i {
+      position: relative;
+      z-index: 2;
+      min-width: 32px;
+      padding: 1px 5px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.54);
       color: #f8e7c0;
       font-style: normal;
       font-size: 12px;
       font-weight: 900;
+      text-shadow: 0 1px 4px #000;
+    }
+
+    .talent-node img {
+      position: absolute;
+      inset: 6%;
+      width: 88%;
+      height: 88%;
+      object-fit: contain;
+      pointer-events: none;
+      filter: drop-shadow(0 0 10px currentColor);
     }
 
     .talent-node span {
@@ -2501,6 +2525,7 @@
     }
 
     .talent-detail-icon {
+      position: relative;
       width: 88px;
       aspect-ratio: 1;
       display: grid;
@@ -2509,6 +2534,27 @@
       border-radius: 50%;
       justify-self: center;
       box-shadow: 0 0 20px currentColor;
+    }
+
+    .talent-detail-icon img {
+      position: absolute;
+      inset: 6%;
+      width: 88%;
+      height: 88%;
+      object-fit: contain;
+      filter: drop-shadow(0 0 12px currentColor);
+    }
+
+    .talent-detail-icon span {
+      position: relative;
+      z-index: 2;
+      min-width: 36px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.58);
+      color: #f8e7c0;
+      font-weight: 900;
+      text-align: center;
     }
 
     .talent-detail strong {
@@ -2958,10 +3004,28 @@
     .boss-ghostfire-aura {
       position: absolute;
       inset: 0;
-      z-index: 5;
+      z-index: 4;
       pointer-events: none;
       overflow: hidden;
       border-radius: 8px;
+    }
+
+    .boss-ghostfire-ring {
+      position: absolute;
+      left: 50%;
+      top: 51%;
+      width: min(86%, 520px);
+      aspect-ratio: 1 / 1.22;
+      background: url("../assets/effects/boss_purple_ghostfire_ring_ai.png") center / contain no-repeat;
+      opacity: 0.92;
+      mix-blend-mode: screen;
+      filter:
+        contrast(1.18)
+        brightness(1.18)
+        drop-shadow(0 0 18px rgba(157, 78, 255, 0.74))
+        drop-shadow(0 0 36px rgba(78, 184, 255, 0.26));
+      transform: translate(-50%, -50%) scale(1);
+      animation: bossGhostfireRingPulse 2600ms ease-in-out infinite alternate;
     }
 
     .boss-ghostfire-aura i {
@@ -2996,6 +3060,11 @@
     .boss-ghostfire-aura i:nth-child(7) { --x: -126px; --y: 180px; --size: 58px; --rot: -4deg; --dur: 5s; --delay: -1.1s; }
     .boss-ghostfire-aura i:nth-child(8) { --x: 116px; --y: 178px; --size: 64px; --rot: 12deg; --dur: 4.7s; --delay: -2.9s; }
     .boss-ghostfire-aura i:nth-child(9) { --x: 0px; --y: 202px; --size: 76px; --rot: 0deg; --dur: 5.4s; --delay: -1.5s; }
+
+    @keyframes bossGhostfireRingPulse {
+      from { opacity: 0.72; transform: translate(-50%, -50%) scale(0.96) rotate(-2deg); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1.05) rotate(2deg); }
+    }
 
     .stage-smoke,
     .stage-embers,
@@ -3076,6 +3145,171 @@
       filter: blur(4px);
     }
 
+    .attack-effect.ghostfire-spear {
+      inset: -20% -18%;
+      background: url("../assets/effects/ghostfire_spear_thrust.png") center / contain no-repeat;
+      mix-blend-mode: screen;
+      opacity: 0;
+      filter:
+        drop-shadow(0 0 16px rgba(74, 255, 236, 0.92))
+        drop-shadow(0 0 30px rgba(255, 101, 30, 0.48));
+      transform-origin: 50% 50%;
+      animation: ghostfireSpearThrust 760ms cubic-bezier(.08, .86, .12, 1) forwards;
+    }
+
+    .attack-effect.ghostfire-spear::after {
+      content: "";
+      position: absolute;
+      left: 18%;
+      top: 52%;
+      width: 66%;
+      height: 16%;
+      border-radius: 999px;
+      background:
+        radial-gradient(ellipse at 28% 50%, rgba(255, 255, 255, 0.94), transparent 24%),
+        linear-gradient(90deg, rgba(76, 255, 236, 0), rgba(76, 255, 236, 0.76), rgba(255, 108, 34, 0.42), transparent);
+      filter: blur(9px);
+      transform: rotate(-24deg);
+      animation: ghostfireSpearFlare 760ms ease-out forwards;
+    }
+
+    .attack-effect.rotten-shield-quake {
+      inset: -18% -20%;
+      background: url("../assets/effects/rotten_shield_quake.png") center 62% / contain no-repeat;
+      opacity: 0;
+      filter:
+        drop-shadow(0 0 14px rgba(184, 154, 72, 0.8))
+        drop-shadow(0 0 24px rgba(88, 148, 42, 0.42));
+      transform-origin: 50% 72%;
+      animation: rottenShieldQuakeImpact 880ms cubic-bezier(.08, .72, .12, 1) forwards;
+    }
+
+    .attack-effect.rotten-shield-quake::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 72%;
+      width: 72%;
+      height: 24%;
+      border-radius: 999px;
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(255, 234, 145, 0.72), transparent 28%),
+        radial-gradient(ellipse at 50% 50%, rgba(115, 164, 56, 0.44), transparent 64%);
+      filter: blur(10px);
+      transform: translate(-50%, -50%) scale(0.28);
+      animation: rottenShieldShockwave 880ms ease-out forwards;
+    }
+
+    .attack-effect.snake-soul-bite {
+      inset: -18% -14%;
+      background: url("../assets/effects/snake_shadow_soul_bite.png") center 54% / contain no-repeat;
+      mix-blend-mode: screen;
+      opacity: 0;
+      filter:
+        drop-shadow(0 0 16px rgba(116, 255, 58, 0.74))
+        drop-shadow(0 0 28px rgba(135, 66, 255, 0.62));
+      transform-origin: 50% 56%;
+      animation: snakeSoulBiteStrike 940ms cubic-bezier(.08, .76, .12, 1) forwards;
+    }
+
+    .attack-effect.snake-soul-bite::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 58%;
+      width: 70%;
+      height: 44%;
+      border-radius: 999px;
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(144, 255, 76, 0.48), transparent 34%),
+        radial-gradient(ellipse at 50% 50%, rgba(111, 54, 255, 0.34), transparent 66%);
+      filter: blur(12px);
+      transform: translate(-50%, -50%) scale(0.42);
+      animation: snakePoisonBloom 940ms ease-out forwards;
+    }
+
+    .attack-effect.bloodmoon-hunt {
+      inset: -18% -16%;
+      background: url("../assets/effects/bloodmoon_hunt_mark_slash.png") center 54% / contain no-repeat;
+      mix-blend-mode: screen;
+      opacity: 0;
+      filter:
+        drop-shadow(0 0 18px rgba(255, 43, 34, 0.88))
+        drop-shadow(0 0 30px rgba(255, 117, 52, 0.42));
+      transform-origin: 50% 54%;
+      animation: bloodmoonHuntSlash 820ms cubic-bezier(.08, .82, .12, 1) forwards;
+    }
+
+    .attack-effect.bloodmoon-hunt::after {
+      content: "";
+      position: absolute;
+      left: 16%;
+      top: 49%;
+      width: 74%;
+      height: 16%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(255, 225, 192, 0.88), rgba(255, 36, 28, 0.8), transparent);
+      filter: blur(7px);
+      transform: rotate(-22deg) scaleX(0.25);
+      animation: bloodmoonSlashFlash 820ms ease-out forwards;
+    }
+
+    .attack-effect.dark-gate-lock {
+      inset: -24% -18%;
+      background: url("../assets/effects/dark_gate_lockdown.png") center 58% / contain no-repeat;
+      mix-blend-mode: screen;
+      opacity: 0;
+      filter:
+        drop-shadow(0 0 18px rgba(162, 94, 255, 0.72))
+        drop-shadow(0 0 32px rgba(40, 18, 92, 0.82));
+      transform-origin: 50% 62%;
+      animation: darkGateLockImpact 980ms cubic-bezier(.06, .74, .12, 1) forwards;
+    }
+
+    .attack-effect.dark-gate-lock::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 66%;
+      width: 76%;
+      height: 26%;
+      border-radius: 999px;
+      border: 2px solid rgba(181, 120, 255, 0.72);
+      box-shadow: 0 0 20px rgba(142, 78, 255, 0.74), inset 0 0 18px rgba(42, 18, 90, 0.72);
+      transform: translate(-50%, -50%) scale(0.22);
+      animation: darkGateShockRing 980ms ease-out forwards;
+    }
+
+    .attack-effect.obsidian-cavalry {
+      inset: -18% -14%;
+      background: url("../assets/effects/obsidian_cavalry_charge_small.png") center 55% / 118% auto no-repeat;
+      mix-blend-mode: screen;
+      opacity: 0;
+      filter:
+        contrast(1.14)
+        brightness(1.16)
+        drop-shadow(0 0 12px rgba(255, 210, 82, 0.62))
+        drop-shadow(0 0 24px rgba(118, 75, 255, 0.62));
+      transform-origin: 50% 58%;
+      animation: obsidianCavalryCharge 920ms cubic-bezier(.06, .82, .12, 1) forwards;
+    }
+
+    .attack-effect.obsidian-cavalry::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 66%;
+      width: 72%;
+      height: 22%;
+      border-radius: 999px;
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(255, 233, 134, 0.72), transparent 22%),
+        linear-gradient(90deg, transparent, rgba(255, 214, 74, 0.78), rgba(111, 75, 255, 0.58), transparent);
+      filter: blur(9px);
+      transform: translate(-50%, -50%) scaleX(0.18);
+      animation: obsidianCavalryShock 920ms ease-out forwards;
+    }
+
     .attack-effect.bomb {
       background:
         radial-gradient(circle at 50% 58%, rgba(255, 244, 184, 0.92) 0 9%, rgba(255, 146, 40, 0.78) 10% 22%, rgba(255, 50, 24, 0.46) 23% 38%, transparent 58%),
@@ -3121,6 +3355,40 @@
       clip-path: polygon(50% 0, 82% 30%, 58% 30%, 90% 64%, 49% 42%, 66% 42%, 20% 100%, 36% 50%, 12% 50%);
       filter: drop-shadow(0 0 18px #fff7a8) drop-shadow(0 0 32px #6ebcff);
       transform: translateX(-50%);
+    }
+
+    .attack-effect.thunder-triple::before,
+    .attack-effect.thunder-triple::after,
+    .attack-effect.thunder-triple {
+      filter: drop-shadow(0 0 16px #fff7b8) drop-shadow(0 0 34px #66bfff);
+    }
+
+    .attack-effect.thunder-triple::before,
+    .attack-effect.thunder-triple::after {
+      content: "";
+      position: absolute;
+      top: 2%;
+      width: 8px;
+      height: 78%;
+      background: linear-gradient(180deg, #fff, #ffe66e 30%, #8fd7ff 68%, transparent);
+      clip-path: polygon(50% 0, 82% 28%, 58% 28%, 91% 62%, 49% 42%, 65% 42%, 20% 100%, 36% 50%, 12% 50%);
+    }
+
+    .attack-effect.thunder-triple {
+      background:
+        linear-gradient(100deg, transparent 19%, rgba(255, 255, 255, 0.42) 21%, transparent 28%),
+        linear-gradient(80deg, transparent 48%, rgba(255, 230, 105, 0.42) 50%, transparent 57%),
+        linear-gradient(118deg, transparent 70%, rgba(103, 193, 255, 0.36) 72%, transparent 80%);
+    }
+
+    .attack-effect.thunder-triple::before {
+      left: 35%;
+      transform: rotate(-10deg);
+    }
+
+    .attack-effect.thunder-triple::after {
+      left: 62%;
+      transform: rotate(12deg);
     }
 
     .enemy-debuffs {
@@ -3222,6 +3490,14 @@
         drop-shadow(0 0 34px rgba(255, 66, 42, 0.9))
         brightness(1.34)
         saturate(1.18);
+    }
+
+    .enemy-sprite.enemy-phase-out {
+      animation: enemyPhaseOut 140ms ease-out forwards !important;
+    }
+
+    .enemy-sprite.enemy-phase-in {
+      animation: enemyPhaseIn 220ms ease-out forwards !important;
     }
 
     .enemy-afterimage {
@@ -3609,12 +3885,13 @@
       position: absolute;
       z-index: 8;
       top: 14px;
-      right: 14px;
+      right: 58px;
       display: grid;
-      grid-template-columns: 48px minmax(128px, auto) auto;
+      grid-template-columns: 42px minmax(120px, max-content) 44px;
       align-items: center;
-      gap: 9px;
-      padding: 7px 10px 7px 7px;
+      gap: 7px;
+      max-width: min(360px, calc(100% - 96px));
+      padding: 6px 7px 6px 6px;
       border: 1px solid rgba(132, 203, 255, 0.72);
       border-radius: 8px;
       background: linear-gradient(135deg, rgba(8, 14, 24, 0.9), rgba(44, 13, 30, 0.86));
@@ -3628,8 +3905,8 @@
     .chaos-doom-warning img {
       position: static;
       z-index: auto;
-      width: 48px;
-      height: 48px;
+      width: 42px;
+      height: 42px;
       object-fit: contain;
       transform: none;
       filter: drop-shadow(0 0 8px rgba(125, 205, 255, 0.44));
@@ -3643,6 +3920,8 @@
     }
 
     .chaos-doom-warning strong {
+      display: grid;
+      gap: 3px;
       color: #fff4ba;
       font-size: 20px;
       line-height: 1;
@@ -3656,15 +3935,23 @@
       white-space: nowrap;
     }
 
+    .chaos-doom-warning small {
+      color: rgba(255, 232, 173, 0.92);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
     .chaos-doom-warning em {
       align-self: stretch;
       display: grid;
-      place-items: center;
-      min-width: 54px;
-      padding: 0 8px;
+      place-items: center start;
+      min-width: 0;
+      padding: 0 0 0 7px;
       border-left: 1px solid rgba(132, 203, 255, 0.34);
       color: #ffd76b;
-      font-size: 19px;
+      font-size: 17px;
       font-style: normal;
       font-weight: 1000;
       text-shadow: 0 1px 0 #000;
@@ -5862,6 +6149,16 @@
     @keyframes enemyReturn {
       0% { transform: translateY(80px) scale(1.2); }
       100% { transform: translateY(0) scale(1); }
+    }
+
+    @keyframes enemyPhaseOut {
+      0% { opacity: 1; transform: scale(1); filter: brightness(1); }
+      100% { opacity: 0; transform: translateY(6px) scale(0.94); filter: brightness(0.35) blur(1px); }
+    }
+
+    @keyframes enemyPhaseIn {
+      0% { opacity: 0; transform: translateY(5px) scale(0.96); filter: brightness(0.5) blur(1px); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: brightness(1); }
     }
 
     @keyframes enemyAfterimage {
@@ -10834,9 +11131,11 @@
       #battleScreen .chaos-doom-warning {
         top: clamp(8px, 1.5dvh, 11px);
         left: clamp(72px, 19vw, 84px);
-        right: clamp(8px, 2vw, 10px);
+        right: clamp(44px, 9vw, 52px);
+        width: auto;
+        max-width: calc(100vw - 132px);
         height: clamp(30px, 6.4dvh, 38px);
-        grid-template-columns: clamp(22px, 6.2vw, 28px) minmax(0, 1fr) clamp(39px, 10.5vw, 47px);
+        grid-template-columns: clamp(22px, 6.2vw, 28px) minmax(0, 1fr) clamp(31px, 8vw, 36px);
         gap: clamp(3px, 0.8vw, 5px);
         padding: clamp(3px, 0.7dvh, 5px) clamp(5px, 1.2vw, 7px);
         border-radius: 7px;
@@ -10861,22 +11160,33 @@
         align-items: baseline;
         gap: 4px;
         min-width: 0;
+        max-width: 100%;
         font-size: clamp(13px, 3.6vw, 15px);
         line-height: 1;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       #battleScreen .chaos-doom-warning span {
         display: inline;
+        min-width: 0;
         font-size: clamp(8px, 2.15vw, 9.5px);
         font-weight: 800;
         line-height: 1;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      #battleScreen .chaos-doom-warning small {
+        display: none;
       }
 
       #battleScreen .chaos-doom-warning em {
         min-width: 0;
-        padding: 0 2px;
+        justify-content: start;
+        padding: 0 0 0 4px;
         font-size: clamp(11px, 3.1vw, 13px);
         line-height: 1;
         white-space: nowrap;
@@ -11171,6 +11481,203 @@
   overflow: visible !important;
 }
 
+/* Home screen polish: launch-test main menu */
+.main-city-panel {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) !important;
+  gap: clamp(7px, 1.7vw, 10px) !important;
+  padding-bottom: calc(var(--safe-bottom, 0px) + 10px) !important;
+  overflow: hidden !important;
+}
+
+.city-topbar {
+  gap: 6px !important;
+}
+
+.lord-badge {
+  grid-template-columns: 62px minmax(0, 1fr);
+}
+
+.lord-badge strong {
+  font-size: clamp(24px, 6.4vw, 30px) !important;
+  cursor: pointer;
+}
+
+.lord-badge span {
+  font-size: clamp(17px, 4.5vw, 20px) !important;
+}
+
+.lord-progress {
+  width: min(292px, 100%) !important;
+  height: 9px !important;
+}
+
+.city-quickbar {
+  margin-top: 2px;
+}
+
+.city-hero {
+  min-height: 116px !important;
+  align-content: start !important;
+  gap: 4px !important;
+  padding: 0 !important;
+}
+
+.announcement {
+  width: min(378px, 100%) !important;
+  margin: 0 auto !important;
+  padding: 8px 12px !important;
+  background: rgba(2, 3, 4, 0.74) !important;
+}
+
+.announcement strong {
+  font-size: 15px !important;
+}
+
+.announcement span {
+  font-size: 14px !important;
+  font-weight: 800;
+}
+
+.city-logo {
+  padding: 0 !important;
+  transform: translateY(-2px);
+}
+
+.city-logo h1 {
+  font-size: clamp(40px, 11vw, 54px) !important;
+}
+
+.city-logo span {
+  font-size: 14px !important;
+}
+
+.city-feature-grid {
+  align-self: start;
+  gap: 10px !important;
+  margin-top: -2px;
+}
+
+.feature-card {
+  min-height: clamp(148px, 33vw, 168px) !important;
+  padding: 12px 10px 10px !important;
+}
+
+.feature-card::before {
+  inset: 62px 0 0 !important;
+  opacity: 0.92 !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.feature-card::after {
+  top: 7px !important;
+  right: 10px !important;
+  width: 11px !important;
+}
+
+.feature-card strong {
+  font-size: clamp(25px, 6.5vw, 32px) !important;
+}
+
+.feature-card span {
+  color: #ffe4ac !important;
+  font-size: clamp(14px, 3.7vw, 16px) !important;
+  font-weight: 800;
+}
+
+.feature-card small {
+  padding-top: 64px !important;
+  color: #fff0bd !important;
+  font-size: clamp(14px, 3.5vw, 16px) !important;
+  font-weight: 900;
+}
+
+.story-card::before {
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.38)), url("../assets/home/home-story-adventure.png") !important;
+}
+
+.rift-card::before {
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(31, 5, 55, 0.28)), url("../assets/home/home-rift-explore.png") !important;
+  filter: saturate(1.15) contrast(1.08) !important;
+}
+
+.team-card::before {
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.34)), url("../assets/home/home-hero-training.png") !important;
+  background-position: center 42% !important;
+}
+
+.summon-card::before {
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(3, 8, 18, 0.34)), url("../assets/home/home-summon.png") !important;
+  background-position: center 48% !important;
+}
+
+.name-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  place-items: center;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(164, 28, 20, 0.28), transparent 36%),
+    rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(5px);
+}
+
+.name-dialog.show {
+  display: grid;
+}
+
+.name-dialog-card {
+  width: min(360px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid rgba(214, 168, 74, 0.74);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(38, 24, 10, 0.96), rgba(5, 5, 6, 0.97));
+  color: #f8e6bd;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.72), inset 0 0 24px rgba(214, 168, 74, 0.08);
+}
+
+.name-dialog-card h2 {
+  margin: 0;
+  color: #ffd986;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.name-dialog-card p {
+  margin: 0;
+  color: #d7c196;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.name-dialog-card input {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid rgba(214, 168, 74, 0.62);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff3cf;
+  font-size: 20px;
+  font-weight: 800;
+  outline: none;
+}
+
+.name-dialog-card input:focus {
+  border-color: #ffd36c;
+  box-shadow: 0 0 0 3px rgba(214, 168, 74, 0.18);
+}
+
+.name-dialog-card button {
+  min-height: 48px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
 #battleScreen .hero-command-row #divineCommandButton.side-command,
 #battleScreen .hero-command-row #orderCommandButton.side-command {
   transform: translateY(-18px) !important;
@@ -11314,8 +11821,14 @@
     0 0 16px rgba(255, 197, 75, 0.2),
     inset 0 0 18px rgba(255, 172, 54, 0.08) !important;
   color: #f6e4b3 !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
   backdrop-filter: blur(2px) !important;
+}
+
+#battleScreen .enemy-intent-panel:focus-visible {
+  outline: 2px solid rgba(114, 221, 255, 0.9) !important;
+  outline-offset: 2px !important;
 }
 
 #battleScreen .enemy-intent-title {
@@ -11396,6 +11909,193 @@
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
+}
+
+.enemy-mechanic-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: max(14px, env(safe-area-inset-top, 0px)) 14px max(14px, env(safe-area-inset-bottom, 0px));
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+.enemy-mechanic-box {
+  width: min(92vw, 390px);
+  max-height: min(84dvh, 620px);
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid rgba(255, 216, 108, 0.7);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 213, 91, 0.16), transparent 34%),
+    linear-gradient(155deg, rgba(34, 16, 8, 0.96), rgba(6, 7, 12, 0.96));
+  color: #f7e7be;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.62), 0 0 22px rgba(255, 197, 79, 0.18);
+}
+
+.enemy-mechanic-header {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.enemy-mechanic-header strong {
+  color: #ffe08a;
+  font-size: 20px;
+  line-height: 1.15;
+  text-shadow: 0 0 10px rgba(255, 211, 95, 0.54);
+}
+
+.enemy-mechanic-header span {
+  color: #d8c293;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.enemy-mechanic-list {
+  display: grid;
+  gap: 8px;
+}
+
+.enemy-mechanic-card {
+  display: grid;
+  gap: 5px;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 208, 104, 0.34);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.enemy-mechanic-card strong {
+  color: #fff2bd;
+  font-size: 15px;
+  line-height: 1.18;
+}
+
+.enemy-mechanic-card span,
+.enemy-mechanic-tips p {
+  margin: 0;
+  color: #ead6a8;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.enemy-mechanic-tips {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px;
+  border-left: 2px solid rgba(116, 221, 255, 0.75);
+  background: rgba(39, 95, 117, 0.16);
+}
+
+.enemy-mechanic-close {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  margin-top: 12px;
+  border: 1px solid rgba(255, 221, 123, 0.58);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(105, 71, 24, 0.92), rgba(32, 17, 8, 0.96));
+  color: #ffe49b;
+  font-weight: 900;
+}
+
+/* Final interactive enemy intent and player debuff icon pass. */
+#battleScreen .enemy-intent-panel {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  min-width: 118px !important;
+  padding: 3px 4px !important;
+}
+
+#battleScreen .enemy-intent-panel::after {
+  content: "詳";
+  position: absolute;
+  right: -6px;
+  top: -8px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid rgba(255, 224, 124, 0.78);
+  border-radius: 999px;
+  background: rgba(19, 10, 5, 0.86);
+  color: #ffe58d;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 0 9px rgba(255, 205, 78, 0.42);
+}
+
+#battleScreen .enemy-intent-panel .enemy-intent-row {
+  pointer-events: none !important;
+}
+
+#battleScreen .player-buff-row .debuff-chip {
+  position: relative !important;
+  display: inline-grid !important;
+  grid-template-columns: 34px minmax(0, auto) !important;
+  align-items: center !important;
+  gap: 5px !important;
+  min-height: 38px !important;
+  padding: 2px 7px 2px 3px !important;
+  border-color: rgba(116, 221, 255, 0.58) !important;
+  background:
+    radial-gradient(circle at 22% 20%, rgba(116, 221, 255, 0.18), transparent 38%),
+    linear-gradient(135deg, rgba(9, 14, 22, 0.94), rgba(20, 8, 16, 0.9)) !important;
+  box-shadow: 0 0 10px rgba(116, 221, 255, 0.16) !important;
+}
+
+#battleScreen .player-buff-row .debuff-icon-wrap {
+  position: relative !important;
+  display: block !important;
+  width: 34px !important;
+  height: 34px !important;
+  flex: 0 0 34px !important;
+}
+
+#battleScreen .player-buff-row .debuff-icon-wrap img {
+  display: block !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 7px !important;
+  object-fit: cover !important;
+  filter: drop-shadow(0 0 5px rgba(255, 228, 140, 0.34)) !important;
+}
+
+#battleScreen .player-buff-row .debuff-turn-badge {
+  position: absolute !important;
+  top: -6px !important;
+  right: -6px !important;
+  display: grid !important;
+  place-items: center !important;
+  min-width: 17px !important;
+  height: 17px !important;
+  padding: 0 4px !important;
+  border: 1px solid rgba(255, 236, 154, 0.9) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, rgba(35, 8, 8, 0.98), rgba(125, 19, 22, 0.96)) !important;
+  color: #fff0b8 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  box-shadow: 0 0 8px rgba(255, 58, 42, 0.56) !important;
+}
+
+#battleScreen .player-buff-row .debuff-label {
+  display: block !important;
+  max-width: 76px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  color: #f7e5b4 !important;
+  font-size: clamp(11px, 2.4vw, 13px) !important;
+  font-weight: 900 !important;
+  line-height: 1.05 !important;
 }
 
 #battleScreen .hero-command-row #divineCommandButton.side-command strong,
@@ -12072,6 +12772,7 @@
   place-items: center !important;
   padding: 0 !important;
   line-height: 0 !important;
+  overflow: hidden !important;
 }
 
 #battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot small,
@@ -12084,8 +12785,1769 @@
   display: block !important;
   width: 100% !important;
   height: 100% !important;
+  aspect-ratio: auto !important;
   max-width: 100% !important;
   max-height: 100% !important;
   object-fit: contain !important;
   object-position: center center !important;
+  transform: scale(1.14) !important;
+}
+
+/* Final mobile shell pass: main city and stage select are tuned around iPhone SE 375x667. */
+body:has(#mainMenuScreen.active),
+body:has(#stageScreen.active) {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+body:has(#mainMenuScreen.active) .app,
+body:has(#stageScreen.active) .app {
+  width: min(100vw, 430px) !important;
+  max-width: 430px !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+#mainMenuScreen,
+#stageScreen {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+#mainMenuScreen .main-city-panel {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100dvh !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(76px, 1fr) auto auto auto !important;
+  gap: clamp(5px, 1.4vh, 8px) !important;
+  padding: calc(env(safe-area-inset-top, 0px) + 7px) 10px calc(env(safe-area-inset-bottom, 0px) + 7px) !important;
+  overflow: hidden !important;
+}
+
+#mainMenuScreen .city-topbar {
+  gap: 6px !important;
+}
+
+#mainMenuScreen .lord-badge {
+  grid-template-columns: clamp(42px, 12vw, 54px) minmax(0, 1fr) !important;
+  gap: 7px !important;
+}
+
+#mainMenuScreen .lord-badge img {
+  width: clamp(42px, 12vw, 54px) !important;
+  height: clamp(42px, 12vw, 54px) !important;
+}
+
+#mainMenuScreen .lord-badge strong {
+  font-size: clamp(16px, 4.7vw, 20px) !important;
+}
+
+#mainMenuScreen .lord-badge span {
+  font-size: clamp(12px, 3.6vw, 15px) !important;
+  line-height: 1.25 !important;
+}
+
+#mainMenuScreen .lord-progress {
+  width: min(210px, 78%) !important;
+  height: 7px !important;
+}
+
+#mainMenuScreen .resource-row {
+  gap: 6px !important;
+}
+
+#mainMenuScreen .resource-row span {
+  min-height: 32px !important;
+  padding: 3px 6px !important;
+  font-size: clamp(11px, 3.2vw, 13px) !important;
+}
+
+#mainMenuScreen .resource-row b {
+  width: 22px !important;
+  font-size: 12px !important;
+}
+
+#mainMenuScreen .city-quickbar {
+  gap: 4px !important;
+}
+
+#mainMenuScreen .city-quickbar button {
+  min-height: 48px !important;
+  font-size: 11px !important;
+}
+
+#mainMenuScreen .city-quickbar i {
+  width: 32px !important;
+  font-size: 13px !important;
+}
+
+#mainMenuScreen .city-hero {
+  min-height: 0 !important;
+  align-content: end !important;
+  gap: 5px !important;
+  padding: 0 !important;
+}
+
+#mainMenuScreen .announcement {
+  width: min(290px, 76%) !important;
+  gap: 3px !important;
+  padding: 6px 8px !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
+
+#mainMenuScreen .announcement strong {
+  padding: 1px 10px !important;
+  font-size: 11px !important;
+}
+
+#mainMenuScreen .city-logo h1 {
+  font-size: clamp(28px, 9.5vw, 40px) !important;
+  line-height: 0.95 !important;
+}
+
+#mainMenuScreen .city-logo span {
+  font-size: 12px !important;
+  letter-spacing: 0.2em !important;
+  text-indent: 0.2em !important;
+}
+
+#mainMenuScreen .city-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  min-height: 0 !important;
+}
+
+#mainMenuScreen .feature-card {
+  min-height: clamp(104px, 17.4vh, 128px) !important;
+  align-content: start !important;
+  gap: 3px !important;
+  padding: 8px 7px 7px !important;
+}
+
+#mainMenuScreen .feature-card::before {
+  inset: 48px 0 0 !important;
+}
+
+#mainMenuScreen .feature-card strong {
+  font-size: clamp(19px, 5.4vw, 24px) !important;
+  line-height: 1.03 !important;
+}
+
+#mainMenuScreen .feature-card span {
+  font-size: clamp(10px, 3vw, 12px) !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+}
+
+#mainMenuScreen .feature-card small {
+  padding-top: clamp(42px, 7.2vh, 58px) !important;
+  font-size: clamp(10px, 3vw, 12px) !important;
+}
+
+#mainMenuScreen .city-utility-row {
+  width: 100% !important;
+  max-width: 100% !important;
+  grid-template-columns: repeat(7, minmax(38px, 1fr)) !important;
+  gap: 3px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+#mainMenuScreen .city-utility-row button {
+  min-height: 38px !important;
+  padding: 0 0 2px !important;
+  font-size: 0 !important;
+}
+
+#mainMenuScreen .city-utility-row button::before {
+  width: 30px !important;
+  margin-bottom: 0 !important;
+}
+
+#mainMenuScreen .city-bottom-tabs {
+  width: 100% !important;
+  max-width: 100% !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+#mainMenuScreen .city-bottom-tabs button {
+  min-height: 38px !important;
+  padding: 0 0 3px !important;
+  font-size: 0 !important;
+}
+
+#mainMenuScreen .city-bottom-tabs button::before {
+  width: 28px !important;
+  margin-bottom: 0 !important;
+}
+
+#stageScreen .stage-select-panel {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100dvh !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) !important;
+  gap: clamp(7px, 1.5vh, 10px) !important;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+  overflow: hidden !important;
+}
+
+#stageScreen .stage-back-button {
+  width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  font-size: 38px !important;
+}
+
+#stageScreen .stage-intro {
+  grid-template-columns: minmax(0, 1fr) clamp(82px, 24vw, 108px) !important;
+  gap: 10px !important;
+  min-height: 0 !important;
+  padding-top: 0 !important;
+}
+
+#stageScreen .stage-title-block {
+  gap: 6px !important;
+}
+
+#stageScreen .stage-kicker {
+  font-size: clamp(18px, 5.4vw, 24px) !important;
+}
+
+#stageScreen .stage-title-block h1 {
+  font-size: clamp(38px, 12vw, 52px) !important;
+  line-height: 0.98 !important;
+  white-space: normal !important;
+}
+
+#stageScreen .stage-title-block p {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 3 !important;
+  overflow: hidden !important;
+  font-size: clamp(13px, 3.7vw, 15px) !important;
+  line-height: 1.45 !important;
+}
+
+#stageScreen .stage-seal {
+  width: clamp(78px, 23vw, 104px) !important;
+}
+
+#stageScreen .stage-seal::before {
+  inset: -8px !important;
+  border-width: 2px !important;
+}
+
+#stageScreen .stage-seal span {
+  font-size: clamp(42px, 13vw, 62px) !important;
+}
+
+#stageScreen .stage-info-row {
+  gap: 7px !important;
+}
+
+#stageScreen .stage-info-row article {
+  min-height: 74px !important;
+  gap: 3px !important;
+  padding: 6px 4px !important;
+}
+
+#stageScreen .stage-info-row img {
+  width: clamp(30px, 9vw, 40px) !important;
+  height: clamp(30px, 9vw, 40px) !important;
+}
+
+#stageScreen .stage-info-row strong {
+  font-size: clamp(11px, 3.1vw, 13px) !important;
+}
+
+#stageScreen .stage-info-row span {
+  font-size: clamp(14px, 4vw, 18px) !important;
+}
+
+#stageScreen .stage-drop-row {
+  gap: 6px !important;
+  margin: 0 !important;
+}
+
+#stageScreen .stage-drop-row span {
+  min-height: 40px !important;
+  max-height: 48px !important;
+}
+
+#stageScreen .stage-select-panel .stage-map {
+  min-height: 0 !important;
+  max-height: none !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  margin-top: 0 !important;
+  padding: 2px 0 8px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+#stageScreen .stage-select-panel .stage-node {
+  min-height: 60px !important;
+  grid-template-columns: clamp(34px, 9.6vw, 42px) minmax(0, 1fr) !important;
+  gap: 6px !important;
+  padding: 7px !important;
+}
+
+#stageScreen .stage-select-panel .stage-node i {
+  width: clamp(34px, 9.6vw, 42px) !important;
+}
+
+#stageScreen .stage-select-panel .stage-node span {
+  font-size: clamp(14px, 4vw, 17px) !important;
+  line-height: 1.12 !important;
+}
+
+#stageScreen .stage-select-panel .stage-node small {
+  grid-column: 2 !important;
+  font-size: clamp(11px, 3.1vw, 13px) !important;
+}
+
+#stageScreen .stage-select-panel .stage-node b {
+  display: none !important;
+}
+
+@media (min-width: 431px) {
+  body:has(#mainMenuScreen.active) .app,
+  body:has(#stageScreen.active) .app {
+    width: min(100vw, 520px) !important;
+    max-width: 520px !important;
+  }
+
+  #mainMenuScreen .main-city-panel,
+  #stageScreen .stage-select-panel {
+    padding-inline: 14px !important;
+  }
+
+  #mainMenuScreen .feature-card {
+    min-height: clamp(116px, 18vh, 150px) !important;
+  }
+
+  #stageScreen .stage-select-panel .stage-node {
+    min-height: 68px !important;
+  }
+}
+
+/* Final battle party fit: center hero portrait and fill equipped gear slots. */
+#battleScreen .hero-command-row #team.hero-row > .hero-card {
+  display: grid !important;
+  place-items: center !important;
+  padding: 1px !important;
+  overflow: hidden !important;
+}
+
+#battleScreen .hero-command-row #team.hero-row > .hero-card .portrait,
+#battleScreen .hero-command-row #team.hero-row > .hero-card .portrait img,
+#battleScreen .hero-command-row #team.hero-row > .hero-card > img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  object-position: center 44% !important;
+  transform: translateY(-1px) scale(1.02) !important;
+}
+
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot {
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  line-height: 0 !important;
+}
+
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot small,
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot span {
+  display: none !important;
+}
+
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot .equipment-slot-icon,
+#battleScreen .hero-command-row #team.hero-row > .equipment-card.equipped-slot > img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  transform: translateY(2px) scale(1.32) !important;
+}
+
+/* Battle speed toggle. */
+#battleScreen .battle-quick-menu .battle-speed-toggle {
+  color: #b9af95 !important;
+}
+
+#battleScreen .battle-quick-menu {
+  width: clamp(88px, 24vw, 108px) !important;
+}
+
+#battleScreen .battle-quick-menu button {
+  white-space: nowrap !important;
+}
+
+#battleScreen .battle-quick-menu .battle-speed-toggle.active {
+  border-color: rgba(255, 214, 98, 0.95) !important;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 221, 105, 0.28), transparent 56%),
+    linear-gradient(180deg, rgba(89, 54, 10, 0.96), rgba(23, 13, 5, 0.96)) !important;
+  color: #ffe58b !important;
+  box-shadow: 0 0 14px rgba(255, 198, 67, 0.36), inset 0 0 10px rgba(255, 219, 116, 0.2) !important;
+}
+
+body.battle-speed-2x #battleScreen .gem-cell,
+body.battle-speed-2x #battleScreen .bar-fill,
+body.battle-speed-2x #battleScreen .energy-fill,
+body.battle-speed-2x .battle-message,
+body.battle-speed-2x .player-gain-float,
+body.battle-speed-2x .attack-name-pop,
+body.battle-speed-2x .enemy-status-callout,
+body.battle-speed-2x .overflow-callout {
+  transition-duration: 50ms !important;
+}
+
+/* Final talent page mobile pass: compact SE 375x667 layout with a usable talent board first. */
+body:has(#talentScreen.active) {
+  padding: 0 !important;
+  overflow: hidden !important;
+  place-items: center !important;
+}
+
+body:has(#talentScreen.active) .app {
+  width: min(100vw, 430px) !important;
+  max-width: 430px !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+#talentScreen,
+#talentScreen.active {
+  width: 100% !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+#talentScreen .talent-page {
+  width: 100% !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100dvh !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: auto auto minmax(286px, 43vh) minmax(0, 1fr) auto !important;
+  gap: clamp(6px, 1.3vh, 9px) !important;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 9px calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+  overflow: hidden !important;
+  background-position: center top !important;
+}
+
+#talentScreen .talent-topbar {
+  grid-column: 1 !important;
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) auto !important;
+  gap: 8px !important;
+  align-items: center !important;
+  min-height: 48px !important;
+  padding: 6px 8px !important;
+}
+
+#talentScreen .talent-back-button {
+  width: 40px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  font-size: 34px !important;
+}
+
+#talentScreen .talent-topbar .eyebrow {
+  font-size: 11px !important;
+  line-height: 1 !important;
+}
+
+#talentScreen .talent-topbar h1 {
+  font-size: clamp(22px, 6.2vw, 28px) !important;
+  line-height: 1 !important;
+}
+
+#talentScreen .talent-point-box {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 1px !important;
+  padding: 5px 8px !important;
+  text-align: right !important;
+}
+
+#talentScreen .talent-point-box span {
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+
+#talentScreen .talent-point-box strong {
+  font-size: 16px !important;
+  line-height: 1.05 !important;
+}
+
+#talentScreen .talent-hero-list {
+  grid-column: 1 !important;
+  display: flex !important;
+  gap: 6px !important;
+  min-height: 58px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0 1px 2px !important;
+  scrollbar-width: none !important;
+}
+
+#talentScreen .talent-hero-list::-webkit-scrollbar {
+  display: none !important;
+}
+
+#talentScreen .talent-hero-list button {
+  flex: 0 0 54px !important;
+  min-width: 54px !important;
+  min-height: 54px !important;
+  gap: 0 !important;
+  padding: 3px !important;
+  overflow: hidden !important;
+}
+
+#talentScreen .talent-hero-list img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+#talentScreen .talent-hero-list span {
+  display: none !important;
+}
+
+#talentScreen .talent-board-panel {
+  grid-column: 1 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+#talentScreen .talent-hero-title {
+  top: 8px !important;
+  min-width: 0 !important;
+  width: min(76%, 260px) !important;
+  padding: 5px 12px !important;
+}
+
+#talentScreen .talent-hero-title span {
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+
+#talentScreen .talent-hero-title strong {
+  font-size: 17px !important;
+  line-height: 1.05 !important;
+}
+
+#talentScreen .talent-board {
+  inset: 42px 8px 8px !important;
+}
+
+#talentScreen .talent-core-ring {
+  width: clamp(92px, 28vw, 118px) !important;
+}
+
+#talentScreen .talent-small {
+  width: clamp(18px, 5vw, 24px) !important;
+  height: clamp(18px, 5vw, 24px) !important;
+}
+
+#talentScreen .talent-medium {
+  width: clamp(42px, 12vw, 54px) !important;
+  height: clamp(42px, 12vw, 54px) !important;
+}
+
+#talentScreen .talent-large {
+  width: clamp(52px, 15vw, 66px) !important;
+  height: clamp(52px, 15vw, 66px) !important;
+}
+
+#talentScreen .talent-special {
+  width: clamp(70px, 20vw, 88px) !important;
+  height: clamp(70px, 20vw, 88px) !important;
+}
+
+#talentScreen .talent-node {
+  border-width: 1px !important;
+}
+
+#talentScreen .talent-node i {
+  min-width: 24px !important;
+  padding: 1px 4px !important;
+  font-size: 10px !important;
+}
+
+#talentScreen .talent-node span {
+  width: 74px !important;
+  top: calc(100% + 3px) !important;
+  font-size: 10px !important;
+  line-height: 1.05 !important;
+}
+
+#talentScreen .talent-side-panel {
+  grid-column: 1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) !important;
+  gap: 7px !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+#talentScreen .talent-side-panel section {
+  min-height: 0 !important;
+  padding: 8px !important;
+  overflow: hidden auto !important;
+  scrollbar-width: none !important;
+}
+
+#talentScreen .talent-side-panel section::-webkit-scrollbar {
+  display: none !important;
+}
+
+#talentScreen .talent-panel-title {
+  margin-bottom: 6px !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
+}
+
+#talentScreen .talent-detail,
+#talentScreen .talent-resonance {
+  gap: 6px !important;
+}
+
+#talentScreen .talent-detail-icon {
+  width: 52px !important;
+  border-width: 1px !important;
+}
+
+#talentScreen .talent-detail strong {
+  font-size: 17px !important;
+  line-height: 1.05 !important;
+}
+
+#talentScreen .talent-detail small {
+  font-size: 11px !important;
+}
+
+#talentScreen .talent-detail p,
+#talentScreen .talent-resonance article {
+  gap: 3px !important;
+  padding: 6px !important;
+  font-size: 11px !important;
+  line-height: 1.3 !important;
+}
+
+#talentScreen .talent-detail button {
+  min-height: 34px !important;
+  font-size: 15px !important;
+}
+
+#talentScreen .talent-bottom-panel {
+  grid-column: 1 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 7px !important;
+  min-height: 74px !important;
+  max-height: 92px !important;
+  padding: 7px !important;
+  overflow: hidden !important;
+}
+
+#talentScreen .active-talent-list,
+#talentScreen .talent-build-list {
+  gap: 5px !important;
+  max-height: 48px !important;
+  overflow: hidden auto !important;
+  scrollbar-width: none !important;
+}
+
+#talentScreen .active-talent-list::-webkit-scrollbar,
+#talentScreen .talent-build-list::-webkit-scrollbar {
+  display: none !important;
+}
+
+#talentScreen .talent-pill,
+#talentScreen .talent-build-list button {
+  min-width: 0 !important;
+  min-height: 28px !important;
+  padding: 4px 7px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+}
+
+@media (min-width: 431px) {
+  body:has(#talentScreen.active) .app {
+    width: min(100vw, 760px) !important;
+    max-width: 760px !important;
+  }
+
+  #talentScreen .talent-page {
+    grid-template-rows: auto auto minmax(360px, 50vh) minmax(0, 1fr) auto !important;
+    padding-inline: 14px !important;
+  }
+
+  #talentScreen .talent-side-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+}
+
+/* Final floating text pass: compact overflow rewards and keep battle callouts readable in-bounds. */
+.overflow-callout {
+  gap: 2px !important;
+  min-width: 150px !important;
+  max-width: min(240px, calc(100vw - 24px)) !important;
+  padding: 7px 10px !important;
+  border-width: 1px !important;
+  border-radius: 6px !important;
+}
+
+.overflow-callout strong {
+  font-size: clamp(18px, 5vw, 23px) !important;
+  line-height: 1.02 !important;
+}
+
+.overflow-callout span {
+  font-size: clamp(12px, 3.4vw, 15px) !important;
+  line-height: 1.18 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.board-callout,
+.enemy-status-callout {
+  min-width: 0 !important;
+  max-width: min(240px, calc(100vw - 32px)) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: clamp(17px, 5vw, 23px) !important;
+  line-height: 1.08 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.enemy-status-callout {
+  max-width: min(180px, calc(100vw - 40px)) !important;
+  font-size: clamp(16px, 4.8vw, 22px) !important;
+}
+
+/* Crisp overflow reward callout: no blur or scale so Chinese text stays sharp. */
+.overflow-callout {
+  background:
+    linear-gradient(180deg, rgba(42, 27, 9, 0.98), rgba(8, 7, 5, 0.98)) !important;
+  border: 1px solid rgba(255, 215, 105, 0.92) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 236, 157, 0.18),
+    0 8px 20px rgba(0, 0, 0, 0.54),
+    inset 0 0 12px rgba(255, 174, 42, 0.1) !important;
+  animation: overflowCalloutCrisp 1800ms ease-out forwards !important;
+  filter: none !important;
+  transform: translateZ(0) !important;
+}
+
+.overflow-callout strong {
+  color: #ffe26b !important;
+  text-shadow: 0 1px 0 #2b1202, 0 0 5px rgba(255, 190, 52, 0.42) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+.overflow-callout span {
+  color: #fff1c8 !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes overflowCalloutCrisp {
+  0% { opacity: 0; transform: translate(0, 8px); filter: none; }
+  12% { opacity: 1; transform: translate(0, 0); filter: none; }
+  72% { opacity: 1; transform: translate(0, -6px); filter: none; }
+  100% { opacity: 0; transform: translate(0, -28px); filter: none; }
+}
+
+@keyframes ghostfireSpearThrust {
+  0% {
+    opacity: 0;
+    transform: translate(34%, -18%) rotate(-2deg) scale(0.62);
+    filter: blur(4px) brightness(0.9);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(10%, -6%) rotate(-2deg) scale(0.86);
+    filter: blur(0) brightness(1.45);
+  }
+  46% {
+    opacity: 1;
+    transform: translate(-8%, 4%) rotate(-2deg) scale(1.08);
+    filter: blur(0) brightness(1.75);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-22%, 12%) rotate(-2deg) scale(1.18);
+    filter: blur(3px) brightness(1.05);
+  }
+}
+
+@keyframes ghostfireSpearFlare {
+  0% {
+    opacity: 0;
+    transform: rotate(-24deg) scaleX(0.28);
+  }
+  34% {
+    opacity: 0.92;
+    transform: rotate(-24deg) scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(-24deg) scaleX(1.28);
+  }
+}
+
+@keyframes rottenShieldQuakeImpact {
+  0% {
+    opacity: 0;
+    transform: translateY(-18%) scale(0.72);
+    filter: blur(4px) brightness(0.85);
+  }
+  22% {
+    opacity: 1;
+    transform: translateY(4%) scale(1.04);
+    filter: blur(0) brightness(1.28);
+  }
+  42% {
+    opacity: 1;
+    transform: translateY(0) scale(0.98);
+    filter: blur(0) brightness(1.45);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(12%) scale(1.2);
+    filter: blur(3px) brightness(0.95);
+  }
+}
+
+@keyframes rottenShieldShockwave {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.18);
+  }
+  28% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.78);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.48);
+  }
+}
+
+@keyframes snakeSoulBiteStrike {
+  0% { opacity: 0; transform: translateY(18px) scale(0.72) rotate(-4deg); }
+  28% { opacity: 1; transform: translateY(0) scale(1.08) rotate(2deg); }
+  52% { opacity: 0.92; transform: translateY(-8px) scale(1.18) rotate(-1deg); }
+  100% { opacity: 0; transform: translateY(-20px) scale(1.34) rotate(3deg); }
+}
+
+@keyframes snakePoisonBloom {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.42); }
+  34% { opacity: 0.86; transform: translate(-50%, -50%) scale(0.88); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.34); }
+}
+
+@keyframes bloodmoonHuntSlash {
+  0% { opacity: 0; transform: scale(0.78) rotate(-3deg); }
+  24% { opacity: 1; transform: scale(1.04) rotate(1deg); }
+  58% { opacity: 0.94; transform: scale(1.12) rotate(-1deg); }
+  100% { opacity: 0; transform: scale(1.28) rotate(4deg); }
+}
+
+@keyframes bloodmoonSlashFlash {
+  0% { opacity: 0; transform: rotate(-22deg) scaleX(0.25); }
+  28% { opacity: 1; transform: rotate(-22deg) scaleX(1.08); }
+  100% { opacity: 0; transform: rotate(-22deg) scaleX(1.2) translateX(16px); }
+}
+
+@keyframes darkGateLockImpact {
+  0% { opacity: 0; transform: translateY(-22px) scale(0.72); }
+  28% { opacity: 1; transform: translateY(0) scale(1.04); }
+  58% { opacity: 0.94; transform: translateY(8px) scale(1.12); }
+  100% { opacity: 0; transform: translateY(20px) scale(1.24); }
+}
+
+@keyframes darkGateShockRing {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.22); }
+  32% { opacity: 0.92; transform: translate(-50%, -50%) scale(0.9); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.26); }
+}
+
+/* Talent screen space pass: smaller header, no hero cards, roomier board. */
+#talentScreen .talent-page {
+  grid-template-rows: 58px minmax(394px, 1fr) minmax(0, 126px) 86px !important;
+  gap: 6px !important;
+  padding: calc(env(safe-area-inset-top, 0px) + 6px) 7px calc(env(safe-area-inset-bottom, 0px) + 6px) !important;
+}
+
+#talentScreen .talent-topbar {
+  min-height: 52px !important;
+  grid-template-columns: 38px minmax(0, 1fr) auto !important;
+  gap: 7px !important;
+  padding: 5px 7px !important;
+}
+
+#talentScreen .talent-back-button {
+  width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  border-radius: 7px !important;
+  font-size: 28px !important;
+}
+
+#talentScreen .talent-topbar .eyebrow {
+  font-size: 9px !important;
+}
+
+#talentScreen .talent-topbar h1 {
+  font-size: clamp(18px, 5.2vw, 22px) !important;
+}
+
+#talentScreen .talent-point-box {
+  min-width: 58px !important;
+  padding: 4px 7px !important;
+  gap: 0 !important;
+}
+
+#talentScreen .talent-point-box span {
+  font-size: 8px !important;
+}
+
+#talentScreen .talent-point-box strong {
+  font-size: 13px !important;
+}
+
+#talentScreen .talent-hero-list {
+  display: none !important;
+}
+
+#talentScreen .talent-board-panel {
+  grid-row: 2 !important;
+}
+
+#talentScreen .talent-hero-title {
+  top: 7px !important;
+  width: min(72%, 238px) !important;
+  padding: 4px 10px !important;
+}
+
+#talentScreen .talent-hero-title span {
+  font-size: 9px !important;
+}
+
+#talentScreen .talent-hero-title strong {
+  font-size: 15px !important;
+}
+
+#talentScreen .talent-board {
+  inset: 34px 6px 6px !important;
+}
+
+#talentScreen .talent-core-ring {
+  width: clamp(76px, 22vw, 96px) !important;
+}
+
+#talentScreen .talent-small {
+  width: clamp(15px, 4.2vw, 20px) !important;
+  height: clamp(15px, 4.2vw, 20px) !important;
+}
+
+#talentScreen .talent-medium {
+  width: clamp(34px, 9.8vw, 44px) !important;
+  height: clamp(34px, 9.8vw, 44px) !important;
+}
+
+#talentScreen .talent-large {
+  width: clamp(44px, 12.5vw, 56px) !important;
+  height: clamp(44px, 12.5vw, 56px) !important;
+}
+
+#talentScreen .talent-special {
+  width: clamp(58px, 16.4vw, 72px) !important;
+  height: clamp(58px, 16.4vw, 72px) !important;
+}
+
+#talentScreen .talent-node i {
+  min-width: 20px !important;
+  padding: 1px 3px !important;
+  font-size: 9px !important;
+}
+
+#talentScreen .talent-node span {
+  width: 64px !important;
+  top: calc(100% + 4px) !important;
+  font-size: 9px !important;
+  line-height: 1.05 !important;
+}
+
+#talentScreen .talent-side-panel {
+  grid-row: 3 !important;
+}
+
+#talentScreen .talent-bottom-panel {
+  grid-row: 4 !important;
+}
+
+/* Talent header fix: keep point counter as a small right-side badge, not a full-width row. */
+#talentScreen .talent-point-box {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  justify-self: end !important;
+  align-self: center !important;
+  width: auto !important;
+  min-width: 54px !important;
+  max-width: 70px !important;
+  height: auto !important;
+}
+
+#talentScreen .talent-node span {
+  width: 58px !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+
+#talentScreen .talent-core-ring {
+  width: clamp(68px, 19vw, 84px) !important;
+}
+
+/* Talent board final expansion: remove footer and keep all nodes round. */
+#talentScreen .talent-page {
+  grid-template-rows: 44px minmax(0, 1fr) minmax(0, 104px) !important;
+  gap: 5px !important;
+}
+
+#talentScreen .talent-topbar {
+  min-height: 42px !important;
+  grid-template-columns: 32px minmax(0, 1fr) auto !important;
+  padding: 4px 6px !important;
+}
+
+#talentScreen .talent-back-button {
+  width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  font-size: 24px !important;
+}
+
+#talentScreen .talent-topbar .eyebrow {
+  font-size: 8px !important;
+}
+
+#talentScreen .talent-topbar h1 {
+  font-size: clamp(15px, 4.4vw, 18px) !important;
+}
+
+#talentScreen .talent-point-box {
+  max-width: 62px !important;
+  padding: 3px 6px !important;
+}
+
+#talentScreen .talent-point-box span {
+  font-size: 7px !important;
+}
+
+#talentScreen .talent-point-box strong {
+  font-size: 12px !important;
+}
+
+#talentScreen .talent-board-panel {
+  grid-row: 2 !important;
+  min-height: 0 !important;
+}
+
+#talentScreen .talent-board {
+  inset: 26px 2px 2px !important;
+}
+
+#talentScreen .talent-bottom-panel {
+  display: none !important;
+}
+
+#talentScreen .talent-side-panel {
+  grid-row: 3 !important;
+}
+
+#talentScreen .talent-node {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+}
+
+#talentScreen .talent-small {
+  width: clamp(18px, 5.2vw, 22px) !important;
+  height: clamp(18px, 5.2vw, 22px) !important;
+}
+
+#talentScreen .talent-medium {
+  width: clamp(30px, 8.8vw, 36px) !important;
+  height: clamp(30px, 8.8vw, 36px) !important;
+}
+
+#talentScreen .talent-large {
+  width: clamp(36px, 10.6vw, 44px) !important;
+  height: clamp(36px, 10.6vw, 44px) !important;
+}
+
+#talentScreen .talent-special {
+  width: clamp(58px, 16vw, 68px) !important;
+  height: clamp(58px, 16vw, 68px) !important;
+}
+
+#talentScreen .talent-node i {
+  min-width: 0 !important;
+  max-width: 82% !important;
+  padding: 0 2px !important;
+  font-size: 8px !important;
+  line-height: 1.15 !important;
+}
+
+#talentScreen .talent-small i {
+  font-size: 6px !important;
+}
+
+#talentScreen .talent-node span {
+  width: 42px !important;
+  font-size: 6.5px !important;
+  line-height: 1 !important;
+  top: calc(100% + 3px) !important;
+  text-shadow: 0 1px 3px #000, 0 0 8px currentColor !important;
+}
+
+#talentScreen .talent-small span {
+  width: 34px !important;
+  font-size: 6px !important;
+}
+
+#talentScreen .talent-link-layer line {
+  stroke-width: 0.28 !important;
+}
+
+/* Last battle overrides: keep enemy intent clickable after later layout passes. */
+#battleScreen .enemy-intent-panel {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 42 !important;
+}
+
+#battleScreen .enemy-intent-panel .enemy-intent-row,
+#battleScreen .enemy-intent-panel .enemy-intent-name,
+#battleScreen .enemy-intent-panel .enemy-intent-meta {
+  pointer-events: none !important;
+}
+
+/* Last player debuff compact pass. */
+#battleScreen .player-buff-row .debuff-chip {
+  grid-template-columns: 24px minmax(0, auto) !important;
+  gap: 4px !important;
+  min-height: 27px !important;
+  height: 27px !important;
+  padding: 1px 5px 1px 2px !important;
+  border-radius: 5px !important;
+}
+
+#battleScreen .player-buff-row .debuff-icon-wrap {
+  width: 24px !important;
+  height: 24px !important;
+  flex-basis: 24px !important;
+}
+
+#battleScreen .player-buff-row .debuff-icon-wrap img {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 5px !important;
+}
+
+#battleScreen .player-buff-row .debuff-turn-badge {
+  top: -4px !important;
+  right: -5px !important;
+  min-width: 14px !important;
+  height: 14px !important;
+  padding: 0 3px !important;
+  font-size: 9px !important;
+}
+
+#battleScreen .player-buff-row .debuff-label {
+  max-width: 56px !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+
+/* Board blank holes and locked chain orbs. */
+#battleScreen .gem-cell.blank-orb {
+  position: relative !important;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(0, 0, 0, 0.96) 0 34%, transparent 58%),
+    repeating-conic-gradient(from 18deg at 50% 50%, rgba(88, 67, 36, 0.34) 0 9deg, transparent 10deg 25deg),
+    linear-gradient(145deg, #050403, #0b0704 70%, #020202) !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 0 10px rgba(96, 54, 20, 0.48)) !important;
+  cursor: not-allowed !important;
+}
+
+#battleScreen .gem-cell.blank-orb::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 18% !important;
+  border-radius: 50% !important;
+  background:
+    linear-gradient(32deg, transparent 40%, rgba(255, 214, 114, 0.42) 41% 44%, transparent 45%),
+    linear-gradient(-58deg, transparent 45%, rgba(255, 214, 114, 0.3) 46% 49%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.95), transparent 62%) !important;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.96), 0 0 8px rgba(183, 126, 49, 0.42) !important;
+}
+
+#battleScreen .locked-orb-overlay {
+  position: absolute !important;
+  inset: -8% !important;
+  z-index: 3 !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  mix-blend-mode: screen !important;
+  opacity: 0.95 !important;
+  pointer-events: none !important;
+  filter: drop-shadow(0 0 8px rgba(168, 110, 255, 0.7)) !important;
+}
+
+#battleScreen .gem-cell.locked-orb {
+  cursor: not-allowed !important;
+  filter:
+    drop-shadow(0 6px 7px rgba(0, 0, 0, 0.66))
+    drop-shadow(0 0 13px rgba(150, 78, 255, 0.52)) !important;
+}
+
+#battleScreen .blank-orb-turns,
+#battleScreen .locked-orb-turns {
+  position: absolute !important;
+  right: 2px !important;
+  top: 2px !important;
+  z-index: 5 !important;
+  display: grid !important;
+  place-items: center !important;
+  min-width: 17px !important;
+  height: 17px !important;
+  padding: 0 4px !important;
+  border: 1px solid rgba(255, 232, 150, 0.86) !important;
+  border-radius: 999px !important;
+  background: rgba(15, 7, 4, 0.88) !important;
+  color: #ffe9a3 !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-shadow: 0 1px 2px #000 !important;
+}
+
+#battleScreen .blank-orb-turns {
+  background: rgba(60, 29, 8, 0.92) !important;
+}
+
+/* Stronger chain lock readability pass. */
+#battleScreen .locked-orb-overlay {
+  inset: -2% !important;
+  z-index: 4 !important;
+  background-size: 122% 122% !important;
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
+  filter:
+    contrast(1.32)
+    brightness(1.22)
+    drop-shadow(0 0 4px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 10px rgba(255, 211, 107, 0.58)) !important;
+}
+
+#battleScreen .gem-cell.locked-orb::before,
+#battleScreen .gem-cell.locked-orb::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 2% !important;
+  top: 50% !important;
+  z-index: 5 !important;
+  width: 96% !important;
+  height: 9px !important;
+  border-radius: 999px !important;
+  background:
+    repeating-linear-gradient(90deg,
+      #2b231c 0 5px,
+      #f5d27a 6px 10px,
+      #5b4530 11px 15px,
+      #1b1410 16px 21px) !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.78),
+    0 2px 3px rgba(0, 0, 0, 0.74),
+    0 0 8px rgba(255, 219, 121, 0.5) !important;
+  pointer-events: none !important;
+}
+
+#battleScreen .gem-cell.locked-orb::before {
+  transform: translateY(-50%) rotate(42deg) !important;
+}
+
+#battleScreen .gem-cell.locked-orb::after {
+  transform: translateY(-50%) rotate(-42deg) !important;
+}
+
+#battleScreen .gem-cell.locked-orb {
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 214, 115, 0.58),
+    inset 0 0 18px rgba(0, 0, 0, 0.58),
+    0 0 13px rgba(133, 76, 255, 0.72) !important;
+}
+
+#battleScreen .locked-orb-turns {
+  z-index: 7 !important;
+  right: 1px !important;
+  top: 1px !important;
+}
+
+#battleScreen .gem-cell.ember-marked-orb,
+#battleScreen .gem-cell.flame-array-marked-orb,
+#battleScreen .gem-cell.thunder-hoof-marked-orb,
+#battleScreen .gem-cell.soul-locked-orb,
+#battleScreen .gem-cell.snake-soul-orb {
+  position: relative !important;
+}
+
+#battleScreen .ember-mark-overlay,
+#battleScreen .flame-array-overlay,
+#battleScreen .thunder-hoof-overlay,
+#battleScreen .soul-lock-overlay,
+#battleScreen .snake-soul-overlay {
+  position: absolute !important;
+  inset: auto !important;
+  left: 3px !important;
+  bottom: 3px !important;
+  width: 38% !important;
+  height: 38% !important;
+  z-index: 4 !important;
+  pointer-events: none !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  mix-blend-mode: screen !important;
+  opacity: 0.88 !important;
+}
+
+#battleScreen .soul-lock-overlay {
+  inset: 8% !important;
+  left: 8% !important;
+  bottom: 8% !important;
+  width: auto !important;
+  height: auto !important;
+  z-index: 5 !important;
+  opacity: 0.78 !important;
+  mix-blend-mode: screen !important;
+  filter:
+    contrast(1.22)
+    brightness(1.16)
+    drop-shadow(0 0 6px rgba(116, 74, 255, 0.82))
+    drop-shadow(0 0 10px rgba(0, 0, 0, 0.72)) !important;
+}
+
+#battleScreen .snake-soul-overlay {
+  inset: -8% !important;
+  left: -8% !important;
+  bottom: -8% !important;
+  width: auto !important;
+  height: auto !important;
+  z-index: 5 !important;
+  opacity: 0.96 !important;
+  mix-blend-mode: screen !important;
+  filter:
+    contrast(1.28)
+    brightness(1.12)
+    drop-shadow(0 0 7px rgba(143, 70, 255, 0.88))
+    drop-shadow(0 0 12px rgba(55, 184, 255, 0.42)) !important;
+  animation: snakeSoulPulse 1180ms ease-in-out infinite alternate !important;
+}
+
+#battleScreen .ember-mark-overlay {
+  inset: -10% !important;
+  left: -10% !important;
+  bottom: -10% !important;
+  width: auto !important;
+  height: auto !important;
+  opacity: 0.94 !important;
+  filter:
+    contrast(1.12)
+    brightness(1.12)
+    drop-shadow(0 0 5px rgba(255, 77, 24, 0.9))
+    drop-shadow(0 0 9px rgba(255, 174, 64, 0.42)) !important;
+  animation: emberMarkPulse 980ms ease-in-out infinite alternate !important;
+}
+
+#battleScreen .flame-array-overlay {
+  inset: -10% !important;
+  left: -10% !important;
+  bottom: -10% !important;
+  width: auto !important;
+  height: auto !important;
+  opacity: 0.95 !important;
+  filter:
+    contrast(1.12)
+    brightness(1.1)
+    drop-shadow(0 0 5px rgba(255, 76, 30, 0.78))
+    drop-shadow(0 0 10px rgba(152, 61, 255, 0.46)) !important;
+  animation: flameArrayMarkSpin 1600ms linear infinite !important;
+}
+
+#battleScreen .thunder-hoof-overlay {
+  inset: -6% !important;
+  left: -6% !important;
+  bottom: -6% !important;
+  width: auto !important;
+  height: auto !important;
+  opacity: 0.88 !important;
+  mix-blend-mode: screen !important;
+  filter:
+    contrast(1.18)
+    brightness(1.08)
+    drop-shadow(0 0 7px rgba(255, 220, 88, 0.86))
+    drop-shadow(0 0 13px rgba(116, 78, 255, 0.52)) !important;
+  animation: thunderHoofStamp 1080ms ease-in-out infinite alternate !important;
+}
+
+#battleScreen .ember-mark-turns,
+#battleScreen .flame-array-turns,
+#battleScreen .thunder-hoof-turns,
+#battleScreen .soul-lock-turns,
+#battleScreen .snake-soul-progress {
+  position: absolute !important;
+  right: 1px !important;
+  top: 1px !important;
+  z-index: 7 !important;
+  display: grid !important;
+  place-items: center !important;
+  min-width: 17px !important;
+  height: 17px !important;
+  padding: 0 4px !important;
+  border-radius: 999px !important;
+  color: #fff5bf !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-shadow: 0 1px 2px #000, 0 0 6px rgba(255, 209, 99, 0.78) !important;
+}
+
+#battleScreen .ember-mark-turns {
+  border: 1px solid rgba(255, 176, 65, 0.9) !important;
+  background: rgba(92, 18, 7, 0.92) !important;
+}
+
+#battleScreen .flame-array-turns {
+  border: 1px solid rgba(210, 149, 255, 0.9) !important;
+  background: rgba(45, 10, 65, 0.92) !important;
+}
+
+#battleScreen .thunder-hoof-turns {
+  border: 1px solid rgba(255, 222, 100, 0.92) !important;
+  background: rgba(21, 13, 48, 0.94) !important;
+}
+
+#battleScreen .soul-lock-turns {
+  border: 1px solid rgba(183, 137, 255, 0.92) !important;
+  background: rgba(18, 8, 44, 0.94) !important;
+}
+
+#battleScreen .snake-soul-progress {
+  min-width: 24px !important;
+  border: 1px solid rgba(205, 154, 255, 0.94) !important;
+  background: rgba(17, 4, 38, 0.95) !important;
+  color: #f2dcff !important;
+}
+
+#battleScreen .gem-cell.thunder-hoof-marked-orb {
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 219, 92, 0.82),
+    inset 0 0 14px rgba(112, 72, 255, 0.42),
+    0 0 14px rgba(255, 213, 82, 0.46),
+    0 0 18px rgba(112, 72, 255, 0.32) !important;
+}
+
+#battleScreen .gem-cell.soul-locked-orb {
+  box-shadow:
+    inset 0 0 0 2px rgba(178, 123, 255, 0.78),
+    inset 0 0 15px rgba(44, 12, 70, 0.5),
+    0 0 13px rgba(128, 76, 255, 0.42) !important;
+}
+
+#battleScreen .gem-cell.snake-soul-orb {
+  box-shadow:
+    inset 0 0 0 2px rgba(182, 98, 255, 0.88),
+    inset 0 0 18px rgba(44, 10, 76, 0.36),
+    0 0 16px rgba(124, 64, 255, 0.58),
+    0 0 18px rgba(58, 188, 255, 0.28) !important;
+}
+
+@keyframes snakeSoulPulse {
+  from {
+    transform: scale(0.98) rotate(-2deg);
+    opacity: 0.84;
+  }
+  to {
+    transform: scale(1.04) rotate(2deg);
+    opacity: 1;
+  }
+}
+
+@keyframes emberMarkPulse {
+  from { transform: scale(0.95) rotate(-4deg); opacity: 0.82; }
+  to { transform: scale(1.08) rotate(4deg); opacity: 1; }
+}
+
+@keyframes flameArrayMarkSpin {
+  from { transform: rotate(0deg) scale(1); opacity: 0.86; }
+  50% { transform: rotate(180deg) scale(1.08); opacity: 1; }
+  to { transform: rotate(360deg) scale(1); opacity: 0.86; }
+}
+
+@keyframes thunderHoofStamp {
+  from { transform: scale(0.94); opacity: 0.78; }
+  to { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes obsidianCavalryCharge {
+  0% {
+    opacity: 0;
+    transform: perspective(520px) translateY(28px) translateZ(-130px) scale(0.52);
+  }
+  18% {
+    opacity: 0.9;
+  }
+  62% {
+    opacity: 1;
+    transform: perspective(520px) translateY(-5px) translateZ(44px) scale(1.02);
+  }
+  100% {
+    opacity: 0;
+    transform: perspective(520px) translateY(-12px) translateZ(90px) scale(1.18);
+  }
+}
+
+@keyframes obsidianCavalryShock {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(0.12) scaleY(0.45);
+  }
+  42% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(1.14) scaleY(1.25);
+  }
+}
+
+/* AI two-chain overlay pass: remove the temporary CSS bars. */
+#battleScreen .locked-orb-overlay {
+  inset: -5% !important;
+  background-size: 112% 112% !important;
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
+  filter:
+    contrast(1.18)
+    brightness(1.08)
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 6px rgba(250, 206, 116, 0.42)) !important;
+}
+
+#battleScreen .gem-cell.locked-orb::before,
+#battleScreen .gem-cell.locked-orb::after {
+  display: none !important;
+}
+
+/* Keep marked orb identity readable: marks sit in the corner and the warning glow uses the cell edge. */
+#battleScreen .gem-cell.ember-marked-orb {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 130, 48, 0.72),
+    inset 0 0 12px rgba(255, 70, 20, 0.32),
+    0 0 9px rgba(255, 84, 22, 0.36) !important;
+}
+
+#battleScreen .gem-cell.flame-array-marked-orb {
+  box-shadow:
+    inset 0 0 0 1px rgba(207, 132, 255, 0.76),
+    inset 0 0 12px rgba(255, 78, 28, 0.26),
+    0 0 10px rgba(162, 78, 255, 0.4) !important;
+}
+
+/* Talent board clean pass: hide node names; details are shown after tapping a node. */
+#talentScreen .talent-board .talent-node span {
+  display: none !important;
+}
+
+/* Vertical element talent tree: one branch at a time for mobile readability. */
+#talentScreen .talent-board {
+  inset: 24px 8px 6px !important;
+}
+
+#talentScreen .talent-core-ring {
+  display: none !important;
+}
+
+#talentScreen .talent-tree-title {
+  display: none !important;
+}
+
+#talentScreen .talent-tree-lines {
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#talentScreen .talent-tree-lines line {
+  stroke-width: 0.48 !important;
+  stroke: rgba(255, 135, 65, 0.74) !important;
+}
+
+#talentScreen .talent-board .talent-node {
+  transform: translate(-50%, -50%) !important;
+}
+
+#talentScreen .talent-board .talent-small {
+  width: clamp(26px, 7.8vw, 34px) !important;
+  height: clamp(26px, 7.8vw, 34px) !important;
+}
+
+#talentScreen .talent-board .talent-medium {
+  width: clamp(39px, 11.6vw, 48px) !important;
+  height: clamp(39px, 11.6vw, 48px) !important;
+}
+
+#talentScreen .talent-board .talent-large {
+  width: clamp(48px, 13.8vw, 56px) !important;
+  height: clamp(48px, 13.8vw, 56px) !important;
+}
+
+#talentScreen .talent-board .talent-special {
+  width: clamp(58px, 16.2vw, 68px) !important;
+  height: clamp(58px, 16.2vw, 68px) !important;
+}
+
+#talentScreen .talent-board .talent-node i {
+  min-width: 24px !important;
+  padding: 1px 4px !important;
+  font-size: 9px !important;
+}
+
+#talentScreen .talent-board .talent-node i {
+  display: none !important;
+}
+
+#talentScreen .talent-element-tabs {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  z-index: 5;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 7px;
+  width: min(94%, 330px);
+}
+
+#talentScreen .talent-element-tab {
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  border: 1px solid rgba(216, 155, 71, 0.55);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(42, 27, 12, 0.8), rgba(8, 6, 5, 0.92));
+  color: currentColor;
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: inset 0 0 12px rgba(255, 207, 102, 0.09);
+}
+
+#talentScreen .talent-element-tab.active {
+  border-color: rgba(255, 224, 132, 0.94);
+  background: radial-gradient(circle at 50% 35%, rgba(255, 211, 105, 0.28), rgba(15, 10, 6, 0.94));
+  box-shadow: 0 0 14px currentColor, inset 0 0 16px rgba(255, 230, 148, 0.18);
+}
+
+#talentScreen .talent-reset-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 8;
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 1px solid rgba(214, 153, 70, 0.58);
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(42, 18, 10, 0.88), rgba(8, 5, 4, 0.92));
+  color: #ffd88d;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: inset 0 0 10px rgba(255, 189, 91, 0.12), 0 0 8px rgba(0, 0, 0, 0.68);
+}
+
+#talentScreen .talent-reset-button:active {
+  transform: translateY(1px);
+}
+
+/* Final home layout pass. Keep this after mobile overrides. */
+#mainMenuScreen .main-city-panel {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) !important;
+  align-content: start !important;
+  gap: 9px !important;
+}
+
+#mainMenuScreen .city-hero {
+  min-height: 0 !important;
+  align-content: start !important;
+  gap: 5px !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+#mainMenuScreen .announcement {
+  margin-top: 4px !important;
+}
+
+#mainMenuScreen .city-logo {
+  transform: none !important;
+}
+
+#mainMenuScreen .city-logo h1 {
+  font-size: clamp(38px, 10.6vw, 50px) !important;
+}
+
+#mainMenuScreen .city-feature-grid {
+  align-self: start !important;
+  margin-top: 0 !important;
+}
+
+#mainMenuScreen .feature-card {
+  min-height: clamp(168px, 19svh, 190px) !important;
 }

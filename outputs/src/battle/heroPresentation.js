@@ -9,13 +9,15 @@ function getHeroName(hero = {}) {
 }
 
 function getGenericAttackPresentation(hero = {}, event = {}) {
+  const isPursuit = event.source === 'hero_pursuit';
   return {
     heroId: hero.id || '',
     heroName: getHeroName(hero),
-    name: event.label || '攻擊',
+    name: isPursuit ? '追擊' : event.label || '攻擊',
     icon: hero.activeSkill?.icon || hero.art?.battleIcon || '',
     voice: null,
-    vfx: '',
+    sfx: isPursuit ? 'straightPunch' : '',
+    vfx: isPursuit ? 'spearShot' : '',
   };
 }
 
@@ -24,14 +26,16 @@ function getZhaoYunAttackPresentation(hero = {}, event = {}) {
   const affinityColor = hero.orbAffinity || 'red';
   const isOrbMatchAttack = event.source === 'orb_match';
   const isAffinityAttack = isOrbMatchAttack && event.color === affinityColor;
+  const isPursuit = event.source === 'hero_pursuit';
 
   return {
     heroId: hero.id || 'hero_zhao_yun',
     heroName: getHeroName(hero),
-    name: art?.name || event.label || '攻擊',
+    name: isPursuit ? '追擊' : art?.name || event.label || '攻擊',
     icon: art?.icon || hero.activeSkill?.icon || '',
     voice: isOrbMatchAttack ? art?.voice || null : null,
-    vfx: isAffinityAttack && event.count >= 3 && event.count <= 4 ? 'spearThrust' : '',
+    sfx: isPursuit ? 'straightPunch' : '',
+    vfx: isPursuit ? 'spearShot' : isAffinityAttack && event.count >= 3 && event.count <= 4 ? 'spearThrust' : '',
   };
 }
 
@@ -46,6 +50,7 @@ export function applyHeroAttackPresentation(hero = {}, event = {}) {
     ...event,
     owner: event.owner || hero.id || '',
     presentation,
+    sfx: event.sfx ?? presentation?.sfx ?? '',
     vfx: event.vfx ?? presentation?.vfx ?? '',
   };
 }

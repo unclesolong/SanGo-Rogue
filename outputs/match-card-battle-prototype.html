@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>五色珠卡牌戰鬥原型</title>
-  <link rel="stylesheet" href="styles/battle.css?v=party-icons-edge-gear-icon-only-20260702b">
+  <link rel="stylesheet" href="styles/battle.css?v=talent-definitions-20260703a">
 </head>
 <body>
   <audio id="battleBgm" src="assets/audio/rogue_sanguo_demon_battle_loop_60s.wav" loop preload="auto"></audio>
@@ -13,14 +13,8 @@
   <main class="app">
     <section id="lobbyScreen" class="screen menu-screen active">
       <div class="login-panel" aria-label="三國妖異志登入頁">
-        <img class="login-poster" src="assets/login-three-kingdoms-vs-demons.png" alt="三國妖異志">
+        <img class="login-poster" src="assets/login-three-kingdoms-vs-demons-v2.png" alt="三國妖異志">
         <button id="startGame" class="poster-start-action" type="button" aria-label="踏入亂世"></button>
-        <div class="poster-bottom-actions" aria-label="登入頁選項">
-          <button type="button" aria-label="公告"></button>
-          <button type="button" aria-label="帳號"></button>
-          <button type="button" aria-label="選擇伺服器"></button>
-          <button type="button" aria-label="設定"></button>
-        </div>
       </div>
     </section>
 
@@ -31,7 +25,7 @@
           <div class="lord-badge">
             <img src="assets/single-hero-card-pack/art/portraits/hero_zhao_yun_portrait.png" alt="">
             <div>
-              <strong>主公</strong>
+              <strong id="playerNameDisplay">主公</strong>
               <span>戰力 125,680</span>
               <div class="lord-progress"><i style="width: 32%"></i></div>
             </div>
@@ -54,7 +48,7 @@
         <section class="city-hero">
           <div class="announcement">
             <strong>公告</strong>
-            <span>恭喜主公戰勝「虎牢魔君」，獲得【龍將?呂布】！</span>
+            <span>恭喜主公戰勝「虎牢魔呂」，獲得【龍將?呂布】！</span>
           </div>
           <div class="city-logo">
             <h1>三國妖異志</h1>
@@ -68,7 +62,7 @@
             <span>主線劇情 / 征戰三國</span>
             <small>第 3 章　黃巾之亂　3/10</small>
           </button>
-          <button class="menu-tile feature-card rift-card" type="button">
+          <button id="goRift" class="menu-tile feature-card rift-card" type="button">
             <strong>裂縫探索</strong>
             <span>無盡裂縫 / 挑戰強敵</span>
             <small>裂縫層數　28 層</small>
@@ -85,24 +79,6 @@
           </button>
         </div>
 
-        <nav class="city-utility-row" aria-label="主城工具">
-          <button type="button">背包</button>
-          <button type="button">任務</button>
-          <button type="button">成就</button>
-          <button type="button">圖鑑</button>
-          <button type="button">排行</button>
-          <button type="button">軍團</button>
-          <button id="goShop" type="button">商店</button>
-        </nav>
-
-        <nav class="city-bottom-tabs" aria-label="主要導覽">
-          <button class="active" type="button">主城</button>
-          <button type="button">武將</button>
-          <button type="button">戰鬥</button>
-          <button type="button">鍛造</button>
-          <button type="button">神兵</button>
-          <button type="button">寶物</button>
-        </nav>
       </div>
     </section>
 
@@ -229,6 +205,7 @@
           <div id="attackEffectLayer" class="attack-effect-layer"></div>
           <button id="battleMenuGear" class="battle-menu-gear" type="button" aria-label="戰鬥選單">⚙</button>
           <div id="battleQuickMenu" class="battle-quick-menu" hidden>
+            <button id="battleSpeedToggle" class="battle-speed-toggle" type="button" aria-pressed="false">2倍速 OFF</button>
             <button id="battleHelpOrb" type="button">消除說明</button>
             <button id="battleHelpOrder" type="button">軍令說明</button>
             <button id="battleHelpDivine" type="button">神令說明</button>
@@ -348,9 +325,19 @@
       </div>
     </aside>
     </section>
+
+    <div id="nameDialog" class="name-dialog" aria-live="polite" aria-modal="true" role="dialog">
+      <form id="nameForm" class="name-dialog-card">
+        <div class="eyebrow">新存檔</div>
+        <h2>請輸入主公名</h2>
+        <p>這個名字會顯示在主城，之後可延續目前進度。</p>
+        <input id="playerNameInput" name="playerName" type="text" maxlength="10" autocomplete="off" placeholder="例如：玄德" required>
+        <button type="submit">建立存檔</button>
+      </form>
+    </div>
   </main>
 
-  <script type="module" src="src/main.js?v=monster-slash-sfx-20260702a"></script>
+  <script type="module" src="src/main.js?v=talent-definitions-20260703a"></script>
 </body>
 </html>
 

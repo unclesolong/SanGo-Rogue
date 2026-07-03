@@ -1,5 +1,18 @@
+﻿function getBattleSpeedMultiplier() {
+  const speed = Number(window.__battleSpeedMultiplier || 1);
+  return Number.isFinite(speed) && speed > 0 ? speed : 1;
+}
+
+function scaleBattleMs(ms) {
+  return Math.max(16, Math.round(ms / getBattleSpeedMultiplier()));
+}
+
+function battleTimeout(callback, ms, ...args) {
+  return globalThis.setTimeout(callback, scaleBattleMs(ms), ...args);
+}
+
 function wait(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
+  return new Promise((resolve) => battleTimeout(resolve, ms));
 }
 
 function waitForImage(src, timeout = 900) {
@@ -15,7 +28,7 @@ function waitForImage(src, timeout = 900) {
       done = true;
       resolve();
     };
-    const timer = window.setTimeout(finish, timeout);
+    const timer = battleTimeout(finish, timeout);
     img.onload = async () => {
       window.clearTimeout(timer);
       try {
@@ -47,6 +60,23 @@ export function createUiEffects({
   const activeBoardCallouts = [];
   const activeEnemyDamageFloats = [];
   const activeOverflowCallouts = [];
+  const activeEnemyStatusCallouts = [];
+
+  function clamp(value, min, max) {
+    if (max < min) return min;
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function getBattleBounds() {
+    return battleEl?.getBoundingClientRect?.() || {
+      left: 0,
+      top: 0,
+      right: window.innerWidth,
+      bottom: window.innerHeight,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  }
 
   function getBoardEffectRect() {
     const cells = Array.from(boardEl?.querySelectorAll?.('.gem-cell') || []);
@@ -74,15 +104,18 @@ export function createUiEffects({
     const slot = activeBoardCallouts.length;
     activeBoardCallouts.push(el);
     const rect = boardEl.getBoundingClientRect();
-    const spacing = Math.max(58, Math.min(74, rect.height * 0.14));
+    const bounds = getBattleBounds();
+    const spacing = Math.max(36, Math.min(54, rect.height * 0.11));
     const offset = slot * spacing;
-    el.style.left = `${rect.left + rect.width / 2}px`;
-    el.style.top = `${rect.top + rect.height * 0.58 - offset}px`;
+    const x = clamp(rect.left + rect.width / 2, bounds.left + 42, bounds.right - 42);
+    const y = clamp(rect.top + rect.height * 0.58 - offset, bounds.top + 42, bounds.bottom - 72);
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
     const drift = -52;
     el.style.setProperty('--callout-mid-drift', `${drift * 0.36}px`);
     el.style.setProperty('--callout-drift', `${drift}px`);
     document.body.appendChild(el);
-    window.setTimeout(() => {
+    battleTimeout(() => {
       const index = activeBoardCallouts.indexOf(el);
       if (index >= 0) activeBoardCallouts.splice(index, 1);
       el.remove();
@@ -93,11 +126,22 @@ export function createUiEffects({
     const el = document.createElement('div');
     el.className = 'enemy-status-callout';
     el.textContent = text;
+    const slot = activeEnemyStatusCallouts.length;
+    activeEnemyStatusCallouts.push(el);
     const rect = enemyArtEl.getBoundingClientRect();
-    el.style.left = `${rect.left + rect.width / 2}px`;
-    el.style.top = `${rect.top + rect.height * 0.42}px`;
+    const bounds = getBattleBounds();
+    const xOffset = (slot % 2 === 0 ? -1 : 1) * Math.min(42, rect.width * 0.1) * Math.ceil(slot / 2);
+    const yOffset = Math.floor(slot / 2) * 34;
+    const x = clamp(rect.left + rect.width / 2 + xOffset, bounds.left + 48, bounds.right - 48);
+    const y = clamp(rect.top + rect.height * 0.38 + yOffset, bounds.top + 34, rect.bottom - 52);
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
     document.body.appendChild(el);
-    window.setTimeout(() => el.remove(), 1900);
+    battleTimeout(() => {
+      const index = activeEnemyStatusCallouts.indexOf(el);
+      if (index >= 0) activeEnemyStatusCallouts.splice(index, 1);
+      el.remove();
+    }, 1700);
   }
 
   function showEnemyBurnEffect() {
@@ -109,7 +153,7 @@ export function createUiEffects({
     const flame = document.createElement('div');
     flame.className = 'enemy-burn-effect';
     enemyArtEl.appendChild(flame);
-    window.setTimeout(() => {
+    battleTimeout(() => {
       enemyArtEl.classList.remove('burn-hit');
       flame.remove();
     }, 1200);
@@ -122,12 +166,13 @@ export function createUiEffects({
     const slot = activeOverflowCallouts.length;
     activeOverflowCallouts.push(el);
     const rect = enemyArtEl.getBoundingClientRect();
-    const x = Math.max(18, rect.left + rect.width * 0.08);
-    const y = rect.top + rect.height * 0.28 + slot * 74;
+    const bounds = getBattleBounds();
+    const x = clamp(rect.left + rect.width * 0.08, bounds.left + 10, bounds.right - 250);
+    const y = clamp(rect.top + rect.height * 0.22 + slot * 50, bounds.top + 12, rect.bottom - 86);
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
     document.body.appendChild(el);
-    window.setTimeout(() => {
+    battleTimeout(() => {
       const index = activeOverflowCallouts.indexOf(el);
       if (index >= 0) activeOverflowCallouts.splice(index, 1);
       el.remove();
@@ -170,7 +215,7 @@ export function createUiEffects({
     el.appendChild(dragon);
 
     const name = document.createElement('strong');
-    name.textContent = skill.name || '主動技能';
+    name.textContent = skill.name || '武將技能';
     el.appendChild(name);
 
     document.body.appendChild(el);
@@ -184,7 +229,7 @@ export function createUiEffects({
     if (skill.variant) el.classList.add(`enemy-skill-cast-pop--${skill.variant}`);
 
     const name = document.createElement('strong');
-    name.textContent = skill.name || '妖術發動';
+    name.textContent = skill.name || '憒??澆?';
     el.appendChild(name);
 
     const rect = enemyArtEl?.getBoundingClientRect();
@@ -212,7 +257,7 @@ export function createUiEffects({
     `;
     enemyArtEl.appendChild(storm);
     shakeBattleStage();
-    window.setTimeout(() => storm.remove(), 1700);
+    battleTimeout(() => storm.remove(), 1700);
   }
 
   async function showIceTalismanCastEffect() {
@@ -255,7 +300,7 @@ export function createUiEffects({
     curse.style.setProperty('--ty', `${endY - startY}px`);
     document.body.appendChild(curse);
 
-    window.setTimeout(() => {
+    battleTimeout(() => {
       targetEl.classList.remove('chaos-doom-marked');
       void targetEl.offsetWidth;
       targetEl.classList.add('chaos-doom-marked');
@@ -264,14 +309,14 @@ export function createUiEffects({
       targetEl.appendChild(seal);
       const label = document.createElement('div');
       label.className = 'chaos-doom-label';
-      label.textContent = '即死';
+      label.textContent = '?單香';
       targetEl.appendChild(label);
-      window.setTimeout(() => seal.remove(), 1180);
-      window.setTimeout(() => label.remove(), 1180);
-      window.setTimeout(() => targetEl.classList.remove('chaos-doom-marked'), 1180);
+      battleTimeout(() => seal.remove(), 1180);
+      battleTimeout(() => label.remove(), 1180);
+      battleTimeout(() => targetEl.classList.remove('chaos-doom-marked'), 1180);
     }, 720);
 
-    window.setTimeout(() => curse.remove(), 980);
+    battleTimeout(() => curse.remove(), 980);
   }
 
   function showAttackEffect(type = 'slash') {
@@ -280,7 +325,7 @@ export function createUiEffects({
     const effect = document.createElement('div');
     effect.className = `attack-effect ${type}`;
     layer.appendChild(effect);
-    window.setTimeout(() => effect.remove(), 650);
+    battleTimeout(() => effect.remove(), 1120);
   }
 
   function showBoardBombs(cells = []) {
@@ -307,8 +352,8 @@ export function createUiEffects({
       marker.style.width = `${rect.width}px`;
       marker.style.height = `${rect.height}px`;
       document.body.appendChild(marker);
-      window.setTimeout(() => marker.remove(), 1120);
-      window.setTimeout(() => bomb.remove(), 1360);
+      battleTimeout(() => marker.remove(), 1120);
+      battleTimeout(() => bomb.remove(), 1360);
     });
   }
 
@@ -336,8 +381,8 @@ export function createUiEffects({
       marker.style.width = `${rect.width}px`;
       marker.style.height = `${rect.height}px`;
       document.body.appendChild(marker);
-      window.setTimeout(() => marker.remove(), 1180);
-      window.setTimeout(() => burst.remove(), 1380);
+      battleTimeout(() => marker.remove(), 1180);
+      battleTimeout(() => burst.remove(), 1380);
     });
   }
 
@@ -367,8 +412,8 @@ export function createUiEffects({
       debris.style.setProperty('--shatter-delay', `${Math.min(index * 28, 220)}ms`);
       document.body.appendChild(debris);
 
-      window.setTimeout(() => crack.remove(), 1220);
-      window.setTimeout(() => debris.remove(), 1320);
+      battleTimeout(() => crack.remove(), 1220);
+      battleTimeout(() => debris.remove(), 1320);
     });
   }
 
@@ -388,7 +433,7 @@ export function createUiEffects({
       marker.style.height = `${rect.height}px`;
       marker.style.setProperty('--convert-delay', `${Math.min(index * 32, 260)}ms`);
       document.body.appendChild(marker);
-      window.setTimeout(() => marker.remove(), 1450);
+      battleTimeout(() => marker.remove(), 1450);
     });
   }
 
@@ -401,7 +446,7 @@ export function createUiEffects({
   }
 
   function getAttackEffectType(color = 'light', label = '') {
-    if (label.includes('炸珠') || label.includes('爆破')) return 'bomb';
+    if (label.includes('?貊?') || label.includes('?')) return 'bomb';
     return getPlayerAttackEffectType(color);
   }
 
@@ -415,7 +460,7 @@ export function createUiEffects({
       { x: -88, y: 18, rot: 5, delay: 105, scale: 0.92 },
       { x: -142, y: 54, rot: -13, delay: 210, scale: 0.86 },
     ].forEach((hit) => {
-      window.setTimeout(() => {
+      battleTimeout(() => {
         const spear = document.createElement('div');
         spear.className = 'zhao-spear-thrust';
         spear.style.left = `${centerX + hit.x}px`;
@@ -431,8 +476,8 @@ export function createUiEffects({
         spark.style.setProperty('--impact-delay', `${hit.delay}ms`);
         document.body.appendChild(spark);
 
-        window.setTimeout(() => spear.remove(), 620);
-        window.setTimeout(() => spark.remove(), 560);
+        battleTimeout(() => spear.remove(), 620);
+        battleTimeout(() => spark.remove(), 560);
       }, hit.delay);
     });
   }
@@ -454,16 +499,16 @@ export function createUiEffects({
     shot.style.setProperty('--shot-y', `${endY - startY}px`);
     document.body.appendChild(shot);
 
-    window.setTimeout(() => {
+    battleTimeout(() => {
       const spark = document.createElement('div');
       spark.className = 'zhao-spear-impact spear-shot-impact';
       spark.style.left = `${endX}px`;
       spark.style.top = `${endY}px`;
       document.body.appendChild(spark);
-      window.setTimeout(() => spark.remove(), 560);
+      battleTimeout(() => spark.remove(), 560);
     }, 330);
 
-    window.setTimeout(() => shot.remove(), 720);
+    battleTimeout(() => shot.remove(), 720);
   }
 
   function animateHeroStrike(color = 'red') {
@@ -475,7 +520,7 @@ export function createUiEffects({
     void card.offsetWidth;
     card.classList.add('hero-strike');
     portrait.classList.add('portrait-strike');
-    window.setTimeout(() => {
+    battleTimeout(() => {
       card.classList.remove('hero-strike');
       portrait.classList.remove('portrait-strike');
     }, 460);
@@ -485,6 +530,7 @@ export function createUiEffects({
     animateHeroStrike(color);
     if (vfx === 'spearThrust') showSpearThrusts();
     else if (vfx === 'spearShot') showSpearShot();
+    else if (vfx === 'thunderTriple') showAttackEffect('thunder-triple');
     else showAttackEffect(getAttackEffectType(color, label));
     battleEl.classList.remove('shake');
     void battleEl.offsetWidth;
@@ -492,7 +538,7 @@ export function createUiEffects({
     enemyArtEl.classList.remove('hit', 'skill-hit', 'attack');
     void enemyArtEl.offsetWidth;
     enemyArtEl.classList.add(skill ? 'skill-hit' : 'hit');
-    window.setTimeout(() => enemyArtEl.classList.remove('hit', 'skill-hit'), skill ? 540 : 300);
+    battleTimeout(() => enemyArtEl.classList.remove('hit', 'skill-hit'), skill ? 540 : 300);
 
     const rect = enemyArtEl.getBoundingClientRect();
     const float = document.createElement('div');
@@ -516,7 +562,7 @@ export function createUiEffects({
     float.style.left = `${rect.left + rect.width / 2}px`;
     float.style.top = `${rect.top + rect.height * 0.46 - offset}px`;
     document.body.appendChild(float);
-    window.setTimeout(() => {
+    battleTimeout(() => {
       const index = activeEnemyDamageFloats.indexOf(float);
       if (index >= 0) activeEnemyDamageFloats.splice(index, 1);
       float.remove();
@@ -531,7 +577,7 @@ export function createUiEffects({
     pop.style.left = `${rect.left + rect.width / 2}px`;
     pop.style.top = `${rect.top + rect.height * 0.34}px`;
     document.body.appendChild(pop);
-    window.setTimeout(() => pop.remove(), 820);
+    battleTimeout(() => pop.remove(), 820);
   }
 
   function createAttackEffect(attackType = 'slash') {
@@ -552,7 +598,7 @@ export function createUiEffects({
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
     parent.appendChild(clone);
-    window.setTimeout(() => clone.remove(), 360);
+    battleTimeout(() => clone.remove(), 360);
     return clone;
   }
 
@@ -560,7 +606,7 @@ export function createUiEffects({
     battleEl.classList.remove('shake');
     void battleEl.offsetWidth;
     battleEl.classList.add('shake');
-    window.setTimeout(() => battleEl.classList.remove('shake'), 260);
+    battleTimeout(() => battleEl.classList.remove('shake'), 260);
   }
 
   function shakeBoard() {
@@ -568,7 +614,7 @@ export function createUiEffects({
     boardEl.classList.remove('shake');
     void boardEl.offsetWidth;
     boardEl.classList.add('shake');
-    window.setTimeout(() => boardEl.classList.remove('shake'), 220);
+    battleTimeout(() => boardEl.classList.remove('shake'), 220);
   }
 
   function flashTargetHit(targetEl) {
@@ -576,7 +622,7 @@ export function createUiEffects({
     targetEl.classList.remove('target-hit');
     void targetEl.offsetWidth;
     targetEl.classList.add('target-hit');
-    window.setTimeout(() => targetEl.classList.remove('target-hit'), 280);
+    battleTimeout(() => targetEl.classList.remove('target-hit'), 280);
   }
 
   function showFloatingDamage(targetEl, damage) {
@@ -588,11 +634,32 @@ export function createUiEffects({
     float.style.left = `${rect.left + rect.width / 2}px`;
     float.style.top = `${rect.top + 8}px`;
     document.body.appendChild(float);
-    window.setTimeout(() => float.remove(), 2000);
+    battleTimeout(() => float.remove(), 2000);
   }
 
   async function playEnemyAttackAnimation(enemyEl = enemyImageEl, targetEl = document.querySelector('.battle-party'), damage = 0, attackType = 'slash') {
     if (!enemyEl) return;
+    if (attackType === 'obsidian-cavalry') {
+      enemyArtEl.classList.remove('hit', 'skill-hit', 'attack', 'enemy-charging');
+      enemyEl.classList.remove('enemy-windup', 'enemy-lunge', 'enemy-return');
+      enemyEl.style.animation = '';
+      enemyArtEl.classList.add('enemy-charging', 'obsidian-charge-casting');
+      enemyEl.classList.add('enemy-phase-out');
+      await wait(120);
+
+      createAttackEffect(attackType);
+      shakeBattleStage();
+      flashTargetHit(targetEl);
+      showFloatingDamage(targetEl, damage);
+      await wait(720);
+
+      enemyEl.classList.remove('enemy-phase-out');
+      enemyEl.classList.add('enemy-phase-in');
+      await wait(220);
+      enemyEl.classList.remove('enemy-phase-in');
+      enemyArtEl.classList.remove('enemy-charging', 'obsidian-charge-casting');
+      return;
+    }
     enemyArtEl.classList.remove('hit', 'skill-hit', 'attack', 'enemy-charging');
     enemyEl.classList.remove('enemy-windup', 'enemy-lunge');
     enemyEl.style.animation = '';
@@ -601,8 +668,8 @@ export function createUiEffects({
     await wait(150);
 
     createAttackAfterimage(enemyEl);
-    window.setTimeout(() => createAttackAfterimage(enemyEl), 48);
-    window.setTimeout(() => createAttackAfterimage(enemyEl), 92);
+    battleTimeout(() => createAttackAfterimage(enemyEl), 48);
+    battleTimeout(() => createAttackAfterimage(enemyEl), 92);
     enemyEl.classList.remove('enemy-windup');
     enemyEl.classList.add('enemy-lunge');
     await wait(180);
@@ -614,7 +681,7 @@ export function createUiEffects({
     await wait(120);
 
     enemyEl.classList.remove('enemy-lunge');
-    enemyEl.style.animation = 'enemyReturn 250ms ease-out forwards';
+    enemyEl.style.animation = `enemyReturn ${scaleBattleMs(250)}ms ease-out forwards`;
     await wait(250);
     enemyEl.style.animation = '';
     enemyArtEl.classList.remove('enemy-charging');
@@ -633,14 +700,14 @@ export function createUiEffects({
       { x: 2, y: 0, rot: -18, delay: 80 },
       { x: 56, y: 22, rot: -12, delay: 150 },
     ].forEach((slash) => {
-      window.setTimeout(() => {
+      battleTimeout(() => {
         const el = document.createElement('div');
         el.className = 'claw-slash';
         el.style.left = `${centerX + slash.x}px`;
         el.style.top = `${centerY + slash.y}px`;
         el.style.setProperty('--rot', `${slash.rot}deg`);
         document.body.appendChild(el);
-        window.setTimeout(() => el.remove(), 560);
+        battleTimeout(() => el.remove(), 560);
       }, slash.delay);
     });
   }
@@ -670,7 +737,7 @@ export function createUiEffects({
     beam.style.color = getColorValue(color);
     beam.style.transform = `rotate(${angle}deg)`;
     document.body.appendChild(beam);
-    window.setTimeout(() => beam.remove(), 560);
+    battleTimeout(() => beam.remove(), 560);
   }
 
   function flashResult() {
@@ -746,3 +813,4 @@ export function showComboPop() {
 export function shakeBattleStage() {
   throw new Error('Use createUiEffects().shakeBattleStage after DOM refs are available.');
 }
+

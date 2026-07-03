@@ -35,6 +35,10 @@ export function getDomRefs() {
     talentDetailEl: document.getElementById('talentDetail'),
     talentResonanceEl: document.getElementById('talentResonance'),
     activeTalentListEl: document.getElementById('activeTalentList'),
+    playerNameDisplayEl: document.getElementById('playerNameDisplay'),
+    nameDialogEl: document.getElementById('nameDialog'),
+    nameFormEl: document.getElementById('nameForm'),
+    playerNameInputEl: document.getElementById('playerNameInput'),
     screens: {
       lobby: document.getElementById('lobbyScreen'),
       stage: document.getElementById('stageScreen'),

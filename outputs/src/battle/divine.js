@@ -16,7 +16,7 @@ export function pickDivineRewards(flags, count = 3) {
   return picked;
 }
 
-export function applyDivineFlag(flag, {
+export async function applyDivineFlag(flag, {
   traitRules,
   battleBalance,
   playerHero,
@@ -77,7 +77,7 @@ export function applyDivineFlag(flag, {
     resultEl.textContent = `${flag.name}：敵人攻擊降低 ${duration} 回合。`;
   } else if (type === 'destroy_all_orbs_of_selected_color') {
     const color = getRandomBoardColor();
-    destroyBoardColor(color);
+    await destroyBoardColor(color);
     resultEl.textContent = `${flag.name}：消除 ${traitRules[color]?.label ?? color} 珠。`;
   } else if (type === 'swap_two_orb_colors') {
     const first = getRandomBoardColor();

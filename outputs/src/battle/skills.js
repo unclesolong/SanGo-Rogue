@@ -44,7 +44,7 @@ export function createHeroSkillSystem({
     const minBombs = passive.minBombs ?? battleBalance.zhaoPassiveMinBombs;
     const maxBombs = passive.maxBombs ?? battleBalance.zhaoPassiveMaxBombs;
     const requested = minBombs + Math.floor(Math.random() * (maxBombs - minBombs + 1));
-    const bombed = destroyRandomOrbsByColor('red', requested);
+    const bombed = destroyRandomOrbsByColor('red', requested, { allowEquipmentChain: false });
     if (!bombed) return 0;
 
     const damage = Math.round(playerHero.attack * (passive.damagePerOrbAtk ?? battleBalance.bombDamageAtkPerOrb) * bombed);

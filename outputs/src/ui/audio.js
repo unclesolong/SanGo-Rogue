@@ -272,6 +272,64 @@ export function createAudioController({
     });
   }
 
+  function playHorseChargeSfx() {
+    const playSynthFallback = () => {
+      playHorseChargeSynthSfx();
+    };
+    const sound = new Audio('assets/audio/sfx_horse_charge_neigh_hoof.wav');
+    sound.volume = 1;
+    sound.play().catch(playSynthFallback);
+  }
+
+  function playHorseChargeSynthSfx() {
+    const context = getSfxContext();
+    if (!context) {
+      playEnemyAttackSfx();
+      return;
+    }
+    const now = context.currentTime;
+
+    [0, 0.12, 0.24, 0.36].forEach((delay, index) => {
+      const hoof = context.createOscillator();
+      const hoofGain = context.createGain();
+      const start = now + delay;
+      hoof.type = 'triangle';
+      hoof.frequency.setValueAtTime(index % 2 ? 118 : 92, start);
+      hoof.frequency.exponentialRampToValueAtTime(index % 2 ? 48 : 38, start + 0.08);
+      hoofGain.gain.setValueAtTime(index < 2 ? 0.72 : 0.92, start);
+      hoofGain.gain.exponentialRampToValueAtTime(0.001, start + 0.12);
+      hoof.connect(hoofGain).connect(context.destination);
+      hoof.start(start);
+      hoof.stop(start + 0.14);
+    });
+
+    const neigh = context.createOscillator();
+    const neighGain = context.createGain();
+    const neighFilter = context.createBiquadFilter();
+    neigh.type = 'sawtooth';
+    neigh.frequency.setValueAtTime(520, now + 0.08);
+    neigh.frequency.exponentialRampToValueAtTime(980, now + 0.24);
+    neigh.frequency.exponentialRampToValueAtTime(360, now + 0.58);
+    neighFilter.type = 'bandpass';
+    neighFilter.frequency.setValueAtTime(1200, now + 0.08);
+    neighFilter.Q.setValueAtTime(4.2, now + 0.08);
+    neighGain.gain.setValueAtTime(0.001, now + 0.06);
+    neighGain.gain.exponentialRampToValueAtTime(0.48, now + 0.17);
+    neighGain.gain.exponentialRampToValueAtTime(0.001, now + 0.62);
+    neigh.connect(neighFilter).connect(neighGain).connect(context.destination);
+    neigh.start(now + 0.06);
+    neigh.stop(now + 0.66);
+
+    playNoiseBurst({
+      duration: 0.72,
+      volume: 0.78,
+      filterType: 'bandpass',
+      startFreq: 1800,
+      endFreq: 260,
+      power: 1.45,
+    });
+  }
+
   function playOverflowSfx() {
     const context = getSfxContext();
     if (!context) {
@@ -378,6 +436,10 @@ export function createAudioController({
     playHeroVoice('assets/audio/sfx_combo_angry_hahh_1s.wav');
   }
 
+  function playStraightPunchSfx() {
+    playHeroVoice('assets/straight_punch.mp3');
+  }
+
   function playPassiveSfx() {
     playHeroVoice('assets/audio/sfx_hero_zhaoyun_passive_courage_trigger_ding_01.wav');
   }
@@ -400,10 +462,12 @@ export function createAudioController({
     playCourageExplosionSfx,
     playBurnSfx,
     playFreezeSfx,
+    playHorseChargeSfx,
     playOverflowSfx,
     playBonusSfx,
     playSkillCastSfx,
     playComboOrderSfx,
+    playStraightPunchSfx,
     playHeroVoice,
     playPassiveSfx,
     playRewardSfx,

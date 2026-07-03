@@ -5,7 +5,8 @@ import { heroDatabase } from './data/heroes.js?v=dragon-soul-burst-20260701f';
 import { rogueRewards } from './data/rogueRewards.js?v=pursuit-order-20260701a';
 import { equipmentRewards } from './data/equipmentRewards.js?v=weapon-icons-20260701a';
 import { divineFlagsPack } from './data/divineFlags.js?v=divine-rework-20260701a';
-import { stageData } from './data/monsters.js?v=yellow-bleed-blade-20260702a';
+import { stageData } from './data/monsters.js?v=orb-mark-wrap-20260703a';
+import { TALENT_STORAGE_KEY, defaultTalentLevels, thunderTalentConfig } from './data/talentDefinitions.js?v=talent-definitions-20260703a';
 import { createMonsterBattleState, getMonsterArt, getMonsterPreviewDamage, getMonsterTurnCooldown, getStageMonster } from './data/monsterCatalog.js';
 import { completeStage, createStageProgress, createStageSelectModel } from './progression/stageProgress.js';
 import {
@@ -16,13 +17,13 @@ import {
   pickEquipmentRewards,
 } from './progression/equipmentProgress.js?v=gem-runes-20260701a';
 import { getDomRefs } from './ui/dom.js';
-import { createUiEffects } from './ui/effects.js?v=dragon-skill-contained-20260702a';
-import { createAudioController } from './ui/audio.js?v=bomb-empty-drop-20260702c';
+import { createUiEffects } from './ui/effects.js?v=thunder-talents-20260703a';
+import { createAudioController } from './ui/audio.js?v=horse-charge-sfx-file-20260703a';
 import { renderHeroRow } from './ui/renderBattle.js?v=enemy-poison-debuff-20260702a';
-import { createTalentScreenController } from './ui/talentScreen.js?v=talent-board-module-20260702a';
+import { createTalentScreenController } from './ui/talentScreen.js?v=talent-definitions-20260703a';
 import { calculateBombDamage as calculateBombDamageValue } from './battle/damage.js';
-import { applyHeroAttackPresentation, getHeroAttackPresentation } from './battle/heroPresentation.js?v=hero-presentation-20260702a';
-import { canActivateHeroSkill, createHeroSkillDialogModel, createHeroSkillSystem } from './battle/skills.js?v=dragon-soul-burst-20260701f';
+import { applyHeroAttackPresentation, getHeroAttackPresentation } from './battle/heroPresentation.js?v=hero-pursuit-straight-punch-20260702a';
+import { canActivateHeroSkill, createHeroSkillDialogModel, createHeroSkillSystem } from './battle/skills.js?v=passive-bomb-refill-wait-20260703a';
 import {
   createEnemySkillCooldowns,
   getEnemyActionIntents,
@@ -31,7 +32,7 @@ import {
   resetEnemySkillCooldown,
   resolveEnemyAction,
   tickEnemySkillCooldowns,
-} from './battle/turns.js?v=enemy-intent-panel-20260702a';
+} from './battle/turns.js?v=baqi-soul-skills-20260703a';
 import {
   applyDivineFlag as applyDivineFlagEffect,
   applyOrderReward as applyOrderRewardEffect,
@@ -41,7 +42,7 @@ import {
   canUseOrder,
   pickDivineRewards,
   pickOrderRewards,
-} from './battle/rewards.js?v=divine-rework-20260701a';
+} from './battle/rewards.js?v=board-refill-before-damage-20260703a';
 
 const colors = teamElements.map((elementId) => traitRules[elementId]);
     
@@ -94,8 +95,13 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     let swapAnim = null;
     let dropKeys = new Set();
     let boardRefillTimer = null;
+    let boardRefillPromise = null;
+    let boardRefillResolve = null;
+    let boardRefillGeneration = 0;
     let pendingBoardRefillPreventAutoMatches = false;
     let chargeDamage = {};
+    let thunderHoofRoute = null;
+    let snakeSoulCurse = null;
     let activeBuffs = [];
     const frozenOrbAssetByColor = {
       red: 'assets/frozen-clean/FIRE STONE FROZEN CLEAN.png',
@@ -140,6 +146,20 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     let bgmStarted = false;
     let heroCardPressTimer = null;
     let heroCardLongPressFired = false;
+    let battleSpeedMultiplier = Number(localStorage.getItem('battleSpeedMultiplier') || 1) === 2 ? 2 : 1;
+    window.__battleSpeedMultiplier = battleSpeedMultiplier;
+
+    function getBattleSpeedMultiplier() {
+      return battleSpeedMultiplier === 2 ? 2 : 1;
+    }
+
+    function scaleBattleMs(ms) {
+      return Math.max(16, Math.round(ms / getBattleSpeedMultiplier()));
+    }
+
+    function battleTimeout(callback, ms, ...args) {
+      return globalThis.setTimeout(callback, scaleBattleMs(ms), ...args);
+    }
 
     const {
       boardEl,
@@ -177,6 +197,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       talentDetailEl,
       talentResonanceEl,
       activeTalentListEl,
+      playerNameDisplayEl,
+      nameDialogEl,
+      nameFormEl,
+      playerNameInputEl,
       screens,
     } = getDomRefs();
     const uiEffects = createUiEffects({
@@ -210,18 +234,81 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       guiguCleared: 0,
       skyEyeUsedThisTurn: false,
     };
+    const PLAYER_PROFILE_KEY = 'sangoPlayerProfileV1';
+
+    function loadPlayerProfile() {
+      try {
+        return JSON.parse(localStorage.getItem(PLAYER_PROFILE_KEY) || 'null');
+      } catch {
+        return null;
+      }
+    }
+
+    function savePlayerProfile(profile) {
+      localStorage.setItem(PLAYER_PROFILE_KEY, JSON.stringify(profile));
+    }
+
+    function getPlayerName() {
+      return loadPlayerProfile()?.name || '';
+    }
+
+    function updatePlayerNameDisplay() {
+      if (playerNameDisplayEl) playerNameDisplayEl.textContent = getPlayerName() || '主公';
+    }
+
+    function openNameDialog() {
+      nameDialogEl?.classList.add('show');
+      playerNameInputEl?.focus();
+    }
+
+    function closeNameDialog() {
+      nameDialogEl?.classList.remove('show');
+    }
+
+    function enterMainMenu() {
+      updatePlayerNameDisplay();
+      startBattleBgm();
+      showScreen('menu');
+    }
+
+    function getTalentLevel(id) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(TALENT_STORAGE_KEY) || 'null');
+        if (Number.isFinite(saved?.levels?.[id])) return saved.levels[id];
+      } catch {
+        // Talent progress is optional in the prototype.
+      }
+      return defaultTalentLevels[id] ?? 0;
+    }
+
+    function hasTalent(id) {
+      return getTalentLevel(id) > 0;
+    }
+
+    function getThunderSkyfallBonus() {
+      if (thunderTalentConfig.skyfall15TalentIds.some((id) => hasTalent(id))) {
+        return thunderTalentConfig.skyfall15Bonus;
+      }
+      if (hasTalent(thunderTalentConfig.skyfall10TalentId)) return thunderTalentConfig.skyfall10Bonus;
+      return 0;
+    }
 
     function randomColor() {
       if (divineStates.eastWindTurns > 0 && Math.random() < 0.3) return 'enhancedRed';
       const redBonus = sumEquipmentEffect('red_skyfall_weight_bonus');
-      if (redBonus <= 0) {
+      const thunderBonus = getThunderSkyfallBonus();
+      if (redBonus <= 0 && thunderBonus <= 0) {
         const picked = colors[Math.floor(Math.random() * colors.length)].id;
         return divineStates.eastWindTurns > 0 && picked === 'red' ? 'enhancedRed' : picked;
       }
 
       const weighted = colors.map((color) => ({
         id: color.id,
-        weight: color.id === 'red' ? 1 + redBonus * colors.length : 1,
+        weight: color.id === 'red'
+          ? 1 + redBonus * colors.length
+          : color.id === 'yellow'
+            ? 1 + thunderBonus * colors.length
+            : 1,
       }));
       const totalWeight = weighted.reduce((sum, color) => sum + color.weight, 0);
       let roll = Math.random() * totalWeight;
@@ -241,6 +328,21 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       return rule.values[Math.min(7, Math.max(3, count))] ?? rule.values[3];
     }
 
+    function getArmorBreakStatus() {
+      return playerStatusEffects.find((effect) => effect.type === 'armorBreak');
+    }
+
+    function applyShieldGainModifiers(amount) {
+      let shieldAmount = Math.round(amount);
+      const armorBreak = getArmorBreakStatus();
+      if (armorBreak) {
+        const reduction = armorBreak.shieldReduction ?? 0.5;
+        shieldAmount = Math.round(shieldAmount * Math.max(0, 1 - reduction));
+        showBuffFlash(`裂甲 護盾-${Math.round(reduction * 100)}%`);
+      }
+      return shieldAmount;
+    }
+
     function addPlayerShield(amount) {
       playerShield += amount;
       playerShieldTurns = 3;
@@ -255,7 +357,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     async function gainPlayerShield(amount) {
-      const shieldAmount = Math.round(amount * (1 + sumEquipmentEffect('shield_gain_multiplier')));
+      const shieldAmount = applyShieldGainModifiers(amount * (1 + sumEquipmentEffect('shield_gain_multiplier')));
       await showBattleMessage(`獲得護盾 +${shieldAmount}`, 'shield');
       showPlayerGain(shieldAmount, 'shield');
       await wait(320);
@@ -289,7 +391,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         void target.offsetWidth;
         target.classList.add('hp-healing');
         target.appendChild(healEffect);
-        window.setTimeout(() => {
+        battleTimeout(() => {
           healEffect.remove();
           target.classList.remove('hp-healing');
         }, 1180);
@@ -310,7 +412,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       float.style.left = `${rect.left + rect.width / 2}px`;
       float.style.top = `${type === 'heal' ? rect.top - 22 : rect.top + 10}px`;
       document.body.appendChild(float);
-      window.setTimeout(() => float.remove(), 1380);
+      battleTimeout(() => float.remove(), 1380);
     }
 
     function addHeroEnergy(amount) {
@@ -349,7 +451,9 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             ? `燃燒 ${debuff.turns}`
             : debuff.type === 'poison'
               ? `中毒 ${debuff.turns}`
-              : `${Math.round((debuff.amount || 0) * 100)}% ${debuff.turns}`;
+              : debuff.type === 'paralysis'
+                ? `麻痺 ${debuff.turns}`
+                : `${Math.round((debuff.amount || 0) * 100)}% ${debuff.turns}`;
         chip.title = debuff.description || label;
         chip.setAttribute('aria-label', label);
 
@@ -441,6 +545,38 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       addLog(`暗特性 ${count} 消，敵人易傷 +${gained} 層（COMBO x${comboMultiplier.toFixed(2)}）。`);
     }
 
+    function addEnemyParalysis(turns = 1) {
+      const existing = enemyDebuffs.find((debuff) => debuff.type === 'paralysis');
+      if (existing) {
+        existing.turns = Math.max(existing.turns, turns);
+        existing.fresh = true;
+      } else {
+        enemyDebuffs.push({
+          id: 'paralysis',
+          type: 'paralysis',
+          name: '麻痺',
+          turns,
+          fresh: true,
+          icon: 'assets/talents/talent-icon-lightning.png',
+          description: '下一次敵方行動無法攻擊。',
+        });
+      }
+      renderEnemyDebuffs();
+      showEnemyStatusCallout('麻痺');
+      showBuffFlash('麻痺');
+      addLog(`${thunderTalentConfig.labels.punishment}使敵人陷入麻痺。`);
+    }
+
+    function consumeEnemyParalysis() {
+      const index = enemyDebuffs.findIndex((debuff) => debuff.type === 'paralysis');
+      if (index < 0) return false;
+      enemyDebuffs.splice(index, 1);
+      renderEnemyDebuffs();
+      showBuffFlash('敵人麻痺');
+      addLog('敵人因麻痺無法行動。');
+      return true;
+    }
+
     function addEnemyBurn(durationTurns = battleBalance.enhancedFireBurnTurns, amount = battleBalance.enhancedFireBurnMaxHp) {
       const existing = enemyDebuffs.find((debuff) => debuff.type === 'burn');
       if (existing) {
@@ -488,13 +624,31 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       showEnemyStatusCallout('中毒');
     }
 
-    function applyPlayerDamage(amount) {
+    function getPlayerBrandStacks() {
+      return playerStatusEffects
+        .filter((effect) => effect.type === 'brand')
+        .reduce((sum, effect) => sum + (effect.stacks ?? 1), 0);
+    }
+
+    function applyPlayerDamage(amount, { ignoreBrand = false, fixed = false } = {}) {
       if (divineStates.invincibleTurns > 0) {
         showBuffFlash('八陣圖：無敵');
         addLog('八陣圖擋下了敵人的攻擊。');
         return 0;
       }
       let damage = amount;
+      const armorBreak = getArmorBreakStatus();
+      if (fixed && armorBreak) {
+        const bonusDamage = armorBreak.fixedDamageBonus ?? 100;
+        damage += bonusDamage;
+        showBuffFlash(`裂甲 固傷+${bonusDamage}`);
+      }
+      const brandStacks = ignoreBrand ? 0 : getPlayerBrandStacks();
+      if (brandStacks > 0) {
+        const bonusRate = brandStacks * 0.2;
+        damage = Math.round(damage * (1 + bonusRate));
+        showBuffFlash(`烙印 +${Math.round(bonusRate * 100)}%`);
+      }
       if (ironWallTurns > 0) {
         damage = Math.round(damage * (1 - battleBalance.ironWallReduction));
         showBuffFlash('鐵壁 -30%');
@@ -562,11 +716,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       });
       if (spawned > 0) {
         showBuffFlash(`符石生珠 +${spawned}`);
+        stabilizeBoardMatchesWithoutClearing();
         renderBoard();
       }
       const shieldStacks = sumEquipmentEffect('turn_start_shield_stack');
       if (shieldStacks <= 0 || playerHp <= 0) return;
-      const shieldAmount = Math.round(playerMaxHp * 0.05 * shieldStacks);
+      const shieldAmount = applyShieldGainModifiers(playerMaxHp * 0.05 * shieldStacks);
       playerShield += shieldAmount;
       playerShieldTurns = Math.max(playerShieldTurns, 1);
       shieldCounterReady = true;
@@ -590,6 +745,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           showBoardConversions(conversion.cells);
           showBuffFlash(`流火 +${conversion.count}`);
           addLog(`流火符石生成 ${conversion.count} 顆強化火珠。`);
+          stabilizeBoardMatchesWithoutClearing();
           renderBoard();
         }
       }
@@ -711,6 +867,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       return multiplier;
     }
 
+    function isFireAttackSealed() {
+      return playerStatusEffects.some((effect) => effect.type === 'slow' || effect.type === 'fireSeal');
+    }
+
     function getComboDamageMultiplier(combo) {
       const buff = activeBuffs.find((item) => item.type === 'combo_damage');
       const base = getComboBaseMultiplier(combo);
@@ -824,17 +984,22 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         },
         poison: {
           name: '中毒',
-          icon: 'assets/POSION.png',
+          icon: 'assets/effects/debuff_poison_ai.png',
           value: effect.damage ? ` ${effect.damage}` : '',
         },
         bleed: {
           name: '流血',
-          icon: 'assets/effects/bleed_blade_cast.png',
+          icon: 'assets/effects/debuff_bleed_ai.png',
           value: effect.damage ? ` ${effect.damage}` : '',
         },
+        huntMark: {
+          name: '獵印',
+          icon: 'assets/effects/debuff_hunt_mark_ai.png',
+          value: '',
+        },
         slow: {
-          name: '遲緩',
-          icon: 'assets/rogue/buffs/buff_sorcery_.png',
+          name: '封攻',
+          icon: 'assets/effects/debuff_slow_ai.png',
           value: '',
         },
         freeze: {
@@ -845,6 +1010,16 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         doom: {
           name: '即死',
           icon: 'assets/DARK STONE FROZEN.png',
+          value: '',
+        },
+        brand: {
+          name: '烙印',
+          icon: 'assets/effects/brand_debuff_icon_ai.png',
+          value: effect.stacks ? ` x${effect.stacks}` : '',
+        },
+        armorBreak: {
+          name: '裂甲',
+          icon: 'assets/effects/debuff_armor_break_ai.png',
           value: '',
         },
       };
@@ -867,8 +1042,11 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         const meta = getPlayerStatusMeta(effect);
         return `
           <div class="buff-chip debuff-chip" title="${effect.description ?? meta.name}">
-            <img src="${meta.icon}" alt="${meta.name}">
-            <span>${meta.name}${meta.value} ${effect.turns > 0 ? effect.turns : ''}</span>
+            <span class="debuff-icon-wrap">
+              <img src="${meta.icon}" alt="${meta.name}">
+              ${effect.turns > 0 ? `<b class="debuff-turn-badge">${effect.turns}</b>` : ''}
+            </span>
+            <span class="debuff-label">${meta.name}${meta.value}</span>
           </div>
         `;
       }).join('');
@@ -881,6 +1059,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       });
       activeBuffs = activeBuffs.filter((buff) => buff.turns !== 0);
       tickFrozenOrbs();
+      tickBlankOrbs();
+      tickSoulLockedOrbs();
+      tickFlameMarkedOrbs();
+      tickThunderHoofRoute();
       tickEnemyDebuffs();
       tickDivineStates();
       renderDivineStatusBanner();
@@ -899,7 +1081,195 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         changed = true;
         if (cell.frozen.turns <= 0) delete cell.frozen;
       }));
+      if (changed) {
+        stabilizeBoardMatchesWithoutClearing();
+        renderBoard();
+      }
+    }
+
+    function tickBlankOrbs() {
+      let changed = false;
+      board.forEach((row, y) => row.forEach((cell, x) => {
+        if (!cell?.blank) return;
+        if (cell.blank.fresh) {
+          cell.blank.fresh = false;
+          return;
+        }
+        cell.blank.turns--;
+        changed = true;
+        if (cell.blank.turns <= 0) board[y][x] = makeOrb();
+      }));
       if (changed) renderBoard();
+    }
+
+    function tickSoulLockedOrbs() {
+      let changed = false;
+      board.forEach((row) => row.forEach((cell) => {
+        if (!cell?.soulLock) return;
+        if (cell.soulLock.fresh) {
+          cell.soulLock.fresh = false;
+          return;
+        }
+        cell.soulLock.turns--;
+        changed = true;
+        if (cell.soulLock.turns <= 0) delete cell.soulLock;
+      }));
+      if (changed) renderBoard();
+    }
+
+    function tickFlameMarkedOrbs() {
+      let changed = false;
+      let emberExploded = 0;
+      let flameArrayExploded = 0;
+      let flameArrayDamage = 0;
+      const burstCells = [];
+
+      board.forEach((row, y) => row.forEach((cell, x) => {
+        if (!cell) return;
+        if (cell.emberMark) {
+          if (cell.emberMark.fresh) {
+            cell.emberMark.fresh = false;
+          } else {
+            cell.emberMark.turns--;
+            changed = true;
+            if (cell.emberMark.turns <= 0) {
+              emberExploded++;
+              burstCells.push({ x, y });
+              delete cell.emberMark;
+            }
+          }
+        }
+        if (cell.flameArrayMark) {
+          if (cell.flameArrayMark.fresh) {
+            cell.flameArrayMark.fresh = false;
+          } else {
+            cell.flameArrayMark.turns--;
+            changed = true;
+            if (cell.flameArrayMark.turns <= 0) {
+              const brandStacks = getPlayerBrandStacks();
+              flameArrayExploded++;
+              flameArrayDamage += (cell.flameArrayMark.explosionDamage ?? 150)
+                + brandStacks * (cell.flameArrayMark.brandBonusDamage ?? 50);
+              burstCells.push({ x, y });
+              delete cell.flameArrayMark;
+            }
+          }
+        }
+      }));
+
+      if (burstCells.length) {
+        showBoardPoisonBursts(burstCells);
+        playBombSfx();
+      }
+      if (emberExploded > 0) {
+        addPlayerStatus({
+          type: 'brand',
+          name: '烙印',
+          stacks: emberExploded,
+          turns: 5,
+          icon: 'assets/effects/brand_debuff_icon_ai.png',
+          description: `每層使受到攻擊傷害 +20%，目前增加 ${emberExploded * 20}%。`,
+        });
+        addLog(`焰印爆發 ${emberExploded} 顆，玩家獲得烙印 ${emberExploded} 層。`);
+      }
+      if (flameArrayDamage > 0) {
+        const dealt = applyPlayerDamage(flameArrayDamage, { ignoreBrand: true, fixed: true });
+        addLog(`焰陣印記爆發 ${flameArrayExploded} 顆，造成 ${dealt} 傷害。`);
+        updateStats();
+      }
+      if (changed || burstCells.length) renderBoard();
+    }
+
+    function clearThunderHoofRoute(success = false) {
+      if (!thunderHoofRoute) return;
+      board.forEach((row) => row.forEach((cell) => {
+        if (cell?.thunderHoofMark) delete cell.thunderHoofMark;
+      }));
+      if (success) {
+        showBuffFlash('雷蹄踏陣解除');
+        addLog('成功消除衝鋒路徑，雷蹄踏陣解除。');
+      }
+      thunderHoofRoute = null;
+      renderBoard();
+    }
+
+    function recordThunderHoofClear(cell) {
+      if (!cell?.thunderHoofMark || !thunderHoofRoute) return;
+      thunderHoofRoute.cleared++;
+      if (thunderHoofRoute.cleared >= thunderHoofRoute.required) clearThunderHoofRoute(true);
+    }
+
+    function clearSnakeSoulCurse(success = false) {
+      board.forEach((row) => row.forEach((cell) => {
+        if (cell?.snakeSoul) delete cell.snakeSoul;
+      }));
+      if (success) {
+        showBuffFlash('蛇魂詛咒解除');
+        addLog('光珠淨化蛇魂詛咒，蛇魂珠解除。');
+      }
+      snakeSoulCurse = null;
+      renderBoard();
+    }
+
+    function recordSnakeSoulLightClears(pendingTraits) {
+      if (!snakeSoulCurse) return;
+      const lightClears = pendingTraits
+        .filter((effect) => effect.color === 'light')
+        .reduce((sum, effect) => sum + effect.count, 0);
+      if (lightClears <= 0) return;
+      snakeSoulCurse.cleared = Math.min(snakeSoulCurse.required, snakeSoulCurse.cleared + lightClears);
+      board.forEach((row) => row.forEach((cell) => {
+        if (cell?.snakeSoul) {
+          cell.snakeSoul.cleared = snakeSoulCurse.cleared;
+          cell.snakeSoul.required = snakeSoulCurse.required;
+        }
+      }));
+      addLog(`光珠淨化蛇魂 ${snakeSoulCurse.cleared}/${snakeSoulCurse.required}。`);
+      if (snakeSoulCurse.cleared >= snakeSoulCurse.required) clearSnakeSoulCurse(true);
+      else renderBoard();
+    }
+
+    function tickThunderHoofRoute() {
+      if (!thunderHoofRoute) return;
+      if (thunderHoofRoute.fresh) {
+        thunderHoofRoute.fresh = false;
+        return;
+      }
+      thunderHoofRoute.turns--;
+      board.forEach((row) => row.forEach((cell) => {
+        if (cell?.thunderHoofMark) cell.thunderHoofMark.turns = thunderHoofRoute.turns;
+      }));
+      if (thunderHoofRoute.cleared >= thunderHoofRoute.required) {
+        clearThunderHoofRoute(true);
+        return;
+      }
+      if (thunderHoofRoute.turns <= 0) {
+        const burstCells = [];
+        const targetColumns = new Set(thunderHoofRoute.columns ?? []);
+        board.forEach((row) => row.forEach((cell, x) => {
+          if (cell?.thunderHoofMark) targetColumns.add(x);
+        }));
+        const columns = [...targetColumns];
+        columns.forEach((x) => {
+          for (let y = 0; y < height; y++) {
+            burstCells.push({ x, y });
+            board[y][x] = {
+              blank: {
+                turns: thunderHoofRoute.blankTurns ?? 5,
+                fresh: true,
+              },
+            };
+          }
+        });
+        showBoardPoisonBursts(burstCells);
+        playHorseChargeSfx();
+        animateEnemyAttack('obsidian-cavalry');
+        showBuffFlash('雷蹄衝鋒：整欄破碎');
+        addLog(`雷蹄踏陣未解除，黑曜鬼騎衝毀第 ${columns.map((x) => x + 1).join('、')} 欄，空白裂洞持續 ${thunderHoofRoute.blankTurns ?? 5} 回合。`);
+        thunderHoofRoute = null;
+        updateStats();
+      }
+      renderBoard();
     }
 
     function tickPoisonOrbs() {
@@ -926,7 +1296,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       exploded.forEach(({ x, y }) => {
         board[y][x] = makeOrb();
       });
-      const dealt = applyPlayerDamage(totalDamage);
+      stabilizeBoardMatchesWithoutClearing();
+      const dealt = applyPlayerDamage(totalDamage, { fixed: true });
       addPlayerStatus({
         type: 'poison',
         name: '中毒',
@@ -1065,9 +1436,9 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (chaosDoom?.active) {
         playerStatusEffects.push({
           type: 'doom',
-          name: '即死',
+          name: chaosDoom.name ?? '即死',
           turns: chaosDoom.turns,
-          icon: 'assets/DARK STONE FROZEN.png',
+          icon: chaosDoom.icon ?? 'assets/DARK STONE FROZEN.png',
           description: `${chaosDoom.turns} 回合後 HP 歸 0。消除 ${chaosDoom.required} 顆${getOrbColorLabel(chaosDoom.targetColor)}珠可解除。`,
         });
       }
@@ -1090,7 +1461,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       panel.innerHTML = `
         <img src="${orbSrc}" alt="${label}珠">
         <div>
-          <strong>${label}*${chaosDoom.cleared}/${chaosDoom.required}<span>需要消除 ${chaosDoom.required} 顆${label}珠</span></strong>
+          <strong>${chaosDoom.skillName ?? '即死倒數'}<span>消珠提示：${label}珠 ${chaosDoom.cleared}/${chaosDoom.required}</span></strong>
+          <small>需要消除 ${chaosDoom.required} 顆${label}珠</small>
         </div>
         <em>${chaosDoom.turns}回合</em>
       `;
@@ -1107,7 +1479,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (aura) return;
       aura = document.createElement('div');
       aura.className = 'boss-ghostfire-aura';
-      aura.innerHTML = Array.from({ length: 9 }, (_, index) => `<i style="--i:${index}"></i>`).join('');
+      aura.innerHTML = `<span class="boss-ghostfire-ring"></span>${Array.from({ length: 9 }, (_, index) => `<i style="--i:${index}"></i>`).join('')}`;
       enemyArtEl.appendChild(aura);
     }
 
@@ -1123,7 +1495,9 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const targetColor = targetColors[Math.floor(Math.random() * targetColors.length)];
       chaosDoom = {
         active: true,
+        name: skill.statusName ?? '即死',
         skillName: skill.name,
+        icon: skill.icon,
         targetColor,
         required: skill.requiredClears ?? 10,
         cleared: 0,
@@ -1131,12 +1505,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       };
       syncChaosDoomStatus();
       renderChaosDoomWarning();
-      addLog(`${skill.name}：即死倒數 ${chaosDoom.turns} 回合。消除 ${chaosDoom.required} 顆${getOrbColorLabel(targetColor)}珠可解除。`);
-      window.setTimeout(() => {
+      addLog(`${skill.name}：倒數 ${chaosDoom.turns} 回合。消除 ${chaosDoom.required} 顆${getOrbColorLabel(targetColor)}珠可解除。`);
+      battleTimeout(() => {
         playChaosThunderSfx();
         uiEffects.showChaosStormEffect?.();
         showEnemySkillCastIntro({ name: skill.name, variant: 'chaos' });
-        window.setTimeout(() => uiEffects.showChaosDoomApplyEffect?.(), 520);
+        battleTimeout(() => uiEffects.showChaosDoomApplyEffect?.(), 520);
         showBuffFlash(`即死倒數 ${chaosDoom?.turns ?? 0} 回合`);
       }, 260);
     }
@@ -1144,7 +1518,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function clearChaosDoom() {
       if (!chaosDoom?.active) return;
       const label = getOrbColorLabel(chaosDoom.targetColor);
-      addLog(`累積消除 ${chaosDoom.required} 顆${label}珠，混沌開天解除。`);
+      addLog(`累積消除 ${chaosDoom.required} 顆${label}珠，${chaosDoom.skillName ?? '即死倒數'}解除。`);
       showBuffFlash('即死解除');
       chaosDoom = null;
       syncChaosDoomStatus();
@@ -1158,7 +1532,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         .reduce((sum, effect) => sum + effect.count, 0);
       if (cleared <= 0) return;
       chaosDoom.cleared = Math.min(chaosDoom.required, chaosDoom.cleared + cleared);
-      addLog(`混沌開天：${getOrbColorLabel(chaosDoom.targetColor)}珠 ${chaosDoom.cleared}/${chaosDoom.required}。`);
+      addLog(`${chaosDoom.skillName ?? '即死倒數'}：${getOrbColorLabel(chaosDoom.targetColor)}珠 ${chaosDoom.cleared}/${chaosDoom.required}。`);
       if (chaosDoom.cleared >= chaosDoom.required) {
         clearChaosDoom();
       } else {
@@ -1172,11 +1546,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       chaosDoom.turns--;
       if (chaosDoom.turns <= 0) {
         const damage = playerHp;
+        const doomName = chaosDoom.skillName ?? '即死倒數';
         chaosDoom = null;
         playerHp = 0;
         if (damage > 0) showPlayerDamage(damage);
-        addLog('混沌開天倒數結束，玩家即死。');
-        resultEl.textContent = '混沌開天：即死';
+        addLog(`${doomName}倒數結束，玩家即死。`);
+        resultEl.textContent = `${doomName}：即死`;
         flashResult();
         syncChaosDoomStatus();
         renderChaosDoomWarning();
@@ -1244,6 +1619,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       audioController.playFreezeSfx?.();
     }
 
+    function playHorseChargeSfx() {
+      audioController.playHorseChargeSfx?.();
+    }
+
     function playOverflowSfx() {
       audioController.playOverflowSfx();
     }
@@ -1260,8 +1639,13 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       audioController.playComboOrderSfx?.();
     }
 
+    function playStraightPunchSfx() {
+      audioController.playStraightPunchSfx?.();
+    }
+
     function playAttackEventSfx(event) {
       if (event.sfx === 'comboOrder') playComboOrderSfx();
+      if (event.sfx === 'straightPunch') playStraightPunchSfx();
       if (event.attackType === 'thunder' || event.sfx === 'thunder') playThunderSfx();
       if (event.sfx === 'courageExplosion' || event.label?.includes('爆破')) playCourageExplosionSfx();
     }
@@ -1271,6 +1655,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     function playEnemyActionSfx(skill) {
+      if (skill?.effectType === 'dash_damage' || skill?.effectType === 'thunder_hoof_route' || skill?.effectType === 'armor_break') {
+        playHorseChargeSfx();
+        return;
+      }
       if (skill?.effectType === 'freeze') {
         playFreezeSfx();
         return;
@@ -1294,7 +1682,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const actionName = presentation.name || event.label || '攻擊';
       el.innerHTML = `${icon}<span>${heroName}・${actionName}</span>`;
       document.body.appendChild(el);
-      window.setTimeout(() => el.remove(), 1000);
+      battleTimeout(() => el.remove(), 1000);
     }
 
     function addOrderGauge(count) {
@@ -1362,7 +1750,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function destroyRandomNonSpecialOrb() {
       const candidates = [];
       board.forEach((row, y) => row.forEach((cell, x) => {
-        if (cell && !cell.special) candidates.push({ x, y });
+        if (cell && !cell.blank && !cell.special) candidates.push({ x, y });
       }));
       if (!candidates.length) return false;
       const target = candidates[Math.floor(Math.random() * candidates.length)];
@@ -1381,7 +1769,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           const [xText, yText] = key.split(',');
           const x = Number(xText);
           const y = Number(yText);
-          if (board[y]?.[x] && !board[y][x].special) board[y][x] = makeOrb();
+          if (board[y]?.[x] && !board[y][x].blank && !board[y][x].special) board[y][x] = makeOrb();
         });
       }
     }
@@ -1391,24 +1779,41 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       dropKeys = new Set();
       renderBoard();
 
-      if (boardRefillTimer) window.clearTimeout(boardRefillTimer);
-      boardRefillTimer = window.setTimeout(() => {
+      if (boardRefillTimer) {
+        window.clearTimeout(boardRefillTimer);
+        boardRefillTimer = null;
+        boardRefillResolve?.();
+      }
+      const generation = ++boardRefillGeneration;
+      boardRefillPromise = new Promise((resolve) => {
+        boardRefillResolve = resolve;
+      });
+      boardRefillTimer = battleTimeout(() => {
         boardRefillTimer = null;
         dropKeys = collapseBoard();
         if (pendingBoardRefillPreventAutoMatches) stabilizeBoardMatchesWithoutClearing();
         pendingBoardRefillPreventAutoMatches = false;
         renderBoard();
-        window.setTimeout(() => {
+        battleTimeout(() => {
+          if (generation !== boardRefillGeneration) return;
           dropKeys = new Set();
           renderBoard();
+          boardRefillResolve?.();
+          boardRefillResolve = null;
+          boardRefillPromise = null;
         }, 360);
       }, delay);
+      return boardRefillPromise;
+    }
+
+    async function waitForBoardRefill() {
+      if (boardRefillPromise) await boardRefillPromise;
     }
 
     function destroyRandomNonSpecialOrbs(requestedCount, { preventAutoMatches = false, visual = 'bomb' } = {}) {
       const candidates = [];
       board.forEach((row, y) => row.forEach((cell, x) => {
-        if (cell && !cell.special) candidates.push({ x, y });
+        if (cell && !cell.blank && !cell.special) candidates.push({ x, y });
       }));
       const count = Math.min(requestedCount, candidates.length);
       const bombedCells = [];
@@ -1434,7 +1839,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function destroyRandomOrbsByColor(color, requestedCount, { allowEquipmentChain = true } = {}) {
       const candidates = [];
       board.forEach((row, y) => row.forEach((cell, x) => {
-        if (cell && !cell.special && cellColor(cell) === color) candidates.push({ x, y });
+        if (cell && !cell.blank && !cell.special && cellColor(cell) === color) candidates.push({ x, y });
       }));
       if (!candidates.length) return 0;
       let destroyed = 0;
@@ -1460,7 +1865,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function freezeRandomBoardOrbs(effect) {
       const candidates = [];
       board.forEach((row, y) => row.forEach((cell, x) => {
-        if (cell && !cell.special && !cell.frozen && !cell.poison) candidates.push({ x, y });
+        if (cell && !cell.blank && !cell.special && !cell.frozen && !cell.poison) candidates.push({ x, y });
       }));
       if (!candidates.length) return 0;
       const count = Math.min(
@@ -1475,11 +1880,13 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           canMove: effect.canMoveFrozenOrbs ?? false,
           canMatch: effect.canMatchFrozenOrbs ?? true,
           fresh: true,
+          lockIcon: effect.lockedOrbIcon,
         };
       }
       renderBoard();
-      showBuffFlash(`冰凍珠 x${count}`);
-      addLog(`冰咒凍結 ${count} 顆珠子，持續 ${effect.durationTurns ?? 3} 回合。`);
+      const locked = effect.canMatchFrozenOrbs === false;
+      showBuffFlash(`${locked ? '鎖鏈珠' : '冰凍珠'} x${count}`);
+      addLog(`${locked ? '魔門封鎖' : '冰咒'}封鎖 ${count} 顆珠子，持續 ${effect.durationTurns ?? 3} 回合。`);
       return count;
     }
 
@@ -1491,10 +1898,38 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       return shattered;
     }
 
+    function blankRandomBoardOrbs(effect) {
+      const candidates = [];
+      board.forEach((row, y) => row.forEach((cell, x) => {
+        if (cell && !cell.blank && !cell.special && !cell.frozen && !cell.poison) candidates.push({ x, y });
+      }));
+      const count = Math.min(effect.count ?? 10, candidates.length);
+      const blankedCells = [];
+      for (let i = 0; i < count; i++) {
+        const index = Math.floor(Math.random() * candidates.length);
+        const target = candidates.splice(index, 1)[0];
+        if (!target) continue;
+        board[target.y][target.x] = {
+          blank: {
+            turns: effect.durationTurns ?? 3,
+            fresh: true,
+          },
+        };
+        blankedCells.push(target);
+      }
+      if (!blankedCells.length) return 0;
+      showBoardShatters(blankedCells);
+      playShatterSfx();
+      renderBoard();
+      showBuffFlash(`空白裂洞 x${blankedCells.length}`);
+      addLog(`大地震裂震碎 ${blankedCells.length} 顆珠子，留下空白裂洞 ${effect.durationTurns ?? 3} 回合。`);
+      return blankedCells.length;
+    }
+
     function spawnPoisonBoardOrbs(effect) {
       const candidates = [];
       board.forEach((row, y) => row.forEach((cell, x) => {
-        if (cell && !cell.special && !cell.frozen && !cell.poison) candidates.push({ x, y });
+        if (cell && !cell.blank && !cell.special && !cell.frozen && !cell.poison) candidates.push({ x, y });
       }));
       if (!candidates.length) return 0;
       const count = Math.min(effect.count ?? 5, candidates.length);
@@ -1517,10 +1952,137 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       return count;
     }
 
+    function getMarkableBoardCells({ targetColor = null, excludeFire = false } = {}) {
+      const cells = [];
+      board.forEach((row, y) => row.forEach((cell, x) => {
+        if (!cell || cell.special || cell.blank || cell.poison || cell.frozen || cell.soulLock || cell.snakeSoul || cell.emberMark || cell.flameArrayMark || cell.thunderHoofMark) return;
+        const color = cellColor(cell);
+        if (excludeFire && color === 'red') return;
+        if (targetColor && color !== targetColor) return;
+        cells.push({ x, y, color });
+      }));
+      return cells;
+    }
+
+    function pickRandomCells(cells, count) {
+      const pool = [...cells];
+      const picked = [];
+      while (pool.length && picked.length < count) {
+        const index = Math.floor(Math.random() * pool.length);
+        picked.push(pool.splice(index, 1)[0]);
+      }
+      return picked;
+    }
+
+    function applyEmberMarkBoardEffect(effect) {
+      const candidates = getMarkableBoardCells();
+      const selectedCells = pickRandomCells(candidates, effect.count ?? 4);
+      selectedCells.forEach(({ x, y }) => {
+        board[y][x].emberMark = {
+          turns: effect.durationTurns ?? 3,
+          fresh: true,
+          icon: effect.icon ?? 'assets/effects/ember_mark_overlay_ai.png',
+        };
+      });
+      renderBoard();
+      showBuffFlash(`焰印珠 x${selectedCells.length}`);
+      addLog(`赤焰連舞標記 ${selectedCells.length} 顆焰印珠。`);
+      return selectedCells.length;
+    }
+
+    function applyFlameArrayMarkBoardEffect(effect) {
+      const availableColors = [...new Set(getMarkableBoardCells({ excludeFire: true }).map((cell) => cell.color))];
+      if (!availableColors.length) return 0;
+      const targetColor = effect.targetColor ?? availableColors[Math.floor(Math.random() * availableColors.length)];
+      const selectedCells = pickRandomCells(getMarkableBoardCells({ targetColor, excludeFire: true }), effect.count ?? 6);
+      selectedCells.forEach(({ x, y }) => {
+        board[y][x].flameArrayMark = {
+          turns: effect.durationTurns ?? 8,
+          fresh: true,
+          icon: effect.icon ?? 'assets/effects/flame_array_overlay_ai.png',
+          explosionDamage: effect.explosionDamage ?? 150,
+          brandBonusDamage: effect.brandBonusDamage ?? 50,
+        };
+      });
+      renderBoard();
+      showBuffFlash(`焰陣印記 ${getOrbColorLabel(targetColor)} x${selectedCells.length}`);
+      addLog(`焰陣魅舞標記 ${selectedCells.length} 顆${getOrbColorLabel(targetColor)}珠。`);
+      return selectedCells.length;
+    }
+
+    function applyThunderHoofRouteBoardEffect(effect) {
+      const markCount = effect.count ?? 3;
+      const selectedCells = pickRandomCells(getMarkableBoardCells(), markCount);
+      thunderHoofRoute = {
+        turns: effect.durationTurns ?? 3,
+        required: effect.requiredClears ?? 3,
+        cleared: 0,
+        columns: selectedCells.map((cell) => cell.x),
+        blankTurns: effect.blankTurns ?? 5,
+        fresh: true,
+      };
+      selectedCells.forEach(({ x, y }) => {
+        board[y][x].thunderHoofMark = {
+          turns: thunderHoofRoute.turns,
+          icon: effect.icon ?? 'assets/effects/thunder_hoof_mark_ai.png',
+        };
+      });
+      renderBoard();
+      showBuffFlash(`雷蹄踏陣 ${selectedCells.length} 顆`);
+      addLog(`雷蹄踏陣隨機標記 ${selectedCells.length} 顆衝鋒路徑，${thunderHoofRoute.turns} 回合內消除 ${thunderHoofRoute.required} 顆可解除。`);
+      return selectedCells.length;
+    }
+
+    function lockNonDarkBoardOrbs(effect) {
+      let count = 0;
+      board.forEach((row) => row.forEach((cell) => {
+        if (!cell || cell.blank || cell.special || cell.poison || cell.frozen || cell.snakeSoul) return;
+        if (cellColor(cell) === 'dark') return;
+        cell.soulLock = {
+          turns: effect.durationTurns ?? 2,
+          fresh: true,
+          icon: effect.icon ?? 'assets/effects/debuff_baqi_soul_bite_ai.png',
+        };
+        count++;
+      }));
+      if (count <= 0) return 0;
+      renderBoard();
+      showBuffFlash(`封鎖非暗珠 x${count}`);
+      addLog(`八岐噬魂封鎖 ${count} 顆非暗珠，持續 ${effect.durationTurns ?? 2} 回合。`);
+      return count;
+    }
+
+    function spawnSnakeSoulBoardOrbs(effect) {
+      if (snakeSoulCurse) clearSnakeSoulCurse(false);
+      const selectedCells = pickRandomCells(getMarkableBoardCells(), effect.count ?? 6);
+      if (!selectedCells.length) return 0;
+      snakeSoulCurse = {
+        required: effect.requiredLightClears ?? 5,
+        cleared: 0,
+      };
+      selectedCells.forEach(({ x, y }) => {
+        board[y][x].snakeSoul = {
+          required: snakeSoulCurse.required,
+          cleared: 0,
+          icon: effect.icon ?? 'assets/effects/snake_soul_orb_overlay_ai.png',
+        };
+      });
+      renderBoard();
+      showBuffFlash(`蛇魂珠 x${selectedCells.length}`);
+      addLog(`蛇魂纏盤生成 ${selectedCells.length} 顆蛇魂珠；累積消除 ${snakeSoulCurse.required} 顆光珠可解除。`);
+      return selectedCells.length;
+    }
+
     function applyEnemyBoardEffect(effect) {
       if (effect.type === 'freeze_random_orbs') return freezeRandomBoardOrbs(effect);
       if (effect.type === 'shatter_random_orbs') return shatterRandomBoardOrbs(effect);
+      if (effect.type === 'blank_random_orbs') return blankRandomBoardOrbs(effect);
       if (effect.type === 'spawn_poison_orbs') return spawnPoisonBoardOrbs(effect);
+      if (effect.type === 'spawn_ember_marks') return applyEmberMarkBoardEffect(effect);
+      if (effect.type === 'spawn_flame_array_marks') return applyFlameArrayMarkBoardEffect(effect);
+      if (effect.type === 'spawn_thunder_hoof_route') return applyThunderHoofRouteBoardEffect(effect);
+      if (effect.type === 'lock_non_dark_orbs') return lockNonDarkBoardOrbs(effect);
+      if (effect.type === 'spawn_snake_soul_orbs') return spawnSnakeSoulBoardOrbs(effect);
       return 0;
     }
 
@@ -1611,11 +2173,14 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const existing = playerStatusEffects.find((item) => item.type === effect.type);
       if (existing) {
         existing.turns = Math.max(existing.turns, effect.turns);
+        if (effect.type === 'brand') existing.stacks = (existing.stacks ?? 1) + (effect.stacks ?? 1);
         existing.damage = effect.damage ?? existing.damage;
         existing.amount = effect.amount ?? existing.amount;
         existing.icon = effect.icon ?? existing.icon;
         existing.name = effect.name ?? existing.name;
-        existing.description = effect.description ?? existing.description;
+        existing.description = effect.type === 'brand'
+          ? `每層使受到攻擊傷害 +20%，目前增加 ${(existing.stacks ?? 1) * 20}%。`
+          : effect.description ?? existing.description;
       } else {
         playerStatusEffects.push(effect);
       }
@@ -1700,84 +2265,77 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     const stagePresentation = [
       {
         id: 'mob_yellow_turban_demon_soldier',
-        name: '黃巾妖兵',
         title: '妖兵',
-        status: '降防 / 凍珠',
+        status: '流血 / 冰咒',
         icon: 'assets/monsters/clean/mob_yellow_turban_demon_soldier_green_clean.png',
       },
       {
         id: 'mob_ghostfire_spear_soldier',
-        name: '鬼火燎營',
-        title: '鬼火槍兵',
-        status: '灼燒 / 連擊',
+        title: '鬼火槍卒',
+        status: '火傷 / 二連刺',
         icon: 'assets/monsters/clean/mob_ghostfire_spear_soldier_green_clean.png',
       },
       {
         id: 'mob_rotten_shell_shield',
-        name: '妖甲巨斧',
-        title: '重甲斧妖',
-        status: '護盾 / 碎珠',
+        title: '腐甲巨盾',
+        status: '護盾 / 空白裂洞',
         icon: 'assets/monsters/clean/MONSTER_3_clean.png',
       },
       {
         id: 'mob_snake_shadow_warlock',
-        name: '妖影術士',
         title: '蛇影術士',
-        status: '毒霧 / 暗咒',
+        status: '中毒 / 毒珠',
         icon: 'assets/monsters/clean/MONSTER_4_clean.png',
       },
       {
         id: 'mob_bloodmoon_wolf_general',
-        name: '血月狼將',
         title: '狼牙妖將',
-        status: '血月 / 追擊',
+        status: '獵印 / 流血',
         icon: 'assets/monsters/clean/MONSTER__5_clean.png',
       },
       {
         id: 'mob_dark_gate_warrior',
-        name: '魔門力士',
-        title: '魔門戰魁',
-        status: '延遲 / 重擊',
+        title: '幽門力士',
+        status: '封攻 / 魔門封鎖',
         icon: 'assets/monsters/clean/MONSTER_6_clean.png',
       },
       {
         id: 'mob_red_flame_demon_lady',
-        name: '奈蝕妖姬',
         title: '赤焰妖姬',
-        status: '雙擊 / 衰弱',
+        status: '焰印 / 妖火重生',
         icon: 'assets/monsters/clean/MONSTER_7_clean.png',
       },
       {
         id: 'mob_black_sun_demon_rider',
-        name: '冥幽鬼騎',
-        title: '黑日鬼騎',
-        status: '突襲 / 雷影',
+        title: '黑曜鬼騎',
+        status: '裂甲 / 雷蹄踏陣',
         icon: 'assets/monsters/clean/MONSTER_8_clean.png',
       },
       {
         id: 'mob_baqi_remnant',
-        name: '八岐妖魂',
         title: '八岐殘魂',
-        status: '凍結 / 妖魂',
+        status: '噬魂 / 蛇魂',
         icon: 'assets/monsters/clean/MONSTER_9_clean.png',
       },
       {
         id: 'mob_hulao_demon_lu',
-        name: '虎牢魔君',
-        title: '妖門魔君',
-        status: '雷盾 / 首領',
+        title: '虎牢魔呂',
+        status: '混沌 / 魔戟雷破',
         icon: 'assets/monsters/clean/MONSTER_10_clean.png',
       },
     ];
 
     function getStagePresentation(stageInfoOrNo) {
       const stageNo = typeof stageInfoOrNo === 'number' ? stageInfoOrNo : stageInfoOrNo?.stageNo;
-      const stageId = typeof stageInfoOrNo === 'object' ? stageInfoOrNo?.id : stageData[stageNo - 1]?.id;
-      return stagePresentation.find((item, index) => item.id === stageId || index + 1 === stageNo) ?? {
-        name: typeof stageInfoOrNo === 'object' ? stageInfoOrNo?.name : `第 ${stageNo} 關`,
-        title: '妖魔',
-        status: '妖力',
-        icon: typeof stageInfoOrNo === 'object' ? getMonsterArt(stageInfoOrNo) : 'assets/monster-yellow-turban-clean.png',
+      const monster = typeof stageInfoOrNo === 'object' ? stageInfoOrNo : stageData[stageNo - 1];
+      const stageId = monster?.id;
+      const presentation = stagePresentation.find((item, index) => item.id === stageId || index + 1 === stageNo) ?? {};
+      return {
+        ...presentation,
+        name: monster?.name ?? presentation.name ?? `第 ${stageNo} 關`,
+        title: presentation.title ?? monster?.name ?? '妖魔',
+        status: presentation.status ?? '妖力',
+        icon: presentation.icon ?? (monster ? getMonsterArt(monster) : 'assets/monster-yellow-turban-clean.png'),
       };
     }
 
@@ -1822,17 +2380,30 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
 
     function cellClass(cell) {
       if (!cell) return 'empty';
+      if (cell.blank) return 'empty blank-orb';
       const raw = rawCellColor(cell);
-      const frozen = cell?.frozen ? ' frozen' : '';
+      const frozen = cell?.frozen ? ` frozen${cell.frozen.canMatch === false ? ' locked-orb' : ''}` : '';
+      const soulLock = cell?.soulLock ? ' soul-locked-orb' : '';
+      const snakeSoul = cell?.snakeSoul ? ' snake-soul-orb' : '';
       const poison = cell?.poison ? ' poison-orb' : '';
-      if (raw === 'enhancedRed') return `red extra-fire${frozen}${poison}`;
-      if (raw === 'rainbow') return `rainbow${frozen}${poison}`;
-      return `${cellColor(cell)}${frozen}${poison}`;
+      const flameMark = cell?.emberMark
+        ? ' ember-marked-orb'
+        : cell?.flameArrayMark
+          ? ' flame-array-marked-orb'
+          : cell?.thunderHoofMark
+            ? ' thunder-hoof-marked-orb'
+            : '';
+      if (raw === 'enhancedRed') return `red extra-fire${frozen}${soulLock}${snakeSoul}${poison}${flameMark}`;
+      if (raw === 'rainbow') return `rainbow${frozen}${soulLock}${snakeSoul}${poison}${flameMark}`;
+      return `${cellColor(cell)}${frozen}${soulLock}${snakeSoul}${poison}${flameMark}`;
     }
 
     function matchColor(cell) {
       if (cell?.special) return null;
+      if (cell?.blank) return null;
       if (cell?.poison) return null;
+      if (cell?.soulLock) return null;
+      if (cell?.snakeSoul) return null;
       if (cell?.frozen && cell.frozen.canMatch === false) return null;
       const color = cellColor(cell);
       return color === 'rainbow' ? null : color;
@@ -1843,7 +2414,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         window.clearTimeout(boardRefillTimer);
         boardRefillTimer = null;
       }
+      boardRefillResolve?.();
+      boardRefillResolve = null;
+      boardRefillPromise = null;
+      boardRefillGeneration++;
       pendingBoardRefillPreventAutoMatches = false;
+      snakeSoulCurse = null;
       board = Array.from({ length: height }, () => Array.from({ length: width }, () => makeOrb()));
       while (findMatches().groups.length) {
         board = Array.from({ length: height }, () => Array.from({ length: width }, () => makeOrb()));
@@ -2202,13 +2778,13 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       busy = false;
     }
 
-    function chooseDivineFlag(id) {
+    async function chooseDivineFlag(id) {
       const flag = divineFlagsPack.flags.find((item) => item.id === id);
       if (!flag) return;
       closeRewardDialog();
       divineGauge = 0;
       renderCommandGauges();
-      applyDivineFlag(flag);
+      await applyDivineFlag(flag);
       addLog(`神令旗「${flag.name}」：${flag.description}`);
       updateStats();
       renderTeam();
@@ -2218,7 +2794,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     function getBoardColors() {
-      return [...new Set(board.flat().filter((cell) => cell && !cell.special).map((cell) => cellColor(cell)).filter((color) => colors.some((item) => item.id === color)))];
+      return [...new Set(board.flat().filter((cell) => cell && !cell.blank && !cell.special).map((cell) => cellColor(cell)).filter((color) => colors.some((item) => item.id === color)))];
     }
 
     function getRandomBoardColor(except = null) {
@@ -2229,7 +2805,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function convertBoardColor(from, to) {
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          if (board[y][x] && !board[y][x].special && cellColor(board[y][x]) === from) board[y][x].color = to;
+          if (board[y][x] && !board[y][x].blank && !board[y][x].special && cellColor(board[y][x]) === from) board[y][x].color = to;
         }
       }
     }
@@ -2238,7 +2814,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const spots = [];
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          if (!board[y][x]?.special) spots.push({ x, y });
+          if (board[y][x] && !board[y][x].blank && !board[y][x]?.special) spots.push({ x, y });
         }
       }
       for (let i = 0; i < count && spots.length; i++) {
@@ -2252,7 +2828,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const spots = [];
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          if (board[y][x] && !board[y][x].special && rawCellColor(board[y][x]) !== color) spots.push({ x, y });
+          if (board[y][x] && !board[y][x].blank && !board[y][x].special && rawCellColor(board[y][x]) !== color) spots.push({ x, y });
         }
       }
       let converted = 0;
@@ -2267,12 +2843,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       return { count: converted, cells: convertedCells };
     }
 
-    function destroyBoardColor(color) {
+    async function destroyBoardColor(color) {
       let destroyed = 0;
       const bombedCells = [];
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          if (board[y][x] && !board[y][x].special && cellColor(board[y][x]) === color) {
+          if (board[y][x] && !board[y][x].blank && !board[y][x].special && cellColor(board[y][x]) === color) {
             board[y][x] = null;
             bombedCells.push({ x, y });
             destroyed++;
@@ -2281,7 +2857,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       }
       showBoardBombs(bombedCells);
       if (destroyed > 0) playBombSfx();
-      if (destroyed > 0) scheduleBoardRefillAfterBomb();
+      if (destroyed > 0) await scheduleBoardRefillAfterBomb();
       addOrderGauge(destroyed);
       addDivineGauge(destroyed);
       addOverflowRewards(destroyed);
@@ -2329,8 +2905,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       }
     }
 
-    function applyDivineFlag(flag) {
-      applyDivineFlagEffect(flag, {
+    async function applyDivineFlag(flag) {
+      await applyDivineFlagEffect(flag, {
         traitRules,
         battleBalance,
         playerHero,
@@ -2354,14 +2930,14 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     function convertRandomBoardColor() {
-      const available = [...new Set(board.flat().filter((cell) => cell && !cell.special).map((cell) => cellColor(cell)).filter(Boolean))];
+      const available = [...new Set(board.flat().filter((cell) => cell && !cell.blank && !cell.special).map((cell) => cellColor(cell)).filter(Boolean))];
       if (available.length < 2) return;
       const from = available[Math.floor(Math.random() * available.length)];
       let to = from;
       while (to === from) to = colors[Math.floor(Math.random() * colors.length)].id;
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          if (board[y][x] && !board[y][x].special && cellColor(board[y][x]) === from) board[y][x].color = to;
+          if (board[y][x] && !board[y][x].blank && !board[y][x].special && cellColor(board[y][x]) === from) board[y][x].color = to;
         }
       }
       renderBoard();
@@ -2390,6 +2966,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const { count } = pendingOrderColorConvert;
       pendingOrderColorConvert = null;
       const result = convertRandomOrbsToColor(targetColor, count);
+      stabilizeBoardMatchesWithoutClearing();
       renderBoard();
       showBoardConversions(result.cells);
       const label = getOrbColorLabel(targetColor);
@@ -2428,10 +3005,29 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           const drop = dropKeys.has(key) ? ' drop' : '';
           const swapClass = getSwapClass(x, y);
           button.className = `orb gem gem-cell ${cellClass(cell)}${special}${power}${drop}${swapClass}${selected && selected.x === x && selected.y === y ? ' selected' : ''}${matched.has(key) ? ' matched' : ''}`;
+          if (cell?.blank) {
+            button.title = `空白裂洞 ${cell.blank.turns} 回合`;
+            const timer = document.createElement('span');
+            timer.className = 'blank-orb-turns';
+            timer.textContent = cell.blank.turns;
+            button.appendChild(timer);
+          }
           if (cell?.frozen) {
-            const frozenSrc = frozenOrbAssetByColor[rawCellColor(cell)] ?? frozenOrbAssetByColor[cellColor(cell)];
-            if (frozenSrc) button.style.backgroundImage = `url("${frozenSrc}")`;
-            button.title = `冰凍 ${cell.frozen.turns} 回合`;
+            if (cell.frozen.lockIcon || cell.frozen.canMatch === false) {
+              button.title = `鎖鏈封鎖 ${cell.frozen.turns} 回合`;
+              const lock = document.createElement('span');
+              lock.className = 'locked-orb-overlay';
+              lock.style.backgroundImage = `url("${cell.frozen.lockIcon ?? 'assets/effects/orb_lock_chain_overlay_ai.png'}")`;
+              button.appendChild(lock);
+              const timer = document.createElement('span');
+              timer.className = 'locked-orb-turns';
+              timer.textContent = cell.frozen.turns;
+              button.appendChild(timer);
+            } else {
+              const frozenSrc = frozenOrbAssetByColor[rawCellColor(cell)] ?? frozenOrbAssetByColor[cellColor(cell)];
+              if (frozenSrc) button.style.backgroundImage = `url("${frozenSrc}")`;
+              button.title = `冰凍 ${cell.frozen.turns} 回合`;
+            }
           }
           if (cell?.poison) {
             button.style.backgroundImage = 'url("assets/POSION_CLEAN.png")';
@@ -2441,8 +3037,67 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             timer.textContent = cell.poison.turns;
             button.appendChild(timer);
           }
+          if (cell?.soulLock) {
+            button.title = `噬魂封鎖 ${cell.soulLock.turns} 回合`;
+            const mark = document.createElement('span');
+            mark.className = 'soul-lock-overlay';
+            mark.style.backgroundImage = `url("${cell.soulLock.icon ?? 'assets/effects/debuff_baqi_soul_bite_ai.png'}")`;
+            button.appendChild(mark);
+            const timer = document.createElement('span');
+            timer.className = 'soul-lock-turns';
+            timer.textContent = cell.soulLock.turns;
+            button.appendChild(timer);
+          }
+          if (cell?.snakeSoul) {
+            const cleared = snakeSoulCurse?.cleared ?? cell.snakeSoul.cleared ?? 0;
+            const required = snakeSoulCurse?.required ?? cell.snakeSoul.required ?? 5;
+            button.title = `蛇魂珠：不可消除，可移動。光珠 ${cleared}/${required} 解除`;
+            const mark = document.createElement('span');
+            mark.className = 'snake-soul-overlay';
+            mark.style.backgroundImage = `url("${cell.snakeSoul.icon ?? 'assets/effects/snake_soul_orb_overlay_ai.png'}")`;
+            button.appendChild(mark);
+            const timer = document.createElement('span');
+            timer.className = 'snake-soul-progress';
+            timer.textContent = `${cleared}/${required}`;
+            button.appendChild(timer);
+          }
+          if (cell?.emberMark) {
+            button.title = `焰印珠 ${cell.emberMark.turns} 回合後爆發`;
+            const mark = document.createElement('span');
+            mark.className = 'ember-mark-overlay';
+            mark.style.backgroundImage = `url("${cell.emberMark.icon ?? 'assets/effects/ember_mark_overlay_ai.png'}")`;
+            button.appendChild(mark);
+            const timer = document.createElement('span');
+            timer.className = 'ember-mark-turns';
+            timer.textContent = cell.emberMark.turns;
+            button.appendChild(timer);
+          }
+          if (cell?.flameArrayMark) {
+            button.title = `焰陣印記 ${cell.flameArrayMark.turns} 回合後爆發`;
+            const mark = document.createElement('span');
+            mark.className = 'flame-array-overlay';
+            mark.style.backgroundImage = `url("${cell.flameArrayMark.icon ?? 'assets/effects/flame_array_overlay_ai.png'}")`;
+            button.appendChild(mark);
+            const timer = document.createElement('span');
+            timer.className = 'flame-array-turns';
+            timer.textContent = cell.flameArrayMark.turns;
+            button.appendChild(timer);
+          }
+          if (cell?.thunderHoofMark) {
+            const cleared = thunderHoofRoute?.cleared ?? 0;
+            const required = thunderHoofRoute?.required ?? 3;
+            button.title = `雷蹄踏陣 ${cell.thunderHoofMark.turns} 回合，已消除 ${cleared}/${required}`;
+            const mark = document.createElement('span');
+            mark.className = 'thunder-hoof-overlay';
+            mark.style.backgroundImage = `url("${cell.thunderHoofMark.icon ?? 'assets/effects/thunder_hoof_mark_ai.png'}")`;
+            button.appendChild(mark);
+            const timer = document.createElement('span');
+            timer.className = 'thunder-hoof-turns';
+            timer.textContent = cell.thunderHoofMark.turns;
+            button.appendChild(timer);
+          }
           button.setAttribute('aria-label', `${x + 1},${y + 1}`);
-          if (!cell) button.disabled = true;
+          if (!cell || cell?.blank) button.disabled = true;
           button.addEventListener('click', () => clickOrb(x, y));
           boardEl.appendChild(button);
         }
@@ -2452,9 +3107,15 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     function clickOrb(x, y) {
       if (busy || boardRefillTimer || enemyHp <= 0 || playerHp <= 0) return;
       if (resolvePendingOrderColorConvert(x, y)) return;
+      if (board[y][x]?.blank) {
+        selected = null;
+        showBuffFlash('空白裂洞無法操作');
+        renderBoard();
+        return;
+      }
       if (board[y][x]?.frozen && board[y][x].frozen.canMove === false) {
         selected = null;
-        showBuffFlash('冰凍珠無法移動');
+        showBuffFlash(board[y][x].frozen.canMatch === false ? '鎖鏈珠無法移動' : '冰凍珠無法移動');
         renderBoard();
         return;
       }
@@ -2482,7 +3143,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const second = { x, y };
       if (board[first.y][first.x]?.frozen?.canMove === false || board[second.y][second.x]?.frozen?.canMove === false) {
         selected = null;
-        showBuffFlash('冰凍珠無法移動');
+        const locked = board[first.y][first.x]?.frozen?.canMatch === false || board[second.y][second.x]?.frozen?.canMatch === false;
+        showBuffFlash(locked ? '鎖鏈珠無法移動' : '冰凍珠無法移動');
         renderBoard();
         return;
       }
@@ -2499,7 +3161,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       renderBoard();
       const matches = findMatches();
       if (!matches.groups.length) {
-        window.setTimeout(async () => {
+        battleTimeout(async () => {
           swapAnim = null;
           renderBoard();
           resultEl.textContent = '未形成消除，消耗 1 回合。';
@@ -2509,7 +3171,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         }, 170);
         return;
       }
-      window.setTimeout(() => {
+      battleTimeout(() => {
         swapAnim = null;
         handleMove({ x, y });
       }, 170);
@@ -2587,6 +3249,9 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       let totalClearedThisMove = 0;
       const attackEvents = [];
       const pendingTraits = [];
+      const thunderRegenCells = [];
+      const fireAttackSealed = isFireAttackSealed();
+      let fireSealNotified = false;
 
       while (true) {
         const { groups, cells } = findMatches();
@@ -2619,7 +3284,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         await wait(230);
         playOrbClearSfx();
         await wait(200);
-        const fireAttackBombed = destroySurroundingOrbsForFireAttack(cells);
+        const fireAttackBombed = fireAttackSealed ? 0 : destroySurroundingOrbsForFireAttack(cells);
+        if (hasTalent(thunderTalentConfig.chargeTalentId)) {
+          cells.forEach(({ x, y }) => {
+            if (cellColor(board[y]?.[x]) === 'yellow') thunderRegenCells.push({ x, y });
+          });
+        }
         if (fireAttackBombed > 0) {
           const bombDamage = applyBombDamage(fireAttackBombed, 'red', true);
           totalDamage += bombDamage;
@@ -2635,10 +3305,18 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         }
         dropKeys = collapseBoard();
         placeSpecialCreatesAfterCollapse(specialCreates);
+        if (hasTalent(thunderTalentConfig.chargeTalentId) && thunderRegenCells.length) {
+          thunderRegenCells.splice(0).forEach(({ x, y }) => {
+            if (board[y]?.[x] && !board[y][x].blank && !board[y][x].special) board[y][x] = makeOrb('yellow');
+          });
+          showBuffFlash(thunderTalentConfig.labels.charge);
+        }
         renderBoard();
         await wait(460);
         dropKeys = new Set();
       }
+
+      await waitForBoardRefill();
 
       if (combo === 0) {
         addLog('沒有形成消除。');
@@ -2648,6 +3326,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       }
 
       await wait(220);
+      recordSnakeSoulLightClears(pendingTraits);
       recordChaosDoomClears(pendingTraits);
       resolveClearedOrbGemEffects(totalClearedThisMove);
       const fourMatchEffect = getEquipmentEffects('four_match_turn_attack_stack')[0];
@@ -2669,8 +3348,9 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const turnRedCount = pendingTraits
         .filter((effect) => effect.color === 'red')
         .reduce((sum, effect) => sum + effect.count, 0);
-      if (orderPassives.battleSpirit && turnRedCount >= 3) addBattleSpiritStack();
-      let redOrbBonusDamage = turnRedCount > 0 ? Math.round(turnRedCount * battleBalance.redOrbBonusAtk * playerHero.attack) : 0;
+      const activeRedAttackCount = fireAttackSealed ? 0 : turnRedCount;
+      if (orderPassives.battleSpirit && activeRedAttackCount >= 3) addBattleSpiritStack();
+      let redOrbBonusDamage = activeRedAttackCount > 0 ? Math.round(activeRedAttackCount * battleBalance.redOrbBonusAtk * playerHero.attack) : 0;
       let shieldGain = 0;
       let energyGain = 0;
       let healGain = 0;
@@ -2678,6 +3358,14 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         const { color, count, value, enhanced } = effect;
         const rule = traitRules[color];
         if (!rule) continue;
+        if (fireAttackSealed && color === 'red' && (rule.type === 'attack' || divineStates.enabledAttackColors[color] > 0)) {
+          if (!fireSealNotified) {
+            fireSealNotified = true;
+            showBuffFlash('封攻：火珠失效');
+            addLog('封攻中：火珠可以消除，但不會發動攻擊。');
+          }
+          continue;
+        }
         if (divineStates.allColorsShieldTurns > 0 && rule.type !== 'shield') {
           const shieldValue = getTraitValue(traitRules.green, count);
           shieldGain += Math.round(playerMaxHp * shieldValue * finalComboMultiplier);
@@ -2687,6 +3375,33 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           const thunderDamage = Math.round(playerHero.attack * battleBalance.thunderStrikeAtk * getPlayerAttackMultiplier() * finalComboMultiplier);
           totalDamage += thunderDamage;
           attackEvents.push({ color: 'yellow', count, damage: thunderDamage, attackType: 'thunder', label: '天公之怒', skill: true });
+        }
+        if (color === 'yellow' && hasTalent(thunderTalentConfig.attackTalentId)) {
+          let thunderPunishmentDamage = Math.round(
+            playerHero.attack * thunderTalentConfig.baseAttackRate
+            + playerHero.recovery * thunderTalentConfig.baseRecoveryRate,
+          );
+          if (hasTalent(thunderTalentConfig.chargeTalentId)) {
+            thunderPunishmentDamage = Math.round(thunderPunishmentDamage * (1 + thunderTalentConfig.chargeDamageBonus));
+          }
+          if (hasTalent(thunderTalentConfig.thunderGodTalentId)) {
+            thunderPunishmentDamage = Math.round(thunderPunishmentDamage * (1 + thunderTalentConfig.thunderGodDamageBonus));
+          }
+          totalDamage += thunderPunishmentDamage;
+          const upgradedThunder = hasTalent(thunderTalentConfig.thunderGodTalentId);
+          const thunderLabel = upgradedThunder ? thunderTalentConfig.labels.thunderGod : thunderTalentConfig.labels.punishment;
+          attackEvents.push({
+            color: 'yellow',
+            count,
+            damage: thunderPunishmentDamage,
+            attackType: 'thunder',
+            label: thunderLabel,
+            sfx: 'thunder',
+            skill: true,
+            vfx: upgradedThunder ? 'thunderTriple' : '',
+          });
+          if (hasTalent(thunderTalentConfig.paralysisTalentId) && Math.random() < thunderTalentConfig.paralysisChance) addEnemyParalysis(1);
+          addLog(`${thunderLabel}造成 ${thunderPunishmentDamage} 雷傷。`);
         }
         if (rule.type === 'attack' || divineStates.enabledAttackColors[color] > 0) {
           let multiplier = getPlayerAttackMultiplier() * finalComboMultiplier;
@@ -2745,7 +3460,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             showBuffFlash('鐵壁 1 回合');
           }
         } else if (rule.type === 'energy') {
-          energyGain += Math.round(value * finalComboMultiplier);
+          const energyMultiplier = color === 'yellow' && hasTalent(thunderTalentConfig.energyDoubleTalentId) ? 2 : 1;
+          energyGain += Math.round(value * finalComboMultiplier * energyMultiplier);
         } else if (rule.type === 'heal') {
           healGain += Math.round(playerHero.recovery * value * finalComboMultiplier);
           if (count >= 4 && !cleanseOnePlayerDebuff()) healGain += Math.round(playerMaxHp * battleBalance.lightCleanseExtraHealMaxHp);
@@ -2757,6 +3473,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           addLog(`暗珠 ${count} 消，Combo x${poisonComboMultiplier.toFixed(1)}，使敵人中毒 ${value} 回合，每回合 ${poisonDamage} 毒傷。`);
         }
       }
+      await waitForBoardRefill();
       const comboOrder = getBuff('combo_damage');
       if (comboOrder && combo >= 3) {
         const comboBonusDamage = Math.round(playerHero.attack * getPlayerAttackMultiplier() * (combo >= 5 ? 2 : 1));
@@ -2831,32 +3548,67 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (followUp && !followUpUsed && pendingTraits.length > 0) {
         followUpUsed = true;
         const followDamage = Math.round(playerHero.attack * followUp.value * getPlayerAttackMultiplier() * finalComboMultiplier);
+        const followEvent = applyHeroAttackPresentation(playerHero, {
+          source: 'hero_pursuit',
+          color: 'red',
+          count: turnRedCount || 3,
+          damage: followDamage,
+          attackType: 'red',
+          label: '追擊',
+          skill: true,
+        });
+        const followPresentation = followEvent.presentation || getHeroAttackPresentation(playerHero, followEvent);
+        const followActionName = followEvent.label || followPresentation?.name || '追擊';
         let followDealt = 0;
-        await playBattleStep('追擊令・突進！', () => {
-          followDealt = damageEnemy(followDamage);
+        showAttackName({ ...followEvent, presentation: followPresentation }, { playVoice: false });
+        await playBattleStep(`${playerHero.hero}・${followActionName}`, () => {
+          playAttackEventSfx(followEvent);
+          if (!['spearThrust', 'spearShot'].includes(followEvent.vfx)) shootBeam(followEvent.color, true);
+          followDealt = damageEnemy(followEvent.damage);
           totalDamage += followDealt;
-          animateAttack(followDealt, true, 'red', '追擊', 'spearShot');
-          addLog(`追擊令追加 ${followDealt} 傷害。`);
+          animateAttack(followDealt, true, followEvent.color, followActionName, followEvent.vfx);
+          addLog(`${playerHero.hero} 追擊造成 ${followDealt} 傷害。`);
           updateStats();
-        }, 'red');
-        if (resolveEnemyDefeat('追擊令')) return;
+        }, followEvent.color);
+        if (resolveEnemyDefeat(followActionName)) return;
         await wait(120);
       }
-      if (!followUpUsed && orderPassives.pursuit && turnRedCount >= 3 && enemyHp > 0 && attackEvents.length && Math.random() < 0.3) {
+      if (!followUpUsed && orderPassives.pursuit && activeRedAttackCount >= 3 && enemyHp > 0 && attackEvents.length && Math.random() < 0.3) {
         followUpUsed = true;
         const followDamage = Math.round(playerHero.attack * 0.5 * getPlayerAttackMultiplier() * finalComboMultiplier);
+        const followEvent = applyHeroAttackPresentation(playerHero, {
+          source: 'hero_pursuit',
+          color: 'red',
+          count: turnRedCount,
+          damage: followDamage,
+          attackType: 'red',
+          label: '追擊',
+          skill: true,
+        });
+        const followPresentation = followEvent.presentation || getHeroAttackPresentation(playerHero, followEvent);
+        const followActionName = followEvent.label || followPresentation?.name || '追擊';
         let followDealt = 0;
-        await playBattleStep('被動追擊・突進！', () => {
-          followDealt = damageEnemy(followDamage);
+        showAttackName({ ...followEvent, presentation: followPresentation }, { playVoice: false });
+        await playBattleStep(`${playerHero.hero}・${followActionName}`, () => {
+          playAttackEventSfx(followEvent);
+          if (!['spearThrust', 'spearShot'].includes(followEvent.vfx)) shootBeam(followEvent.color, true);
+          followDealt = damageEnemy(followEvent.damage);
           totalDamage += followDealt;
-          animateAttack(followDealt, true, 'red', '追擊', 'spearShot');
-          addLog(`被動追擊追加 ${followDealt} 傷害。`);
+          animateAttack(followDealt, true, followEvent.color, followActionName, followEvent.vfx);
+          addLog(`${playerHero.hero} 追擊造成 ${followDealt} 傷害。`);
           updateStats();
-        }, 'red');
-        if (resolveEnemyDefeat('被動追擊')) return;
+        }, followEvent.color);
+        if (resolveEnemyDefeat(followActionName)) return;
         await wait(120);
       }
       await wait(160);
+
+      if (findMatches().groups.length) {
+        addLog('炸珠落下形成連鎖消除。');
+        showBuffFlash('落珠連鎖');
+        await handleMove();
+        return;
+      }
 
       resultEl.textContent = totalDamage > 0 ? `${combo} Combo x${finalComboMultiplier.toFixed(2)}，造成 ${totalDamage} 傷害` : `${combo} Combo x${finalComboMultiplier.toFixed(2)}，觸發特性效果`;
       flashResult();
@@ -2934,6 +3686,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         const requestedCount = activeSkill.convertCountsByLevel[skillLevel - 1] + extraOrbs;
         const conversion = convertRandomOrbsToColor(activeSkill.targetColor ?? 'enhancedRed', requestedCount);
         const converted = conversion.count;
+        stabilizeBoardMatchesWithoutClearing();
         renderBoard();
         showBoardConversions(conversion.cells);
         await wait(220);
@@ -3054,6 +3807,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
 
     function clearCells(cells, specialCreates = new Map()) {
       cells.forEach(({ x, y }) => {
+        recordThunderHoofClear(board[y][x]);
         board[y][x] = specialCreates.get(`${x},${y}`) || null;
       });
     }
@@ -3071,12 +3825,14 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
 
     function collapseBoard() {
       const moved = new Set();
-      for (let x = 0; x < width; x++) {
+      const collapseSegment = (x, topY, bottomY) => {
+        if (topY > bottomY) return;
         const stack = [];
-        for (let y = height - 1; y >= 0; y--) {
-          if (board[y][x]) stack.push({ cell: board[y][x], fromY: y });
+        for (let y = bottomY; y >= topY; y--) {
+          const cell = board[y][x];
+          if (cell && !cell.blank) stack.push({ cell, fromY: y });
         }
-        for (let y = height - 1; y >= 0; y--) {
+        for (let y = bottomY; y >= topY; y--) {
           const item = stack.shift();
           if (item) {
             board[y][x] = item.cell;
@@ -3086,6 +3842,16 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             moved.add(`${x},${y}`);
           }
         }
+      };
+
+      for (let x = 0; x < width; x++) {
+        let bottomY = height - 1;
+        for (let y = height - 1; y >= 0; y--) {
+          if (!board[y][x]?.blank) continue;
+          collapseSegment(x, y + 1, bottomY);
+          bottomY = y - 1;
+        }
+        collapseSegment(x, 0, bottomY);
       }
       return moved;
     }
@@ -3121,10 +3887,14 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         attackMultiplier: divineStates.enemyAttackMultiplier,
       });
       panel.textContent = '';
+      panel.setAttribute('role', 'button');
+      panel.setAttribute('tabindex', '0');
+      panel.setAttribute('aria-label', '查看怪物攻擊機制');
+      panel.title = '查看怪物攻擊機制';
 
       const title = document.createElement('strong');
       title.className = 'enemy-intent-title';
-      title.textContent = '敵方行動';
+      title.textContent = '敵方行動 ⓘ';
       panel.appendChild(title);
 
       intents.forEach((intent, index) => {
@@ -3143,6 +3913,66 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         row.append(name, meta);
         panel.appendChild(row);
       });
+    }
+
+    function openEnemyMechanicDialog(monster = getCurrentStage()) {
+      if (!monster) return;
+      closeBattleQuickMenu?.();
+      const existing = document.getElementById('enemyMechanicDialog');
+      existing?.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'enemyMechanicDialog';
+      overlay.className = 'enemy-mechanic-dialog';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', `${monster.name} 攻擊機制`);
+
+      const box = document.createElement('div');
+      box.className = 'enemy-mechanic-box';
+
+      const header = document.createElement('div');
+      header.className = 'enemy-mechanic-header';
+      const title = document.createElement('strong');
+      title.textContent = monster.name;
+      const sub = document.createElement('span');
+      sub.textContent = `普通攻擊：每 ${monster.basicAttackTurns} 回合 / 傷害 ${getMonsterPreviewDamage(monster, divineStates.enemyAttackMultiplier)}`;
+      header.append(title, sub);
+
+      const list = document.createElement('div');
+      list.className = 'enemy-mechanic-list';
+      [monster.specialSkill, ...(monster.skills ?? [])].filter(Boolean).forEach((skill) => {
+        const card = document.createElement('section');
+        card.className = 'enemy-mechanic-card';
+        const name = document.createElement('strong');
+        name.textContent = `${skill.name} / ${skill.frequencyTurns ?? '-'} 回合`;
+        const desc = document.createElement('span');
+        desc.textContent = skill.description ?? '無說明。';
+        card.append(name, desc);
+        list.appendChild(card);
+      });
+
+      const tips = document.createElement('div');
+      tips.className = 'enemy-mechanic-tips';
+      (monster.mechanicTips ?? ['觀察右下角倒數，技能快到時先保留補血、護盾或可消除路徑。']).forEach((tip) => {
+        const line = document.createElement('p');
+        line.textContent = tip;
+        tips.appendChild(line);
+      });
+
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'enemy-mechanic-close';
+      close.textContent = '關閉';
+      close.addEventListener('click', () => overlay.remove());
+      overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) overlay.remove();
+      });
+
+      box.append(header, list, tips, close);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      close.focus();
     }
 
     function updateStats() {
@@ -3256,6 +4086,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     async function performEnemyAction(forcedSkill = null) {
+      if (!forcedSkill && consumeEnemyParalysis()) {
+        enemyTurn = getMonsterTurnCooldown(getCurrentStage());
+        updateStats();
+        await wait(520);
+        return;
+      }
       const monster = getCurrentStage();
       const action = resolveEnemyAction(monster, {
         actionCount: enemyActionCount,
@@ -3274,7 +4110,11 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         await showEnemySkillCastIntro(skill);
         if (skill.effectType === 'freeze_board_orbs') {
           playFreezeSfx();
-          await uiEffects.showIceTalismanCastEffect?.();
+          if (monster.id === 'mob_dark_gate_warrior') {
+            await playEnemyAttackAnimation(enemyImageEl, document.querySelector('.battle-party'), 0, 'dark-gate-lock');
+          } else {
+            await uiEffects.showIceTalismanCastEffect?.();
+          }
         }
         if (skill.effectType === 'bleed') {
           playEnemyActionSfx(skill);
@@ -3324,17 +4164,51 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           if (action.endsAfterShield) return;
         }
         action.playerStatuses.forEach((status) => addPlayerStatus(status));
-        action.boardEffects.forEach((effect) => applyEnemyBoardEffect(effect));
+        if (skill.effectType !== 'baqi_soul_bite') action.boardEffects.forEach((effect) => applyEnemyBoardEffect(effect));
       }
 
-      if (useSkill && ['freeze_board_orbs', 'shatter_board_orbs'].includes(skill.effectType)) {
+      if (useSkill && ['freeze_board_orbs', 'shatter_board_orbs', 'flame_array_marks', 'thunder_hoof_route', 'snake_soul_bind'].includes(skill.effectType)) {
         if (skill.description) addLog(skill.description);
+        if (skill.effectType === 'shatter_board_orbs') {
+          playEnemyActionSfx(skill);
+          await playEnemyAttackAnimation(enemyImageEl, document.querySelector('.battle-party'), 0, 'rotten-shield-quake');
+        } else if (skill.effectType === 'flame_array_marks') {
+          playEnemyActionSfx(skill);
+          await playEnemyAttackAnimation(enemyImageEl, document.querySelector('.battle-party'), 0, 'fire');
+        } else if (skill.effectType === 'thunder_hoof_route') {
+          playEnemyActionSfx(skill);
+          await playEnemyAttackAnimation(enemyImageEl, document.querySelector('.battle-party'), 0, 'obsidian-cavalry');
+        } else if (skill.effectType === 'snake_soul_bind') {
+          playEnemyActionSfx(skill);
+          await playEnemyAttackAnimation(enemyImageEl, document.querySelector('.battle-party'), 0, 'snake-soul-bite');
+        }
         await wait(520);
         return;
       }
 
-      playEnemyActionSfx(useSkill ? skill : null);
-      const attackType = getEnemyAttackType(useSkill ? skill : null);
+      if (monster.id === 'mob_black_sun_demon_rider' && !useSkill) {
+        playHorseChargeSfx();
+      } else {
+        playEnemyActionSfx(useSkill ? skill : null);
+      }
+      let attackType = getEnemyAttackType(useSkill ? skill : null);
+      if (monster.id === 'mob_ghostfire_spear_soldier') {
+        attackType = 'ghostfire-spear';
+      } else if (monster.id === 'mob_rotten_shell_shield') {
+        attackType = 'rotten-shield-quake';
+      } else if (monster.id === 'mob_snake_shadow_warlock') {
+        attackType = 'snake-soul-bite';
+      } else if (monster.id === 'mob_bloodmoon_wolf_general') {
+        attackType = 'bloodmoon-hunt';
+      } else if (monster.id === 'mob_dark_gate_warrior') {
+        attackType = 'dark-gate-lock';
+      } else if (monster.id === 'mob_red_flame_demon_lady') {
+        attackType = useSkill && skill?.effectType === 'flame_array_marks' ? 'fire' : 'slash';
+      } else if (monster.id === 'mob_black_sun_demon_rider') {
+        attackType = 'obsidian-cavalry';
+      } else if (monster.id === 'mob_baqi_remnant') {
+        attackType = 'snake-soul-bite';
+      }
       const attackAnimation = playEnemyAttackAnimation(enemyImageEl, document.querySelector('.battle-party'), 0, attackType);
       if (attackType === 'slash') showClawSlashes();
       await wait(330);
@@ -3353,6 +4227,9 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         addLog(`${label}，玩家受到 ${dealt} 傷害。`);
       }
       if (useSkill && skill.description) addLog(skill.description);
+      if (useSkill && skill.effectType === 'baqi_soul_bite') {
+        action.boardEffects.forEach((effect) => applyEnemyBoardEffect(effect));
+      }
       if (playerHp <= 0) addLog('玩家隊伍倒下了。');
       await attackAnimation;
       if (pendingShieldCounterDamage > 0 && enemyHp > 0) {
@@ -3382,7 +4259,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       float.style.left = `${rect.left + rect.width / 2}px`;
       float.style.top = `${rect.top + 8}px`;
       document.body.appendChild(float);
-      window.setTimeout(() => {
+      battleTimeout(() => {
         float.remove();
         battleEl.classList.remove('hurt');
       }, 2000);
@@ -3396,7 +4273,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       card.classList.remove('attack-pulse');
       void card.offsetWidth;
       card.classList.add('attack-pulse');
-      window.setTimeout(() => {
+      battleTimeout(() => {
         card.classList.remove('attack-pulse');
       }, 380);
     }
@@ -3513,6 +4390,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       swapAnim = null;
       animMode = '';
       chargeDamage = {};
+      thunderHoofRoute = null;
+      snakeSoulCurse = null;
       closeSkillDialog();
       victoryPanelEl.classList.remove('show');
       victoryPanelEl.classList.remove('defeat');
@@ -3553,7 +4432,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     }
 
     function wait(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
+      return new Promise((resolve) => battleTimeout(resolve, ms));
     }
 
 
@@ -3579,8 +4458,22 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (pendingSkillColor) activateHeroSkill(pendingSkillColor);
     });
     document.getElementById('startGame').addEventListener('click', () => {
-      startBattleBgm();
-      showScreen('menu');
+      if (!getPlayerName()) {
+        openNameDialog();
+        return;
+      }
+      enterMainMenu();
+    });
+    nameFormEl?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = playerNameInputEl.value.trim() || '主公';
+      savePlayerProfile({ name, createdAt: Date.now() });
+      closeNameDialog();
+      enterMainMenu();
+    });
+    playerNameDisplayEl?.addEventListener('click', () => {
+      if (playerNameInputEl) playerNameInputEl.value = getPlayerName();
+      openNameDialog();
     });
     document.getElementById('goAdventure').addEventListener('click', () => {
       renderStageMap();
@@ -3590,8 +4483,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       renderRoster();
       showScreen('team');
     });
-    document.getElementById('goShop').addEventListener('click', () => alert('商店功能準備中'));
-    document.getElementById('goGacha').addEventListener('click', () => alert('抽卡功能準備中'));
+    document.getElementById('goRift')?.addEventListener('click', () => alert('裂縫探索準備中'));
+    document.getElementById('goGacha')?.addEventListener('click', () => alert('異世召喚準備中'));
     document.getElementById('backMenu').addEventListener('click', () => showScreen('menu'));
     document.getElementById('backMenuFromTeam').addEventListener('click', () => showScreen('menu'));
     document.getElementById('backTeamFromTalent').addEventListener('click', () => {
@@ -3599,6 +4492,20 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       showScreen('team');
     });
     const battleQuickMenuEl = document.getElementById('battleQuickMenu');
+    const battleSpeedToggleEl = document.getElementById('battleSpeedToggle');
+    function applyBattleSpeedUi() {
+      window.__battleSpeedMultiplier = battleSpeedMultiplier;
+      document.body.classList.toggle('battle-speed-2x', battleSpeedMultiplier === 2);
+      if (!battleSpeedToggleEl) return;
+      battleSpeedToggleEl.classList.toggle('active', battleSpeedMultiplier === 2);
+      battleSpeedToggleEl.setAttribute('aria-pressed', battleSpeedMultiplier === 2 ? 'true' : 'false');
+      battleSpeedToggleEl.textContent = battleSpeedMultiplier === 2 ? '2倍速 ON' : '2倍速 OFF';
+    }
+    function toggleBattleSpeed() {
+      battleSpeedMultiplier = battleSpeedMultiplier === 2 ? 1 : 2;
+      localStorage.setItem('battleSpeedMultiplier', String(battleSpeedMultiplier));
+      applyBattleSpeedUi();
+    }
     const closeBattleQuickMenu = () => {
       if (battleQuickMenuEl) battleQuickMenuEl.hidden = true;
     };
@@ -3618,6 +4525,16 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
     document.getElementById('battleHelpOrb')?.addEventListener('click', () => openBattleHelpDialog('orb'));
     document.getElementById('battleHelpOrder')?.addEventListener('click', () => openBattleHelpDialog('order'));
     document.getElementById('battleHelpDivine')?.addEventListener('click', () => openBattleHelpDialog('divine'));
+    document.getElementById('enemyIntentPanel')?.addEventListener('click', () => openEnemyMechanicDialog(getCurrentStage()));
+    document.getElementById('enemyIntentPanel')?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      openEnemyMechanicDialog(getCurrentStage());
+    });
+    battleSpeedToggleEl?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleBattleSpeed();
+    });
     document.getElementById('battleQuickStage')?.addEventListener('click', goBattleStageSelect);
     document.getElementById('battleQuickMenuHome')?.addEventListener('click', goBattleMainMenu);
     document.getElementById('battleMenuGear')?.addEventListener('click', (event) => {
@@ -3632,9 +4549,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       closeBattleQuickMenu();
     });
     document.body.addEventListener('pointerdown', startBattleBgm, { once: true });
+    applyBattleSpeedUi();
+    updatePlayerNameDisplay();
 
     renderTeam();
     renderRoster();
     renderStageMap();
     restart();
+
 
