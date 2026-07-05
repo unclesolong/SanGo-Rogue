@@ -5,7 +5,7 @@ import { heroDatabase } from './data/heroes.js?v=dragon-soul-burst-20260701f';
 import { rogueRewards } from './data/rogueRewards.js?v=pursuit-order-20260701a';
 import { equipmentRewards } from './data/equipmentRewards.js?v=weapon-icons-20260701a';
 import { divineFlagsPack } from './data/divineFlags.js?v=divine-rework-20260701a';
-import { stageData } from './data/monsters.js?v=thunder-hoof-8turn-20260705a';
+import { stageData } from './data/monsters.js?v=doom-skull-icon-20260705a';
 import { TALENT_STORAGE_KEY, defaultTalentLevels, thunderTalentConfig } from './data/talentDefinitions.js?v=talent-judiang-no-regen-20260704a';
 import { createMonsterBattleState, getMonsterArt, getMonsterPreviewDamage, getMonsterTurnCooldown, getStageMonster } from './data/monsterCatalog.js';
 import { completeStage, createStageProgress, createStageSelectModel } from './progression/stageProgress.js';
@@ -17,7 +17,7 @@ import {
   pickEquipmentRewards,
 } from './progression/equipmentProgress.js?v=gem-runes-20260701a';
 import { getDomRefs } from './ui/dom.js';
-import { createUiEffects } from './ui/effects.js?v=thunder-talents-20260703a';
+import { createUiEffects } from './ui/effects.js?v=doom-card-icon-20260705a';
 import { createAudioController } from './ui/audio.js?v=horse-charge-sfx-file-20260703a';
 import { renderHeroRow } from './ui/renderBattle.js?v=enemy-poison-debuff-20260702a';
 import { createTalentScreenController } from './ui/talentScreen.js?v=talent-hover-effects-20260704b';
@@ -133,7 +133,6 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       invincibleTurns: 0,
       enemyAttackMultiplier: 1,
       enemyAttackDebuffTurns: 0,
-      nextColorDamage: null,
       enabledAttackColors: {},
       enhancedColorMultiplier: {},
       damageReductionTurns: 0,
@@ -142,6 +141,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       eastWindTurns: 0,
       allColorsShieldTurns: 0,
       heavenGeneralThunderTurns: 0,
+      azureDragonHealTurns: 0,
+      azureDragonHealMultiplier: 0,
     };
     let bgmStarted = false;
     let heroCardPressTimer = null;
@@ -996,7 +997,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         },
         doom: {
           name: '即死',
-          icon: 'assets/DARK STONE FROZEN.png',
+          icon: 'assets/effects/debuff_doom_skull_icon_256.png',
           value: '',
         },
         brand: {
@@ -1439,6 +1440,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (divineStates.eastWindTurns > 0) divineStates.eastWindTurns--;
       if (divineStates.allColorsShieldTurns > 0) divineStates.allColorsShieldTurns--;
       if (divineStates.heavenGeneralThunderTurns > 0) divineStates.heavenGeneralThunderTurns--;
+      if (divineStates.azureDragonHealTurns > 0) {
+        divineStates.azureDragonHealTurns--;
+        if (divineStates.azureDragonHealTurns <= 0) divineStates.azureDragonHealMultiplier = 0;
+      }
       Object.keys(divineStates.enabledAttackColors).forEach((color) => {
         divineStates.enabledAttackColors[color]--;
         if (divineStates.enabledAttackColors[color] <= 0) delete divineStates.enabledAttackColors[color];
@@ -1465,11 +1470,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           text: `天降火珠 +30%，天降火珠必為強化火珠（${formatTurns(divineStates.eastWindTurns)}）`,
         });
       }
-      if (divineStates.nextColorDamage) {
-        const targetLabel = traitRules[divineStates.nextColorDamage.targetColor]?.label || '指定顏色';
+      if (divineStates.azureDragonHealTurns > 0) {
         items.push({
-          name: '青龍現世',
-          text: `下一次${targetLabel}消除傷害 x${divineStates.nextColorDamage.damageMultiplier}`,
+          name: '青龍回春',
+          text: `所有消珠附帶回血 x${divineStates.azureDragonHealMultiplier || 2}（${formatTurns(divineStates.azureDragonHealTurns)}）`,
         });
       }
       if (divineStates.invincibleTurns > 0 || divineStates.damageReductionTurns > 0 || divineStates.allColorsShieldTurns > 0) {
@@ -1551,7 +1555,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           type: 'doom',
           name: chaosDoom.name ?? '即死',
           turns: chaosDoom.turns,
-          icon: chaosDoom.icon ?? 'assets/DARK STONE FROZEN.png',
+          icon: chaosDoom.icon ?? 'assets/effects/debuff_doom_skull_icon_256.png',
           description: `${chaosDoom.turns} 回合後 HP 歸 0。消除 ${chaosDoom.required} 顆${getOrbColorLabel(chaosDoom.targetColor)}珠可解除。`,
         });
       }
@@ -2834,12 +2838,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
               lines: [
                 '火燒連環令：轉換火珠；消除時引爆十字範圍，炸珠傷害 x2.5。',
                 '東風令：火珠天降提高，火珠變為強化火珠，持續 3 回合。',
-                '青龍現世：下一次指定顏色消除傷害 x3。',
+                '青龍現世：立即恢復最大 HP 50%，3 回合內所有消珠附帶回血，回血效果 x2。',
                 '七星燈：生成 5 顆彩虹珠。',
-                '箭雨：造成固定傷害，並附加燃燒與中毒。',
+                '萬箭齊發：造成攻擊力 2.5 倍傷害，並附加燃燒與中毒。',
                 '八陣圖：無敵、減傷，並讓所有屬性珠也產生護盾。',
                 '空城計：降低敵人攻擊。',
-                '天雷令：摧毀隨機顏色珠。',
+                '天降神雷：摧毀隨機一種顏色的所有珠。',
                 '奇門遁甲：交換兩種珠色。',
                 '天公將軍：雷珠與光珠也可攻擊，並讓任意 3 消觸發天公之怒。',
               ],
@@ -3043,6 +3047,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         traitRules,
         battleBalance,
         playerHero,
+        playerMaxHp,
         divineStates,
         getCurrentStage,
         getRandomBoardColor,
@@ -3052,6 +3057,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         animateAttack,
         showAttackEffect,
         showBuffFlash,
+        gainPlayerHeal,
         destroyBoardColor,
         swapBoardColors,
         addEnemyBurn,
@@ -3476,10 +3482,16 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       let shieldGain = 0;
       let energyGain = 0;
       let healGain = 0;
+      const azureDragonHealingActive = divineStates.azureDragonHealTurns > 0;
+      const azureDragonHealMultiplier = divineStates.azureDragonHealMultiplier || 2;
       for (const effect of pendingTraits) {
         const { color, count, value, enhanced } = effect;
         const rule = traitRules[color];
         if (!rule) continue;
+        if (azureDragonHealingActive && rule.type !== 'heal') {
+          const healValue = getTraitValue(traitRules.light, count);
+          healGain += Math.round(playerHero.recovery * healValue * finalComboMultiplier * azureDragonHealMultiplier);
+        }
         if (fireAttackSealed && color === 'red' && (rule.type === 'attack' || divineStates.enabledAttackColors[color] > 0)) {
           if (!fireSealNotified) {
             fireSealNotified = true;
@@ -3527,14 +3539,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         }
         if (rule.type === 'attack' || divineStates.enabledAttackColors[color] > 0) {
           let multiplier = getPlayerAttackMultiplier() * finalComboMultiplier;
-          let consumedDragonMultiplier = 1;
           if (enhanced && color === 'red') multiplier *= battleBalance.enhancedFireMultiplier;
-          if (divineStates.nextColorDamage?.targetColor === color) {
-            consumedDragonMultiplier = divineStates.nextColorDamage.damageMultiplier;
-            multiplier *= consumedDragonMultiplier;
-            showBuffFlash(`青龍現世 x${consumedDragonMultiplier}`);
-            if (divineStates.nextColorDamage.consumeOnTrigger) divineStates.nextColorDamage = null;
-          }
           const fireDamageMultiplier = color === 'red' ? getEquipmentFireDamageMultiplier() : 1;
           multiplier *= fireDamageMultiplier;
           const baseValue = rule.type === 'attack' ? value : 0.6;
@@ -3554,7 +3559,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             attackType: color === 'yellow' ? 'thunder' : color === 'red' && count >= 5 ? 'fire' : color,
           }));
           if (color === 'red' && enhanced) {
-            const bonusDamage = Math.round(playerHero.attack * battleBalance.enhancedFireFlatAtk * getPlayerAttackMultiplier() * finalComboMultiplier * consumedDragonMultiplier * fireDamageMultiplier);
+            const bonusDamage = Math.round(playerHero.attack * battleBalance.enhancedFireFlatAtk * getPlayerAttackMultiplier() * finalComboMultiplier * fireDamageMultiplier);
             totalDamage += bonusDamage;
             attackEvents.push({ color, count, damage: bonusDamage, attackType: 'fire', label: '強化火珠爆裂', skill: true });
             addEnemyBurn();
@@ -3585,7 +3590,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           const energyMultiplier = color === 'yellow' && hasTalent(thunderTalentConfig.energyDoubleTalentId) ? 2 : 1;
           energyGain += Math.round(value * finalComboMultiplier * energyMultiplier);
         } else if (rule.type === 'heal') {
-          healGain += Math.round(playerHero.recovery * value * finalComboMultiplier);
+          const healMultiplier = azureDragonHealingActive ? azureDragonHealMultiplier : 1;
+          healGain += Math.round(playerHero.recovery * value * finalComboMultiplier * healMultiplier);
           if (count >= 4 && !cleanseOnePlayerDebuff()) healGain += Math.round(playerMaxHp * battleBalance.lightCleanseExtraHealMaxHp);
         } else if (rule.type === 'poison') {
           const poisonComboMultiplier = getPoisonComboMultiplier(combo);
@@ -3630,7 +3636,10 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       }
       if (shieldGain > 0) await gainPlayerShield(shieldGain);
       if (energyGain > 0) await gainHeroEnergy(energyGain);
-      if (healGain > 0) await gainPlayerHeal(healGain);
+      if (healGain > 0) {
+        if (azureDragonHealingActive) showBuffFlash(`青龍回春 +${healGain}`);
+        await gainPlayerHeal(healGain);
+      }
 
       let followUpUsed = false;
       for (const event of attackEvents) {
@@ -4482,7 +4491,6 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           invincibleTurns: 0,
           enemyAttackMultiplier: 1,
           enemyAttackDebuffTurns: 0,
-          nextColorDamage: null,
           enabledAttackColors: {},
           enhancedColorMultiplier: {},
           damageReductionTurns: 0,
@@ -4491,6 +4499,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
           eastWindTurns: 0,
           allColorsShieldTurns: 0,
           heavenGeneralThunderTurns: 0,
+          azureDragonHealTurns: 0,
+          azureDragonHealMultiplier: 0,
         };
       }
       playerHp = Math.min(playerHp, playerMaxHp);

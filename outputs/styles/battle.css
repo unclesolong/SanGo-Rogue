@@ -15121,3 +15121,39 @@ body:has(#talentScreen.active) .app {
 #battleScreen .player-buff-row .buff-label {
   display: none !important;
 }
+
+/* Final chaos doom card mark: use the generated skull icon instead of text. */
+#battleScreen .hero-card .chaos-doom-label {
+  top: 4px !important;
+  width: 54px !important;
+  min-width: 0 !important;
+  height: 54px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  box-shadow:
+    0 0 16px rgba(175, 61, 255, 0.82),
+    0 0 26px rgba(255, 21, 93, 0.42) !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: visible !important;
+}
+
+#battleScreen .hero-card .chaos-doom-label img {
+  width: 54px !important;
+  height: 54px !important;
+  object-fit: contain !important;
+  border-radius: 8px !important;
+  filter:
+    drop-shadow(0 0 8px rgba(172, 56, 255, 0.86))
+    drop-shadow(0 0 12px rgba(255, 35, 85, 0.48)) !important;
+}
+
+/* Fallback for any cached/alternate doom card label that still injects text. */
+#battleScreen .chaos-doom-label {
+  color: transparent !important;
+  font-size: 0 !important;
+  text-shadow: none !important;
+  background: url("../assets/effects/debuff_doom_skull_icon_256.png") center / contain no-repeat !important;
+}

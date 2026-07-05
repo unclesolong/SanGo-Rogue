@@ -309,7 +309,10 @@ export function createUiEffects({
       targetEl.appendChild(seal);
       const label = document.createElement('div');
       label.className = 'chaos-doom-label';
-      label.textContent = '?單香';
+      const labelIcon = document.createElement('img');
+      labelIcon.src = 'assets/effects/debuff_doom_skull_icon_256.png';
+      labelIcon.alt = '即死';
+      label.appendChild(labelIcon);
       targetEl.appendChild(label);
       battleTimeout(() => seal.remove(), 1180);
       battleTimeout(() => label.remove(), 1180);
