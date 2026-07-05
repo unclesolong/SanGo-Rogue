@@ -5,8 +5,8 @@ import { heroDatabase } from './data/heroes.js?v=dragon-soul-burst-20260701f';
 import { rogueRewards } from './data/rogueRewards.js?v=pursuit-order-20260701a';
 import { equipmentRewards } from './data/equipmentRewards.js?v=weapon-icons-20260701a';
 import { divineFlagsPack } from './data/divineFlags.js?v=divine-rework-20260701a';
-import { stageData } from './data/monsters.js?v=orb-mark-wrap-20260703a';
-import { TALENT_STORAGE_KEY, defaultTalentLevels, thunderTalentConfig } from './data/talentDefinitions.js?v=talent-definitions-20260703a';
+import { stageData } from './data/monsters.js?v=thunder-hoof-8turn-20260705a';
+import { TALENT_STORAGE_KEY, defaultTalentLevels, thunderTalentConfig } from './data/talentDefinitions.js?v=talent-judiang-no-regen-20260704a';
 import { createMonsterBattleState, getMonsterArt, getMonsterPreviewDamage, getMonsterTurnCooldown, getStageMonster } from './data/monsterCatalog.js';
 import { completeStage, createStageProgress, createStageSelectModel } from './progression/stageProgress.js';
 import {
@@ -20,7 +20,7 @@ import { getDomRefs } from './ui/dom.js';
 import { createUiEffects } from './ui/effects.js?v=thunder-talents-20260703a';
 import { createAudioController } from './ui/audio.js?v=horse-charge-sfx-file-20260703a';
 import { renderHeroRow } from './ui/renderBattle.js?v=enemy-poison-debuff-20260702a';
-import { createTalentScreenController } from './ui/talentScreen.js?v=talent-definitions-20260703a';
+import { createTalentScreenController } from './ui/talentScreen.js?v=talent-hover-effects-20260704b';
 import { calculateBombDamage as calculateBombDamageValue } from './battle/damage.js';
 import { applyHeroAttackPresentation, getHeroAttackPresentation } from './battle/heroPresentation.js?v=hero-pursuit-straight-punch-20260702a';
 import { canActivateHeroSkill, createHeroSkillDialogModel, createHeroSkillSystem } from './battle/skills.js?v=passive-bomb-refill-wait-20260703a';
@@ -441,21 +441,14 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const el = document.getElementById('enemyDebuffs');
       if (!el) return;
       el.textContent = '';
-      enemyDebuffs.forEach((debuff) => {
-        const chip = document.createElement('div');
+      enemyDebuffs.forEach((debuff, index) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
         chip.className = `enemy-debuff enemy-debuff-${debuff.type}`;
-        const counter = debuff.type === 'vulnerability' ? debuff.layers : debuff.turns;
-        const label = debuff.type === 'vulnerability'
-          ? `易傷 x${debuff.layers}`
-          : debuff.type === 'burn'
-            ? `燃燒 ${debuff.turns}`
-            : debuff.type === 'poison'
-              ? `中毒 ${debuff.turns}`
-              : debuff.type === 'paralysis'
-                ? `麻痺 ${debuff.turns}`
-                : `${Math.round((debuff.amount || 0) * 100)}% ${debuff.turns}`;
-        chip.title = debuff.description || label;
-        chip.setAttribute('aria-label', label);
+        chip.dataset.enemyDebuffIndex = String(index);
+        const info = getEnemyDebuffInfo(debuff);
+        chip.title = info.description || info.label;
+        chip.setAttribute('aria-label', info.label);
 
         const defaultEnemyDebuffIcons = {
           burn: 'assets/effects/burn_debuff_icon_256.png',
@@ -471,23 +464,17 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
 
         const turns = document.createElement('span');
         turns.className = 'enemy-debuff-turns';
-        turns.textContent = counter ?? '';
+        turns.textContent = info.counter ?? '';
         chip.appendChild(turns);
 
         const text = document.createElement('span');
         text.className = 'enemy-debuff-label';
-        text.textContent = label;
+        text.textContent = info.label;
         chip.appendChild(text);
 
+        chip.addEventListener('click', () => openDebuffInfoDialog(debuff, 'enemy'));
         el.appendChild(chip);
       });
-      return;
-      el.innerHTML = enemyDebuffs.map((debuff) => `
-        <div class="enemy-debuff" title="${debuff.description || debuff.name}">
-          <img src="${debuff.icon}" alt="${debuff.name}">
-          <span>${debuff.type === 'vulnerability' ? `易傷 x${debuff.layers}` : debuff.type === 'burn' ? `燃燒 ${debuff.turns}` : `${Math.round((debuff.amount || 0) * 100)}% ${debuff.turns}`}</span>
-        </div>
-      `).join('');
     }
 
     function tickEnemyDebuffs() {
@@ -1031,26 +1018,142 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       };
     }
 
+    function getPlayerDebuffInfo(effect) {
+      const meta = getPlayerStatusMeta(effect);
+      const details = [];
+      if (effect.amount) details.push(`效果：${Math.round(effect.amount * 100)}%`);
+      if (effect.damage) details.push(`每回合傷害：${effect.damage}`);
+      if (effect.stacks) details.push(`層數：${effect.stacks}`);
+      if (effect.requiredColor && effect.required) {
+        details.push(`解除：累積消除 ${effect.required} 顆指定屬性珠`);
+      }
+      if (effect.turns > 0) details.push(`剩餘：${effect.turns} 回合`);
+      return {
+        name: meta.name,
+        icon: meta.icon,
+        label: `${meta.name}${meta.value}`,
+        description: effect.description || details.join('，') || `${meta.name}${meta.value}`,
+        counter: effect.turns > 0 ? effect.turns : '',
+      };
+    }
+
+    function getEnemyDebuffInfo(debuff) {
+      const label = debuff.type === 'vulnerability'
+        ? `易傷 x${debuff.layers}`
+        : debuff.type === 'burn'
+          ? `燃燒 ${debuff.turns}`
+          : debuff.type === 'poison'
+            ? `中毒 ${debuff.turns}`
+            : debuff.type === 'paralysis'
+              ? `麻痺 ${debuff.turns}`
+              : debuff.name
+                ? `${debuff.name}${debuff.turns ? ` ${debuff.turns}` : ''}`
+                : `${Math.round((debuff.amount || 0) * 100)}% ${debuff.turns}`;
+      const details = [];
+      if (debuff.layers) details.push(`層數：${debuff.layers}`);
+      if (debuff.amount) details.push(`效果：${Math.round(debuff.amount * 100)}%`);
+      if (debuff.damage) details.push(`每回合傷害：${debuff.damage}`);
+      if (debuff.turns > 0) details.push(`剩餘：${debuff.turns} 回合`);
+      return {
+        name: debuff.name || label,
+        icon: debuff.icon || '',
+        label,
+        description: debuff.description || details.join('，') || label,
+        counter: debuff.type === 'vulnerability' ? debuff.layers : debuff.turns,
+      };
+    }
+
+    function getPlayerBuffInfo(buff) {
+      const value = formatBuffValue(buff);
+      const details = [];
+      if (value) details.push(`效果：${value.trim()}`);
+      if (buff.stacks) details.push(`層數：${buff.stacks}`);
+      if (buff.turns > 0) details.push(`剩餘：${buff.turns} 回合`);
+      return {
+        name: buff.name || '增益',
+        icon: buff.buffIcon || buff.icon || 'assets/rogue/buffs/buff_attack_up_.png',
+        label: `${buff.name || '增益'}${value}`,
+        description: buff.description || details.join('，') || `${buff.name || '增益'}${value}`,
+        counter: buff.turns > 0 ? buff.turns : buff.stacks ? buff.stacks : '',
+      };
+    }
+
+    function openDebuffInfoDialog(effect, owner = 'player') {
+      const oldDialog = document.getElementById('debuffInfoDialog');
+      oldDialog?.remove();
+      const info = owner === 'enemy'
+        ? getEnemyDebuffInfo(effect)
+        : owner === 'buff'
+          ? getPlayerBuffInfo(effect)
+          : getPlayerDebuffInfo(effect);
+      const dialog = document.createElement('div');
+      dialog.id = 'debuffInfoDialog';
+      dialog.className = 'debuff-info-dialog';
+      const panel = document.createElement('div');
+      panel.className = 'debuff-info-panel';
+      const icon = document.createElement('img');
+      icon.className = 'debuff-info-icon';
+      icon.src = info.icon || 'assets/rogue/buffs/buff_sorcery_.png';
+      icon.alt = info.name;
+      const title = document.createElement('strong');
+      title.textContent = info.name;
+      const description = document.createElement('p');
+      description.textContent = info.description;
+      const closeButton = document.createElement('button');
+      closeButton.type = 'button';
+      closeButton.className = 'debuff-info-close';
+      closeButton.textContent = '關閉';
+      closeButton.addEventListener('click', () => dialog.remove());
+      panel.append(icon, title, description, closeButton);
+      dialog.appendChild(panel);
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) dialog.remove();
+      });
+      document.body.appendChild(dialog);
+    }
+
     function renderBuffs() {
-      const buffHtml = activeBuffs.map((buff) => `
-        <div class="buff-chip" title="${buff.description}">
-          <img src="${buff.buffIcon}" alt="${buff.name}">
-          <span>${buff.name}${formatBuffValue(buff)} ${buff.turns > 0 ? buff.turns : ''}</span>
-        </div>
-      `).join('');
-      const debuffHtml = playerStatusEffects.map((effect) => {
-        const meta = getPlayerStatusMeta(effect);
+      const buffHtml = activeBuffs.map((buff, index) => {
+        const info = getPlayerBuffInfo(buff);
         return `
-          <div class="buff-chip debuff-chip" title="${effect.description ?? meta.name}">
+          <button type="button" class="buff-chip player-active-buff-chip" title="${info.description}" data-player-buff-index="${index}">
+            <span class="buff-icon-wrap">
+              <img src="${info.icon}" alt="${info.name}">
+              ${info.counter ? `<b class="buff-turn-badge">${info.counter}</b>` : ''}
+            </span>
+            <span class="buff-label">${info.label}</span>
+          </button>
+        `;
+      }).join('');
+      const debuffHtml = playerStatusEffects.map((effect, index) => {
+        const meta = getPlayerDebuffInfo(effect);
+        return `
+          <button type="button" class="buff-chip debuff-chip" title="${meta.description}" data-player-debuff-index="${index}">
             <span class="debuff-icon-wrap">
               <img src="${meta.icon}" alt="${meta.name}">
-              ${effect.turns > 0 ? `<b class="debuff-turn-badge">${effect.turns}</b>` : ''}
+              ${meta.counter ? `<b class="debuff-turn-badge">${meta.counter}</b>` : ''}
             </span>
-            <span class="debuff-label">${meta.name}${meta.value}</span>
-          </div>
+            <span class="debuff-label">${meta.label}</span>
+          </button>
         `;
       }).join('');
       buffRowEl.innerHTML = `${buffHtml}${debuffHtml}`;
+      buffRowEl.querySelectorAll('[data-player-buff-index]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const index = Number(button.dataset.playerBuffIndex);
+          if (Number.isFinite(index) && activeBuffs[index]) {
+            openDebuffInfoDialog(activeBuffs[index], 'buff');
+          }
+        });
+      });
+      buffRowEl.querySelectorAll('[data-player-debuff-index]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const index = Number(button.dataset.playerDebuffIndex);
+          if (Number.isFinite(index) && playerStatusEffects[index]) {
+            openDebuffInfoDialog(playerStatusEffects[index], 'player');
+          }
+        });
+      });
     }
 
     function tickBuffs() {
@@ -1193,9 +1296,17 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       renderBoard();
     }
 
+    function getThunderHoofMarkedCells() {
+      const marked = [];
+      board.forEach((row, y) => row.forEach((cell, x) => {
+        if (cell?.thunderHoofMark) marked.push({ x, y, cell });
+      }));
+      return marked;
+    }
+
     function recordThunderHoofClear(cell) {
       if (!cell?.thunderHoofMark || !thunderHoofRoute) return;
-      thunderHoofRoute.cleared++;
+      thunderHoofRoute.cleared = Math.min(thunderHoofRoute.required, thunderHoofRoute.cleared + 1);
       if (thunderHoofRoute.cleared >= thunderHoofRoute.required) clearThunderHoofRoute(true);
     }
 
@@ -1239,17 +1350,19 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       board.forEach((row) => row.forEach((cell) => {
         if (cell?.thunderHoofMark) cell.thunderHoofMark.turns = thunderHoofRoute.turns;
       }));
-      if (thunderHoofRoute.cleared >= thunderHoofRoute.required) {
+      const remainingMarks = getThunderHoofMarkedCells();
+      if (thunderHoofRoute.cleared >= thunderHoofRoute.required || remainingMarks.length === 0) {
         clearThunderHoofRoute(true);
         return;
       }
       if (thunderHoofRoute.turns <= 0) {
         const burstCells = [];
-        const targetColumns = new Set(thunderHoofRoute.columns ?? []);
-        board.forEach((row) => row.forEach((cell, x) => {
-          if (cell?.thunderHoofMark) targetColumns.add(x);
-        }));
+        const targetColumns = new Set(remainingMarks.map(({ x }) => x));
         const columns = [...targetColumns];
+        if (!columns.length) {
+          clearThunderHoofRoute(true);
+          return;
+        }
         columns.forEach((x) => {
           for (let y = 0; y < height; y++) {
             burstCells.push({ x, y });
@@ -1342,8 +1455,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const items = [];
       if (divineStates.fireAttackBombTurns > 0) {
         items.push({
-          name: '火攻令',
-          text: `消除任意珠會引爆周遭九宮格並造成炸珠傷害（${formatTurns(divineStates.fireAttackBombTurns)}）`,
+          name: '火燒連環令',
+          text: `消除任意珠會引爆十字範圍，炸珠傷害 x${battleBalance.fireChainOrderBombMultiplier}（${formatTurns(divineStates.fireAttackBombTurns)}）`,
         });
       }
       if (divineStates.eastWindTurns > 0) {
@@ -1479,8 +1592,23 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (aura) return;
       aura = document.createElement('div');
       aura.className = 'boss-ghostfire-aura';
-      aura.innerHTML = `<span class="boss-ghostfire-ring"></span>${Array.from({ length: 9 }, (_, index) => `<i style="--i:${index}"></i>`).join('')}`;
+      aura.innerHTML = Array.from({ length: 9 }, (_, index) => `<i style="--i:${index}"></i>`).join('');
       enemyArtEl.appendChild(aura);
+    }
+
+    function pickMostCommonChaosDoomTargetColor(targetColors) {
+      const allowed = new Set(targetColors);
+      const counts = Object.fromEntries(targetColors.map((color) => [color, 0]));
+      board.flat().forEach((cell) => {
+        const color = matchColor(cell);
+        if (allowed.has(color)) counts[color]++;
+      });
+      const best = targetColors.reduce((winner, color) => {
+        if (counts[color] > counts[winner]) return color;
+        return winner;
+      }, targetColors[0]);
+      if (counts[best] > 0) return best;
+      return targetColors[Math.floor(Math.random() * targetColors.length)];
     }
 
     function applyChaosDoomOpening(stageInfo) {
@@ -1492,7 +1620,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         return;
       }
       const targetColors = skill.targetColors?.length ? skill.targetColors : ['red', 'green', 'yellow', 'light', 'dark'];
-      const targetColor = targetColors[Math.floor(Math.random() * targetColors.length)];
+      const targetColor = pickMostCommonChaosDoomTargetColor(targetColors);
       chaosDoom = {
         active: true,
         name: skill.statusName ?? '即死',
@@ -2315,7 +2443,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         id: 'mob_baqi_remnant',
         title: '八岐殘魂',
         status: '噬魂 / 蛇魂',
-        icon: 'assets/monsters/clean/MONSTER_9_clean.png',
+        icon: 'assets/monsters/transparent/MONSTER_9_baqi_remnant_ai.png',
       },
       {
         id: 'mob_hulao_demon_lu',
@@ -2704,7 +2832,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
             {
               title: '目前神令',
               lines: [
-                '火攻令：轉換火珠，並讓消除引爆周遭九宮格。',
+                '火燒連環令：轉換火珠；消除時引爆十字範圍，炸珠傷害 x2.5。',
                 '東風令：火珠天降提高，火珠變為強化火珠，持續 3 回合。',
                 '青龍現世：下一次指定顏色消除傷害 x3。',
                 '七星燈：生成 5 顆彩虹珠。',
@@ -2870,18 +2998,23 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       const matchedCells = [...cells];
       const matched = new Set(matchedCells.map(({ x, y }) => `${x},${y}`));
       const targets = new Map();
+      const crossOffsets = [
+        { dx: 0, dy: 0 },
+        { dx: 0, dy: -1 },
+        { dx: 1, dy: 0 },
+        { dx: 0, dy: 1 },
+        { dx: -1, dy: 0 },
+      ];
       matchedCells.forEach(({ x, y }) => {
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            const tx = x + dx;
-            const ty = y + dy;
-            const key = `${tx},${ty}`;
-            if (tx < 0 || tx >= width || ty < 0 || ty >= height || matched.has(key)) continue;
-            const cell = board[ty][tx];
-            if (!cell || cell.special) continue;
-            targets.set(key, { x: tx, y: ty });
-          }
-        }
+        crossOffsets.forEach(({ dx, dy }) => {
+          const tx = x + dx;
+          const ty = y + dy;
+          const key = `${tx},${ty}`;
+          if (tx < 0 || tx >= width || ty < 0 || ty >= height || matched.has(key)) return;
+          const cell = board[ty][tx];
+          if (!cell || cell.special) return;
+          targets.set(key, { x: tx, y: ty });
+        });
       });
       const bombedCells = [...targets.values()];
       bombedCells.forEach(({ x, y }) => {
@@ -2890,7 +3023,7 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       if (bombedCells.length > 0) {
         showBoardBombs(bombedCells);
         playBombSfx();
-        addLog(`火攻令引爆周遭 ${bombedCells.length} 顆珠。`);
+        addLog(`火燒連環令引爆十字範圍 ${bombedCells.length} 顆珠。`);
       }
       return bombedCells.length;
     }
@@ -3249,7 +3382,6 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
       let totalClearedThisMove = 0;
       const attackEvents = [];
       const pendingTraits = [];
-      const thunderRegenCells = [];
       const fireAttackSealed = isFireAttackSealed();
       let fireSealNotified = false;
 
@@ -3285,16 +3417,12 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         playOrbClearSfx();
         await wait(200);
         const fireAttackBombed = fireAttackSealed ? 0 : destroySurroundingOrbsForFireAttack(cells);
-        if (hasTalent(thunderTalentConfig.chargeTalentId)) {
-          cells.forEach(({ x, y }) => {
-            if (cellColor(board[y]?.[x]) === 'yellow') thunderRegenCells.push({ x, y });
-          });
-        }
         if (fireAttackBombed > 0) {
-          const bombDamage = applyBombDamage(fireAttackBombed, 'red', true);
+          const baseBombDamage = applyBombDamage(fireAttackBombed, 'red', true);
+          const bombDamage = Math.round(baseBombDamage * battleBalance.fireChainOrderBombMultiplier);
           totalDamage += bombDamage;
           if (bombDamage > 0) {
-            attackEvents.push({ color: 'red', count: fireAttackBombed, damage: bombDamage, attackType: 'fire', label: '火攻爆破', skill: true });
+            attackEvents.push({ color: 'red', count: fireAttackBombed, damage: bombDamage, attackType: 'fire', label: '火燒連環', skill: true });
           }
         }
         clearCells(cells);
@@ -3305,12 +3433,6 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         }
         dropKeys = collapseBoard();
         placeSpecialCreatesAfterCollapse(specialCreates);
-        if (hasTalent(thunderTalentConfig.chargeTalentId) && thunderRegenCells.length) {
-          thunderRegenCells.splice(0).forEach(({ x, y }) => {
-            if (board[y]?.[x] && !board[y][x].blank && !board[y][x].special) board[y][x] = makeOrb('yellow');
-          });
-          showBuffFlash(thunderTalentConfig.labels.charge);
-        }
         renderBoard();
         await wait(460);
         dropKeys = new Set();
@@ -4351,8 +4473,8 @@ const colors = teamElements.map((elementId) => traitRules[elementId]);
         playerShield = 0;
         playerShieldTurns = 0;
         resetEquipmentBattleState();
-        orderGauge = 0;
-        divineGauge = 0;
+        orderGauge = battleBalance.orderGaugeMax;
+        divineGauge = battleBalance.divineGaugeMax;
         playerStatusEffects = [];
         activeBuffs = [];
         clearOrderPassives();

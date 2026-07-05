@@ -1,10 +1,8 @@
-export const TALENT_STORAGE_KEY = 'sangoTalentProgressV1';
+export const TALENT_STORAGE_KEY = 'sangoTalentProgressV2';
 
-export const defaultTalentLevels = {
-  thunder_small_1: 1,
-  thunder_small_2: 1,
-  thunder_small_3: 1,
-};
+export const talentTestPointTotal = 12;
+
+export const defaultTalentLevels = {};
 
 export const thunderTalentConfig = {
   attackTalentId: 'thunder_small_1',
@@ -46,8 +44,8 @@ export const thunderSmallTalentText = {
   },
   thunder_small_4: {
     name: '聚電',
-    effect: '天罰傷害 +20%；本回合消除雷珠的位置會再生雷珠。',
-    next: '解鎖聚雷再生。',
+    effect: '天罰傷害 +20%。',
+    next: '已啟動。',
   },
   thunder_small_5: {
     name: '疾雷',

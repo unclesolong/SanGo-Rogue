@@ -43,7 +43,7 @@ export async function applyDivineFlag(flag, {
     const source = params.sourceColor === 'random' ? getRandomBoardColor(target) : params.sourceColor;
     convertBoardColor(source, target);
     divineStates.fireAttackBombTurns = Math.max(divineStates.fireAttackBombTurns ?? 0, params.fireAttackBombTurns ?? 1);
-    resultEl.textContent = `${flag.name}：${traitRules[source]?.label ?? source} 轉為 ${traitRules[target]?.label ?? target}，本回合消除觸發九宮格炸珠。`;
+    resultEl.textContent = `${flag.name}：${traitRules[source]?.label ?? source} 轉為 ${traitRules[target]?.label ?? target}，本回合消除觸發十字炸珠。`;
   } else if (type === 'enhance_color_orbs') {
     convertBoardColor(params.targetColor, params.enhancedColor);
     divineStates.enhancedColorMultiplier[params.enhancedColor] = battleBalance.enhancedFireMultiplier;

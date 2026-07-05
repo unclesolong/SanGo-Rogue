@@ -10,6 +10,7 @@ export const battleBalance = {
       vulnerabilityTurns: 3,
       thunderStrikeAtk: 1,
       bombDamageAtkPerOrb: 0.1,
+      fireChainOrderBombMultiplier: 2.5,
       orderGaugeMax: 5,
       divineGaugeMax: 7,
       shieldCounterRate: 0.3,

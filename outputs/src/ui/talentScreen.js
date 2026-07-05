@@ -1,8 +1,9 @@
-import {
+﻿import {
   TALENT_STORAGE_KEY,
   applyTalentTextOverrides,
+  talentTestPointTotal,
   thunderSmallTalentText,
-} from '../data/talentDefinitions.js?v=talent-definitions-20260703a';
+} from '../data/talentDefinitions.js?v=talent-judiang-no-regen-20260704a';
 
 const talentNodes = [
   { id: 'core_fire_heart', name: '赤焰之心', color: 'red', size: 'special', x: 50, y: 52, level: 1, max: 1, effect: '主動技能產生的火珠數量 +3。', next: '核心天賦已啟動。' },
@@ -118,10 +119,14 @@ const talentElementTabs = [
 ];
 
 let talentPointState = Object.fromEntries(
-  talentElementTabs.map((tab) => [tab.color, { owned: 12, available: 12 }]),
+  talentElementTabs.map((tab) => [tab.color, { owned: talentTestPointTotal, available: talentTestPointTotal }]),
 );
 
 applyTalentTextOverrides(talentNodes, thunderSmallTalentText);
+talentNodes.forEach((node) => {
+  node.level = 0;
+  node.max = 1;
+});
 
 function loadTalentProgress() {
   try {
@@ -161,10 +166,19 @@ function getHeroDisplayName(hero) {
 }
 
 function getTalentSizeLabel(size) {
-  if (size === 'special') return '特殊格';
-  if (size === 'large') return '大格';
-  if (size === 'medium') return '中格';
-  return '小格';
+  if (size === 'special') return '終極';
+  if (size === 'large') return '大珠';
+  if (size === 'medium') return '中珠';
+  return '小珠';
+}
+
+function escapeTalentText(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 export function createTalentScreenController({
@@ -199,6 +213,32 @@ export function createTalentScreenController({
     if (pointEl) pointEl.textContent = `${pointState.available} / ${pointState.owned}`;
   }
 
+  function showTalentHoverCard(node, x, y) {
+    const card = talentBoardEl?.querySelector('[data-talent-hover-card]');
+    if (!card || !node) return;
+    card.innerHTML = `
+      <b>${escapeTalentText(node.name)}</b>
+      <small>${escapeTalentText(getTalentSizeLabel(node.size))}</small>
+      <p>${escapeTalentText(node.effect ?? '尚未設定。')}</p>
+    `;
+    card.style.left = `${x}%`;
+    card.style.top = `${y}%`;
+    card.classList.toggle('below', y < 18);
+    card.classList.add('show');
+  }
+
+  function hideTalentHoverCard() {
+    talentBoardEl?.querySelector('[data-talent-hover-card]')?.classList.remove('show', 'below');
+  }
+
+  function showTalentHoverFromButton(button) {
+    const node = getTalentNode(button?.dataset?.talentId);
+    if (!node) return;
+    const x = Number(button.dataset.talentX);
+    const y = Number(button.dataset.talentY);
+    showTalentHoverCard(node, Number.isFinite(x) ? x : 50, Number.isFinite(y) ? y : 50);
+  }
+
   function getExclusiveSiblings(node) {
     if (!['medium', 'large'].includes(node.size)) return [];
     const sameSize = getActiveBranchNodes().filter((item) => item.size === node.size);
@@ -208,10 +248,48 @@ export function createTalentScreenController({
     return sameSize.slice(pairStart, pairStart + 2).filter((item) => item.id !== node.id);
   }
 
+  function createBranchLinks(branchNodes) {
+    const [smallA, smallB, smallC, smallD, smallE, smallF, smallG] = branchNodes.filter((node) => node.size === 'small');
+    const mediumNodes = branchNodes.filter((node) => node.size === 'medium');
+    const largeNodes = branchNodes.filter((node) => node.size === 'large');
+    const specialNode = branchNodes.find((node) => node.size === 'special');
+    return [
+      [smallA?.id, smallB?.id],
+      [smallB?.id, mediumNodes[0]?.id],
+      [smallB?.id, mediumNodes[1]?.id],
+      [mediumNodes[0]?.id, smallC?.id],
+      [mediumNodes[1]?.id, smallC?.id],
+      [smallC?.id, smallD?.id],
+      [smallD?.id, mediumNodes[2]?.id],
+      [smallD?.id, mediumNodes[3]?.id],
+      [mediumNodes[2]?.id, smallE?.id],
+      [mediumNodes[3]?.id, smallE?.id],
+      [smallE?.id, smallF?.id],
+      [smallF?.id, mediumNodes[4]?.id],
+      [smallF?.id, mediumNodes[5]?.id],
+      [mediumNodes[4]?.id, smallG?.id],
+      [mediumNodes[5]?.id, smallG?.id],
+      [smallG?.id, largeNodes[0]?.id],
+      [smallG?.id, largeNodes[1]?.id],
+      [largeNodes[0]?.id, specialNode?.id],
+      [largeNodes[1]?.id, specialNode?.id],
+    ].filter(([fromId, toId]) => fromId && toId);
+  }
+
+  function canLearnTalent(node) {
+    if (!node || node.level > 0) return false;
+    const branchNodes = getActiveBranchNodes();
+    const firstNode = branchNodes.find((item) => item.size === 'small');
+    if (node.id === firstNode?.id) return true;
+    return createBranchLinks(branchNodes).some(([fromId, toId]) => (
+      toId === node.id && getTalentNode(fromId).level > 0
+    ));
+  }
+
   function upgradeSelectedTalent() {
     const node = getTalentNode(selectedTalentId);
     if (!node || node.color !== activeTalentElement) return;
-    if (node.level >= node.max) return;
+    if (!canLearnTalent(node)) return;
     const pointState = talentPointState[activeTalentElement] ?? talentPointState.red;
     if (pointState.available <= 0) return;
     getExclusiveSiblings(node).forEach((sibling) => {
@@ -219,7 +297,7 @@ export function createTalentScreenController({
       pointState.available = Math.min(pointState.owned, pointState.available + sibling.level);
       sibling.level = 0;
     });
-    node.level++;
+    node.level = 1;
     pointState.available = Math.max(0, pointState.available - 1);
     saveTalentProgress();
     renderBoard();
@@ -254,7 +332,7 @@ export function createTalentScreenController({
       const points = [[36, 16], [64, 16]];
       return points[indexBySize.large++] ?? [50, 14];
     }
-    const points = [[50, 8]];
+    const points = [[50, 14]];
     return points[indexBySize.special++] ?? [50, 5];
   }
 
@@ -283,31 +361,7 @@ export function createTalentScreenController({
       return { ...node, x, y };
     });
     const positionedById = Object.fromEntries(positionedNodes.map((node) => [node.id, node]));
-    const [smallA, smallB, smallC, smallD, smallE, smallF, smallG] = positionedNodes.filter((node) => node.size === 'small');
-    const mediumNodes = positionedNodes.filter((node) => node.size === 'medium');
-    const largeNodes = positionedNodes.filter((node) => node.size === 'large');
-    const specialNode = positionedNodes.find((node) => node.size === 'special');
-    const branchLinks = [
-      [smallA?.id, smallB?.id],
-      [smallB?.id, mediumNodes[0]?.id],
-      [smallB?.id, mediumNodes[1]?.id],
-      [mediumNodes[0]?.id, smallC?.id],
-      [mediumNodes[1]?.id, smallC?.id],
-      [smallC?.id, smallD?.id],
-      [smallD?.id, mediumNodes[2]?.id],
-      [smallD?.id, mediumNodes[3]?.id],
-      [mediumNodes[2]?.id, smallE?.id],
-      [mediumNodes[3]?.id, smallE?.id],
-      [smallE?.id, smallF?.id],
-      [smallF?.id, mediumNodes[4]?.id],
-      [smallF?.id, mediumNodes[5]?.id],
-      [mediumNodes[4]?.id, smallG?.id],
-      [mediumNodes[5]?.id, smallG?.id],
-      [smallG?.id, largeNodes[0]?.id],
-      [smallG?.id, largeNodes[1]?.id],
-      [largeNodes[0]?.id, specialNode?.id],
-      [largeNodes[1]?.id, specialNode?.id],
-    ].filter(([fromId, toId]) => fromId && toId);
+    const branchLinks = createBranchLinks(positionedNodes);
     const lineSvg = branchLinks.map(([fromId, toId]) => {
       const from = positionedById[fromId];
       const to = positionedById[toId];
@@ -319,26 +373,55 @@ export function createTalentScreenController({
       <button class="talent-reset-button" type="button" data-talent-reset>重置天賦</button>
       <svg class="talent-link-layer talent-tree-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lineSvg}</svg>
       ${positionedNodes.map((node) => `
-        <button class="talent-node talent-${node.color} talent-${node.size} ${node.id === selectedTalentId ? 'selected' : ''} ${node.level > 0 ? 'active' : 'locked'}"
+        <button class="talent-node talent-${node.color} talent-${node.size} ${node.id === selectedTalentId ? 'selected' : ''} ${node.level > 0 ? 'active' : 'locked'} ${canLearnTalent(node) ? 'learnable' : ''}"
           style="left:${node.x}%; top:${node.y}%"
           data-talent-id="${node.id}"
+          data-talent-x="${node.x}"
+          data-talent-y="${node.y}"
+          title="${escapeTalentText(`${node.name}：${node.effect ?? '尚未設定。'}`)}"
+          aria-label="${escapeTalentText(`${node.name}，${getTalentSizeLabel(node.size)}，${node.effect ?? ''}`)}"
           type="button">
           <img src="${talentIconByColor[node.color]}" alt="" aria-hidden="true">
-          <i>${node.level}/${node.max}</i>
           <span>${node.name}</span>
         </button>
       `).join('')}
+      <div class="talent-hover-card" data-talent-hover-card aria-hidden="true"></div>
       <div class="talent-element-tabs" role="tablist" aria-label="天賦屬性">
         ${talentElementTabs.map((tab) => `
           <button class="talent-element-tab talent-${tab.color} ${tab.color === activeTalentElement ? 'active' : ''}" data-talent-element="${tab.color}" type="button">${tab.label}</button>
         `).join('')}
       </div>
-    `;
+    `; 
+    talentBoardEl.onmousemove = (event) => {
+      const button = event.target.closest?.('[data-talent-id]');
+      if (!button || !talentBoardEl.contains(button)) {
+        hideTalentHoverCard();
+        return;
+      }
+      showTalentHoverFromButton(button);
+    };
+    talentBoardEl.onpointerover = (event) => {
+      const button = event.target.closest?.('[data-talent-id]');
+      if (button && talentBoardEl.contains(button)) showTalentHoverFromButton(button);
+    };
+    talentBoardEl.onmouseleave = hideTalentHoverCard;
     talentBoardEl.querySelectorAll('[data-talent-id]').forEach((button) => {
+      const node = getTalentNode(button.dataset.talentId);
+      const positionedNode = positionedById[button.dataset.talentId] ?? node;
+      button.addEventListener('mouseenter', () => showTalentHoverCard(node, positionedNode.x, positionedNode.y));
+      button.addEventListener('mouseleave', hideTalentHoverCard);
+      button.addEventListener('focus', () => showTalentHoverCard(node, positionedNode.x, positionedNode.y));
+      button.addEventListener('blur', hideTalentHoverCard);
       button.addEventListener('click', () => {
         selectedTalentId = button.dataset.talentId;
-        renderBoard();
-        renderDetail();
+        const clickedNode = getTalentNode(selectedTalentId);
+        showTalentHoverCard(clickedNode, positionedNode.x, positionedNode.y);
+        if (canLearnTalent(clickedNode)) {
+          upgradeSelectedTalent();
+        } else {
+          renderBoard();
+          renderDetail();
+        }
       });
     });
     talentBoardEl.querySelectorAll('[data-talent-element]').forEach((button) => {
@@ -355,26 +438,29 @@ export function createTalentScreenController({
 
   function renderDetail() {
     const node = getTalentNode(selectedTalentId);
+    const canLearn = canLearnTalent(node);
     if (talentDetailEl) {
       talentDetailEl.innerHTML = `
         <div class="talent-detail-icon talent-${node.color}">
           <img src="${talentIconByColor[node.color]}" alt="" aria-hidden="true">
-          <span>${node.level}/${node.max}</span>
         </div>
         <strong>${node.name}</strong>
         <small>${getTalentSizeLabel(node.size)}</small>
-        <p><b>目前效果</b>${node.effect}</p>
-        <p><b>下一級效果</b>${node.next}</p>
-        <button type="button" data-talent-upgrade ${node.level >= node.max ? 'disabled' : ''}>${node.level >= node.max ? '已滿級' : '升級'}</button>
+        <p><b>效果</b>${node.effect}</p>
+        <button type="button" data-talent-upgrade ${!canLearn ? 'disabled' : ''}>${node.level > 0 ? '已啟動' : '啟動天賦'}</button>
       `;
       talentDetailEl.querySelector('[data-talent-upgrade]')?.addEventListener('click', upgradeSelectedTalent);
     }
     if (talentResonanceEl) {
-      talentResonanceEl.innerHTML = `
-        <article><b>烈焰共鳴</b><span>火珠傷害 +25%</span></article>
-        <article><b>引爆共鳴</b><span>引爆傷害 +30%</span></article>
-        <article><b>戰意共鳴</b><span>攻擊力 +15% / 神令冷卻 -1</span></article>
-      `;
+      const activeEffects = getActiveBranchNodes().filter((item) => item.level > 0);
+      talentResonanceEl.innerHTML = activeEffects.length
+        ? activeEffects.slice(0, 8).map((item) => `
+          <article>
+            <b>${escapeTalentText(item.name)}</b>
+            <span>${escapeTalentText(item.effect ?? '尚未設定。')}</span>
+          </article>
+        `).join('')
+        : '<article><b>尚未觸發天賦</b><span>點亮天賦後，效果會顯示在這裡。</span></article>';
     }
     if (activeTalentListEl) {
       activeTalentListEl.innerHTML = talentNodes
@@ -383,7 +469,6 @@ export function createTalentScreenController({
         .map((item) => `
           <button class="talent-pill talent-${item.color}" data-talent-pill="${item.id}" type="button">
             <span>${item.name}</span>
-            <small>Lv.${item.level}</small>
           </button>
         `).join('');
       activeTalentListEl.querySelectorAll('[data-talent-pill]').forEach((button) => {
@@ -410,3 +495,4 @@ export function createTalentScreenController({
     open,
   };
 }
+

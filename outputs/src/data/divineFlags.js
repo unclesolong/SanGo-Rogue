@@ -3,9 +3,9 @@ export const divineFlagsPack = {
   flags: [
     {
       id: 'flag_fire_attack',
-      name: '火攻令',
-      category: '火攻',
-      description: '隨機一種珠色轉成紅珠。本回合每次消除任意珠，包含天降與排列消除，會引爆消除珠周遭九宮格並觸發炸珠傷害。',
+      name: '火燒連環令',
+      category: '火燒',
+      description: '隨機一種珠色轉成紅珠。本回合每次消除任意珠，包含天降與排列消除，會引爆消除珠十字範圍，炸珠傷害 x2.5。',
       effect: { type: 'convert_random_color_to_color', params: { targetColor: 'red', sourceColor: 'random', fireAttackBombTurns: 1 } },
       icon: 'assets/divine-flags-pack/icons/flag_fire_attack.png',
     },
